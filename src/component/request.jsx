@@ -659,6 +659,11 @@ import { useState, useEffect, useRef } from "react";
     if (!req.requester_name.trim())         errs.requester_name         = "Full name is required";
     if (!req.requester_relationship.trim()) errs.requester_relationship = "Relationship is required";
     if (!req.requester_address.trim())      errs.requester_address      = "Address is required";
+    // NEW: requester email — required so the office can send the
+    // "Ready for Pickup" notification to the correct Gmail/email address.
+    if (!req.requester_email.trim())        errs.requester_email        = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.requester_email.trim()))
+                                             errs.requester_email        = "Enter a valid email address";
     return errs;
   }
 
@@ -802,7 +807,9 @@ import { useState, useEffect, useRef } from "react";
 
   /* ─── REQUESTER FIELDS ───────────────────────────────────────── */
   // UPDATED: forwards printedName / onPrintedNameChange down to
-  // SignatureUpload. Everything else here is unchanged.
+  // SignatureUpload, and now also renders an "Email Address" field
+  // (required) so the office can send the "Ready for Pickup" email
+  // notification to the requester. Everything else here is unchanged.
   function RequesterFields({data,onChange,errors,sigFile,onSigChange,printedName,onPrintedNameChange}) {
     return (
       <div className="req-left">
@@ -836,6 +843,14 @@ import { useState, useEffect, useRef } from "react";
         <div className="req-field">
           Telephone No.
           <input type="text" value={data.requester_telephone} onChange={e=>onChange("requester_telephone",e.target.value)}/>
+        </div>
+        {/* NEW: Email Address — used to send the "Ready for Pickup" notification */}
+        <div className="req-field">
+          Email Address *
+          <input type="email" className={errors.requester_email?"invalid":""}
+            value={data.requester_email} onChange={e=>onChange("requester_email",e.target.value)}
+            placeholder="juandelacruz@gmail.com"/>
+          {errors.requester_email && <div className="field-error">{errors.requester_email}</div>}
         </div>
       </div>
     );
@@ -1058,7 +1073,7 @@ import { useState, useEffect, useRef } from "react";
     const [errors,setErrors]=useState({});
     const [child,setChild]=useState({firstname:"",middlename:"",surname:""});
     const [dob,setDob]=useState({month:"",date:"",year:""});
-    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:""});
+    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:"",requester_email:""});
     const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
     const [sigFile,setSigFile]=useState(null);
     const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
@@ -1167,7 +1182,7 @@ import { useState, useEffect, useRef } from "react";
     const [errors,setErrors]=useState({});
     const [deceased,setDeceased]=useState({firstname:"",middlename:"",surname:""});
     const [dod,setDod]=useState({month:"",date:"",year:""});
-    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:""});
+    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:"",requester_email:""});
     const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
     const [sigFile,setSigFile]=useState(null);
     const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
@@ -1277,7 +1292,7 @@ import { useState, useEffect, useRef } from "react";
     const [husband,setHusband]=useState("");
     const [wife,setWife]=useState("");
     const [marriageDate,setMarriageDate]=useState("");
-    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:""});
+    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:"",requester_email:""});
     const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
     const [sigFile,setSigFile]=useState(null);
     const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
