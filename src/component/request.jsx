@@ -86,6 +86,34 @@ import { useState, useEffect, useRef } from "react";
     margin-bottom:18px;
   }
 
+  /* ── MOBILE NAVBAR ── */
+  .mobile-navbar{ display:none; }
+  @media(max-width:640px){
+    .mobile-navbar{
+      display:flex;
+      position:fixed;
+      left:0;right:0;bottom:0;
+      z-index:50;
+      background:#fff;
+      border-top:1px solid #dde6f2;
+      padding:7px 6px calc(7px + env(safe-area-inset-bottom,0px));
+      justify-content:space-around;
+      align-items:stretch;
+    }
+    .mobile-navbar-item{
+      display:flex;flex-direction:column;align-items:center;gap:3px;
+      background:none;border:none;cursor:pointer;
+      padding:6px 8px;border-radius:10px;
+      font-family:inherit;color:#8aabbf;
+      transition:color 0.2s,background 0.2s;
+      flex:1;max-width:96px;
+    }
+    .mobile-navbar-item .nav-icon{font-size:19px;line-height:1;}
+    .mobile-navbar-item .nav-label{font-size:0.62rem;font-weight:500;letter-spacing:0.02em;}
+    .mobile-navbar-item.active{color:#185fa5;background:#eef3fb;}
+    .landing{padding-bottom:92px;}
+  }
+
   /* ── TYPE CARDS ── */
   .cards-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
   .type-card{
