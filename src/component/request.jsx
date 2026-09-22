@@ -19,96 +19,100 @@ import { useState, useEffect, useRef } from "react";
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    padding:48px 20px;
-    background:linear-gradient(160deg,#e8f0fb 0%,#f0f4fa 60%);
+    padding:56px 20px;
+    background:#f6f8fc;
   }
   .brand-badge{
     display:inline-flex;
     align-items:center;
     gap:10px;
     background:#fff;
-    border:1px solid #c8d9f0;
+    border:1px solid #dde6f2;
     border-radius:100px;
-    padding:8px 18px 8px 12px;
-    margin-bottom:32px;
-    box-shadow:0 1px 6px rgba(24,95,165,0.08);
+    padding:7px 16px 7px 7px;
+    margin-bottom:28px;
   }
   .brand-icon{
-    width:32px;height:32px;
+    width:28px;height:28px;
     background:#185fa5;
-    border-radius:8px;
+    border-radius:7px;
     display:flex;align-items:center;justify-content:center;
-    color:#fff;font-size:16px;
+    color:#fff;font-size:14px;
   }
-  .brand-text{font-size:0.78rem;font-weight:600;color:#185fa5;letter-spacing:0.04em;}
+  .brand-text{font-size:0.74rem;font-weight:600;color:#185fa5;letter-spacing:0.05em;text-transform:uppercase;}
 
   .office-name{
     font-family:'DM Serif Display',serif;
-    font-size:2rem;
+    font-size:2.1rem;
     font-weight:400;
     text-align:center;
     color:#0f1f3d;
-    line-height:1.25;
-    margin-bottom:8px;
+    line-height:1.28;
+    letter-spacing:0.01em;
+    margin-bottom:10px;
   }
   .office-sub{
-    font-size:0.9rem;
+    font-size:0.85rem;
     color:#5577a0;
     text-align:center;
-    margin-bottom:40px;
+    margin-bottom:28px;
     letter-spacing:0.02em;
   }
 
   /* ── CONNECTION BANNER ── */
   .conn-banner{
-    display:flex;align-items:center;gap:8px;
-    padding:7px 16px;border-radius:100px;
-    font-size:0.72rem;font-weight:500;
-    margin-bottom:32px;
-    border:1px solid transparent;
+    display:flex;align-items:center;gap:9px;
+    padding:8px 16px;border-radius:8px;
+    font-size:0.74rem;font-weight:500;
+    margin-bottom:36px;
+    background:#fff;
+    border:1px solid #dde6f2;
+    color:#42557a;
   }
-  .conn-banner.ok{background:#eaf3de;border-color:#c0dd97;color:#3b6d11;}
-  .conn-banner.err{background:#fcebeb;border-color:#f09595;color:#a32d2d;}
-  .conn-banner.checking{background:#e6f1fb;border-color:#b5d4f4;color:#185fa5;}
+  .conn-banner.ok{color:#2f6b1f;}
+  .conn-banner.err{color:#a32d2d;}
+  .conn-banner.checking{color:#185fa5;}
   .conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-  .conn-dot.ok{background:#639922;}
-  .conn-dot.err{background:#e24b4a;}
+  .conn-dot.ok{background:#3f8f21;}
+  .conn-dot.err{background:#d43d3c;}
   .conn-dot.checking{background:#378add;animation:pulse 1.2s infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
   /* ── SELECT PROMPT ── */
   .select-prompt{
-    font-size:0.7rem;text-transform:uppercase;
-    letter-spacing:0.14em;color:#8aabbf;
-    margin-bottom:16px;
+    font-size:0.68rem;text-transform:uppercase;
+    letter-spacing:0.15em;color:#8aabbf;
+    font-weight:600;
+    margin-bottom:18px;
   }
 
   /* ── TYPE CARDS ── */
-  .cards-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+  .cards-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
   .type-card{
-    width:200px;padding:32px 20px 28px;
-    border-radius:14px;cursor:pointer;
-    border:1.5px solid #c8d9f0;
+    width:204px;padding:28px 22px 24px;
+    border-radius:12px;cursor:pointer;
+    border:1px solid #dde6f2;
     background:#fff;text-align:left;
-    transition:border-color 0.25s,box-shadow 0.25s,transform 0.25s;
-    display:flex;flex-direction:column;gap:10px;
+    transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s;
+    display:flex;flex-direction:column;gap:14px;
     font-family:inherit;
+    box-shadow:0 1px 2px rgba(15,31,61,0.04);
   }
   .type-card:hover{
-    border-color:#378add;
-    box-shadow:0 8px 28px rgba(24,95,165,0.13);
-    transform:translateY(-4px);
+    border-color:#185fa5;
+    box-shadow:0 4px 14px rgba(15,31,61,0.08);
+    transform:translateY(-2px);
   }
   .card-icon{
-    width:40px;height:40px;border-radius:10px;
-    background:#e6f1fb;display:flex;align-items:center;
-    justify-content:center;color:#185fa5;font-size:20px;
-    transition:background 0.25s;
+    width:38px;height:38px;border-radius:9px;
+    background:#eef3fb;display:flex;align-items:center;
+    justify-content:center;color:#185fa5;font-size:18px;
+    transition:background 0.2s,color 0.2s;
   }
   .type-card:hover .card-icon{background:#185fa5;color:#fff;}
-  .card-title{font-size:0.95rem;font-weight:600;color:#0f1f3d;line-height:1.3;}
-  .card-arrow{font-size:0.72rem;color:#8aabbf;transition:color 0.2s,transform 0.2s;display:inline-block;}
-  .type-card:hover .card-arrow{color:#185fa5;transform:translateX(4px);}
+  .card-title{font-size:0.92rem;font-weight:600;color:#0f1f3d;line-height:1.35;letter-spacing:0.01em;}
+  .card-arrow{font-size:0.7rem;font-weight:500;color:#8aabbf;transition:color 0.2s,transform 0.2s;display:inline-block;}
+  .type-card:hover .card-arrow{color:#185fa5;transform:translateX(3px);}
 
   /* ── OVERLAY ── */
   .overlay{
