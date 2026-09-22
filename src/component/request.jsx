@@ -547,7 +547,7 @@ import { useState, useEffect, useRef } from "react";
     { id:"marriage", label:"Marriage Request", icon:"💍" },
     { id:"death",    label:"Death Request",    icon:"📜" },
   ];
-  const BASE_URL = "/api";
+ const BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
   /* ─── API ────────────────────────────────────────────────────── */
   async function fetchApi(path, body) {
