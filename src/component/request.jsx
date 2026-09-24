@@ -698,8 +698,6 @@ import { useState, useEffect, useRef } from "react";
     if (!req.requester_name.trim())         errs.requester_name         = "Full name is required";
     if (!req.requester_relationship.trim()) errs.requester_relationship = "Relationship is required";
     if (!req.requester_address.trim())      errs.requester_address      = "Address is required";
-    // NEW: requester email — required so the office can send the
-    // "Ready for Pickup" notification to the correct Gmail/email address.
     if (!req.requester_email.trim())        errs.requester_email        = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.requester_email.trim()))
                                              errs.requester_email        = "Enter a valid email address";
@@ -951,7 +949,7 @@ import { useState, useEffect, useRef } from "react";
         <div className="form-header-accent2"/>
         <div className="form-header-inner">
           <div className="header-left">
-            <div className="header-label">Office of the City Civil Registrar · San Carlos City, Negros Occidental</div>
+            <div className="header-label">Local Civil Registrar· San Carlos City, Negros Occidental</div>
             <div className="header-title">Verification Form for {recordWord} Record</div>
             <div className="header-subtitle">City of San Carlos · Official Document Request</div>
           </div>
