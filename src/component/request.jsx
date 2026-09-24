@@ -1373,7 +1373,7 @@ import { useState, useEffect, useRef } from "react";
           </div>
           <div style={{textAlign:"center",marginBottom:"36px"}}>
             <div className="office-name">
-              Local Civil Registrar
+              Local Civil Registrar San Carlos City, Negros Occidental
             </div>
           </div>
           <div className="select-prompt">Select record type to request</div>
