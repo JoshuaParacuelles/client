@@ -32,7 +32,7 @@ import { useState, useEffect, useRef } from "react";
   .logo-divider{width:1px;height:36px;background:#dde6f2;flex-shrink:0;}
   .office-name{
     font-family:'DM Serif Display',serif;
-    font-size:2.1rem;
+    font-size:clamp(1.6rem,6vw,2.1rem);
     font-weight:400;
     text-align:center;
     color:#0f1f3d;
@@ -255,7 +255,7 @@ import { useState, useEffect, useRef } from "react";
   /* ── NAME / DATE ROWS ── */
   .name-block-fields{}
   .name-row,.date-row{display:flex;gap:10px;margin-bottom:10px;}
-  .name-col,.date-col{flex:1;display:flex;flex-direction:column;}
+  .name-col,.date-col{flex:1;min-width:0;display:flex;flex-direction:column;}
   .name-col input,.date-col input{
     border:none;border-bottom:1.5px solid #d4e4f5;
     background:transparent;font-size:0.85rem;font-family:inherit;
@@ -503,36 +503,21 @@ import { useState, useEffect, useRef } from "react";
   @keyframes shrink{from{width:100%;}to{width:0%;}}
 
   /* ── RESPONSIVE ── */
-  @media(max-width:640px){
-    .office-name{font-size:1.5rem;}
-    .form-body{display:flex;flex-direction:column;}
-    .form-left{padding:16px;border-right:none;}
-    .form-right{padding:14px;border-top:1px solid #e2ecf8;}
-    .purpose-grid{grid-template-columns:1fr 1fr;}
-    .name-row,.date-row{flex-direction:column;gap:8px;}
-    .req-section{grid-template-columns:1fr;}
-    .req-divider{height:1px;width:auto;}
-    .req-right{border-top:1px solid #e2ecf8;}
-    .overlay{padding:0;}
-    .form-paper{border-radius:0;max-width:100%;min-height:100vh;box-shadow:none;border:none;}
-    .form-header-inner{padding:16px 18px 14px;}
-    .form-subheader{padding:10px 18px;}
-    .form-left{padding:14px 18px;}
-    .form-actions{padding:12px 18px;}
-    .success-overlay{padding:40px 24px;}
-    .toast-wrap{top:auto;bottom:16px;right:12px;left:12px;}
-    .toast{min-width:unset;width:100%;}
-  }
-  @media(max-width:480px){
-    /* Home screen: hero */
-    .landing{padding-top:36px;padding-left:16px;padding-right:16px;}
-    .logo-row{gap:14px;margin-bottom:18px;}
-    .logo-img{height:52px;max-width:80px;}
-    .office-name{font-size:1.75rem;line-height:1.2;letter-spacing:0;}
-    .select-prompt{margin-bottom:14px;}
 
-    /* Home screen: request cards → one clean row each
-       [icon] [title / subtitle] [chevron] */
+  /* Tablet and below: form body becomes one column; OCCR panel becomes a grid */
+  @media(max-width:760px){
+    .form-body{display:flex;flex-direction:column;}
+    .form-left{border-right:none;}
+    .form-right{
+      border-top:1px solid #e2ecf8;
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 16px;
+    }
+    .form-right .right-panel-title{grid-column:1/-1;}
+  }
+
+  /* Home: request cards become one clean row each
+     [icon] [title / subtitle] [chevron] */
+  @media(max-width:700px){
     .cards-row{flex-direction:column;align-items:stretch;width:100%;max-width:420px;gap:10px;}
     .type-card{
       width:100%;flex-direction:row;align-items:center;gap:14px;
@@ -546,7 +531,87 @@ import { useState, useEffect, useRef } from "react";
       border-top:1.5px solid #8aabbf;border-right:1.5px solid #8aabbf;
       transform:rotate(45deg);margin-right:4px;
     }
+  }
+
+  @media(max-width:640px){
+    /* Home: hero */
+    .landing{padding-top:36px;padding-left:16px;padding-right:16px;}
+    .logo-row{gap:14px;margin-bottom:18px;}
+    .logo-img{height:52px;max-width:80px;}
+    .office-name{line-height:1.2;letter-spacing:0;}
+    .select-prompt{margin-bottom:14px;}
+
+    /* Modal: full-screen sheet with a pinned action bar */
+    .overlay{padding:0;overscroll-behavior:contain;}
+    .form-paper{
+      border-radius:0;max-width:100%;box-shadow:none;border:none;
+      min-height:100vh;min-height:100dvh;
+      overflow:visible;
+      display:flex;flex-direction:column;
+    }
+    .form-body{flex:1;}
+    .form-header-inner{padding:16px 18px 14px;gap:12px;}
+    .header-label{letter-spacing:0.08em;line-height:1.4;}
+    .header-title{font-size:1.15rem;line-height:1.25;}
+    .form-subheader{padding:10px 18px;gap:10px 20px;}
+    .form-left{padding:14px 18px;}
+    .form-right{padding:14px 18px;}
+
+    /* Modal: fields */
+    .purpose-grid{grid-template-columns:1fr 1fr;}
+    .name-row{flex-direction:column;gap:8px;}
+    .date-row{gap:8px;}
+    .date-col:nth-child(1){flex:1.6;}
+    .date-col:nth-child(2){flex:0.8;}
+    .copies-options{gap:10px 16px;}
+    /* 16px stops iOS from zooming the page when an input is focused */
+    .form-paper input[type="text"]:not([readonly]),
+    .form-paper input[type="email"],
+    .form-paper input[type="date"]{font-size:16px;}
+    .req-field input,.right-field input,.name-col input,.date-col input,
+    .marriage-date-input,.specify-row input{padding-top:6px;padding-bottom:6px;}
+
+    /* Modal: larger tap targets for checkboxes and radios */
+    .check-label,.radio-label{gap:8px;padding:3px 0;font-size:0.8rem;}
+    .check-box,.radio-box{width:18px;height:18px;}
+    .check-box{font-size:11px;}
+    .radio-label input[type="radio"]:checked+.radio-box::after{inset:3.5px;}
+
+    /* Modal: requester + issuance */
+    .req-section{grid-template-columns:1fr;}
+    .req-divider{height:1px;width:auto;}
+    .req-left{padding:12px 14px;}
+    .req-right{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:12px 14px;}
+    .issuance-title{width:100%;text-align:left;margin-bottom:0;}
+    .issuance-item{margin-bottom:0;}
+    .issuance-sep{display:none;}
+
+    /* Modal: actions stay reachable while scrolling */
+    .form-actions{
+      position:sticky;bottom:0;z-index:5;flex-wrap:wrap;gap:10px;
+      padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));
+    }
+    .form-status{flex:1 1 100%;font-size:0.76rem;line-height:1.4;}
+    .form-status:empty{display:none;}
+    .btn-cancel,.btn-submit{min-height:44px;font-size:0.9rem;}
+    .btn-cancel{flex:1;}
+    .btn-submit{flex:2;}
+
+    /* Modal: success + toasts (toasts move to the top so they never cover the buttons) */
+    .success-overlay{flex:1;padding:40px 24px;}
+    .success-ref{flex-wrap:wrap;justify-content:center;}
+    .toast-wrap{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;right:12px;left:12px;}
+    .toast{min-width:unset;width:100%;max-width:none;}
+  }
+
+  @media(max-width:480px){
+    .header-badge{font-size:0.62rem;padding:4px 10px;}
+    .sh-divider{display:none;}
+  }
+
+  @media(max-width:360px){
     .purpose-grid{grid-template-columns:1fr;}
+    .header-badge{display:none;}
   }
   `;
 
