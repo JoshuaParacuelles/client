@@ -1402,8 +1402,6 @@ import { useState, useEffect, useRef } from "react";
         <ToastContainer/>
         <div className="landing">
           <div className="brand-badge">
-            <div className="brand-icon"><BrandIcon/></div>
-            <span className="brand-text">Civil Registrar · San Carlos City</span>
           </div>
           <div style={{textAlign:"center",marginBottom:"36px"}}>
             <div className="office-name">
