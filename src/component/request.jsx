@@ -41,6 +41,7 @@ import { useState, useEffect, useRef } from "react";
     margin-bottom:0;
     text-wrap:balance;
   }
+  .office-loc{display:block;font-size:0.6em;line-height:1.35;letter-spacing:0.02em;margin-top:6px;}
   /* ── SELECT PROMPT ── */
   .select-prompt{
     font-size:0.68rem;text-transform:uppercase;
@@ -1373,7 +1374,8 @@ import { useState, useEffect, useRef } from "react";
           </div>
           <div style={{textAlign:"center",marginBottom:"36px"}}>
             <div className="office-name">
-              Local Civil Registrar San Carlos City, Negros Occidental
+              Local Civil Registrar
+              <span className="office-loc">San Carlos City, Negros Occidental</span>
             </div>
           </div>
           <div className="select-prompt">Select record type to request</div>
