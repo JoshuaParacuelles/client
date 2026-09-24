@@ -30,31 +30,6 @@ import { useState, useEffect, useRef } from "react";
   .logo-img{height:64px;width:auto;max-width:96px;object-fit:contain;display:block;}
   .logo-img--lcr{mix-blend-mode:multiply;} /* hides the white box around the .jpg on the light page */
   .logo-divider{width:1px;height:36px;background:#dde6f2;flex-shrink:0;}
-  .brand-badge{
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    max-width:100%;
-    background:#fff;
-    border:1px solid #dde6f2;
-    border-radius:100px;
-    padding:6px 16px 6px 6px;
-    margin-bottom:28px;
-  }
-  .brand-icon{
-    width:28px;height:28px;
-    background:#185fa5;
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    color:#fff;flex-shrink:0;
-  }
-  .brand-icon svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-  .brand-text{
-    font-size:0.74rem;font-weight:600;color:#185fa5;
-    letter-spacing:0.05em;text-transform:uppercase;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
-  }
-
   .office-name{
     font-family:'DM Serif Display',serif;
     font-size:2.1rem;
@@ -63,18 +38,9 @@ import { useState, useEffect, useRef } from "react";
     color:#0f1f3d;
     line-height:1.28;
     letter-spacing:0.01em;
-    margin-bottom:10px;
-  }
-  .office-sub{
-    font-size:0.85rem;
-    color:#5577a0;
-    text-align:center;
-    margin:0 auto;
-    letter-spacing:0.02em;
-    line-height:1.5;
+    margin-bottom:0;
     text-wrap:balance;
   }
-
   /* ── SELECT PROMPT ── */
   .select-prompt{
     font-size:0.68rem;text-transform:uppercase;
@@ -561,10 +527,7 @@ import { useState, useEffect, useRef } from "react";
     .landing{padding-top:36px;padding-left:16px;padding-right:16px;}
     .logo-row{gap:14px;margin-bottom:18px;}
     .logo-img{height:52px;max-width:80px;}
-    .brand-badge{margin-bottom:22px;padding-right:14px;}
-    .brand-text{font-size:0.66rem;letter-spacing:0.04em;}
-    .office-name{font-size:1.75rem;line-height:1.2;letter-spacing:0;margin-bottom:12px;}
-    .office-sub{font-size:0.8rem;max-width:30ch;}
+    .office-name{font-size:1.75rem;line-height:1.2;letter-spacing:0;}
     .select-prompt{margin-bottom:14px;}
 
     /* Home screen: request cards → one clean row each
@@ -631,16 +594,6 @@ import { useState, useEffect, useRef } from "react";
       ),
     };
     return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[id]}</svg>;
-  }
-
-  function BrandIcon() {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M3 10l9-6 9 6"/>
-        <path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/>
-        <path d="M3 20h18"/>
-      </svg>
-    );
   }
 
   /* ─── API ────────────────────────────────────────────────────── */
@@ -1418,15 +1371,10 @@ import { useState, useEffect, useRef } from "react";
             <img src="/scc.png" alt="City of San Carlos seal" className="logo-img"
               onError={e=>{e.currentTarget.style.display="none";}}/>
           </div>
-          <div className="brand-badge">
-            <div className="brand-icon"><BrandIcon/></div>
-            <span className="brand-text">Civil Registrar · San Carlos City</span>
-          </div>
           <div style={{textAlign:"center",marginBottom:"36px"}}>
             <div className="office-name">
-              Office of the<br/>City Civil Registrar
+              Local Civil Registrar
             </div>
-            <div className="office-sub">San Carlos City · Negros Occidental · Verification Form Request System</div>
           </div>
           <div className="select-prompt">Select record type to request</div>
           <div className="cards-row">
