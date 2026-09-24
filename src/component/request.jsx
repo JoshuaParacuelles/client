@@ -1409,7 +1409,7 @@ import { useState, useEffect, useRef } from "react";
             <div className="office-name">
               Office of the<br/>City Civil Registrar
             </div>
-            <div className="office-sub">San Carlos City · Negros Occidental · Verification Form Request System</div>
+            <div className="office-sub">San Carlos City · Negros Occidental</div>
           </div>
           <div className="select-prompt">Select record type to request</div>
           <div className="cards-row">
