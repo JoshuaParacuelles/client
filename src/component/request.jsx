@@ -26,20 +26,26 @@ import { useState, useEffect, useRef } from "react";
     display:inline-flex;
     align-items:center;
     gap:10px;
+    max-width:100%;
     background:#fff;
     border:1px solid #dde6f2;
     border-radius:100px;
-    padding:7px 16px 7px 7px;
+    padding:6px 16px 6px 6px;
     margin-bottom:28px;
   }
   .brand-icon{
     width:28px;height:28px;
     background:#185fa5;
-    border-radius:7px;
+    border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    color:#fff;font-size:14px;
+    color:#fff;flex-shrink:0;
   }
-  .brand-text{font-size:0.74rem;font-weight:600;color:#185fa5;letter-spacing:0.05em;text-transform:uppercase;}
+  .brand-icon svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .brand-text{
+    font-size:0.74rem;font-weight:600;color:#185fa5;
+    letter-spacing:0.05em;text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+  }
 
   .office-name{
     font-family:'DM Serif Display',serif;
@@ -55,35 +61,40 @@ import { useState, useEffect, useRef } from "react";
     font-size:0.85rem;
     color:#5577a0;
     text-align:center;
-    margin-bottom:28px;
+    margin:0 auto 28px;
     letter-spacing:0.02em;
+    line-height:1.5;
+    text-wrap:balance;
   }
 
   /* ── CONNECTION BANNER ── */
   .conn-banner{
-    display:flex;align-items:center;gap:9px;
-    padding:8px 16px;border-radius:8px;
-    font-size:0.74rem;font-weight:500;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:fit-content;max-width:100%;
+    padding:6px 14px;border-radius:100px;
+    font-size:0.74rem;font-weight:500;line-height:1.4;
+    text-align:center;
     margin-bottom:36px;
     background:#fff;
     border:1px solid #dde6f2;
     color:#42557a;
   }
-  .conn-banner.ok{color:#2f6b1f;}
-  .conn-banner.err{color:#a32d2d;}
+  .conn-banner.ok{color:#2f6b1f;border-color:#cfe3c6;}
+  .conn-banner.err,.conn-banner.error{color:#a32d2d;border-color:#efcaca;border-radius:12px;}
   .conn-banner.checking{color:#185fa5;}
   .conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
   .conn-dot.ok{background:#3f8f21;}
-  .conn-dot.err{background:#d43d3c;}
+  .conn-dot.err,.conn-dot.error{background:#d43d3c;}
   .conn-dot.checking{background:#378add;animation:pulse 1.2s infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
   /* ── SELECT PROMPT ── */
   .select-prompt{
     font-size:0.68rem;text-transform:uppercase;
-    letter-spacing:0.15em;color:#8aabbf;
+    letter-spacing:0.15em;color:#6b87a8;
     font-weight:600;
     margin-bottom:18px;
+    text-align:center;
   }
 
   /* ── MOBILE NAVBAR ── */
@@ -121,26 +132,29 @@ import { useState, useEffect, useRef } from "react";
     border-radius:12px;cursor:pointer;
     border:1px solid #dde6f2;
     background:#fff;text-align:left;
-    transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s;
+    transition:border-color 0.2s,background 0.2s;
     display:flex;flex-direction:column;gap:14px;
     font-family:inherit;
-    box-shadow:0 1px 2px rgba(15,31,61,0.04);
+    -webkit-tap-highlight-color:transparent;
   }
-  .type-card:hover{
-    border-color:#185fa5;
-    box-shadow:0 4px 14px rgba(15,31,61,0.08);
-    transform:translateY(-2px);
-  }
+  .type-card:focus-visible{outline:2px solid #185fa5;outline-offset:2px;}
+  .type-card:active{background:#f6f8fc;border-color:#185fa5;}
   .card-icon{
-    width:38px;height:38px;border-radius:9px;
-    background:#eef3fb;display:flex;align-items:center;
-    justify-content:center;color:#185fa5;font-size:18px;
-    transition:background 0.2s,color 0.2s;
+    width:38px;height:38px;border-radius:10px;
+    background:#fff;border:1px solid #dde6f2;
+    display:flex;align-items:center;
+    justify-content:center;color:#185fa5;flex-shrink:0;
+    transition:background 0.2s,color 0.2s,border-color 0.2s;
   }
-  .type-card:hover .card-icon{background:#185fa5;color:#fff;}
+  .card-icon svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+  .card-text{display:flex;flex-direction:column;gap:14px;min-width:0;}
   .card-title{font-size:0.92rem;font-weight:600;color:#0f1f3d;line-height:1.35;letter-spacing:0.01em;}
-  .card-arrow{font-size:0.7rem;font-weight:500;color:#8aabbf;transition:color 0.2s,transform 0.2s;display:inline-block;}
-  .type-card:hover .card-arrow{color:#185fa5;transform:translateX(3px);}
+  .card-arrow{font-size:0.7rem;font-weight:500;color:#6b87a8;transition:color 0.2s,transform 0.2s;display:inline-block;line-height:1.3;}
+  @media(hover:hover){
+    .type-card:hover{border-color:#185fa5;}
+    .type-card:hover .card-icon{background:#185fa5;border-color:#185fa5;color:#fff;}
+    .type-card:hover .card-arrow{color:#185fa5;transform:translateX(3px);}
+  }
 
   /* ── OVERLAY ── */
   .overlay{
@@ -556,9 +570,30 @@ import { useState, useEffect, useRef } from "react";
     .toast{min-width:unset;width:100%;}
   }
   @media(max-width:480px){
-    .cards-row{flex-direction:column;align-items:stretch;width:100%;max-width:320px;}
-    .type-card{width:100%;flex-direction:row;padding:20px;align-items:center;border-radius:10px;}
-    .card-icon{flex-shrink:0;}
+    /* Home screen: hero */
+    .landing{padding-top:36px;padding-left:16px;padding-right:16px;}
+    .brand-badge{margin-bottom:22px;padding-right:14px;}
+    .brand-text{font-size:0.66rem;letter-spacing:0.04em;}
+    .office-name{font-size:1.75rem;line-height:1.2;letter-spacing:0;margin-bottom:12px;}
+    .office-sub{font-size:0.8rem;max-width:30ch;margin-bottom:24px;}
+    .conn-banner{margin-bottom:28px;}
+    .select-prompt{margin-bottom:14px;}
+
+    /* Home screen: request cards → one clean row each
+       [icon] [title / subtitle] [chevron] */
+    .cards-row{flex-direction:column;align-items:stretch;width:100%;max-width:420px;gap:10px;}
+    .type-card{
+      width:100%;flex-direction:row;align-items:center;gap:14px;
+      padding:14px 16px;border-radius:12px;
+    }
+    .card-text{flex:1;gap:2px;}
+    .card-title{font-size:0.95rem;line-height:1.25;}
+    .card-arrow{font-size:0.72rem;transform:none!important;}
+    .type-card::after{
+      content:'';flex-shrink:0;width:7px;height:7px;
+      border-top:1.5px solid #8aabbf;border-right:1.5px solid #8aabbf;
+      transform:rotate(45deg);margin-right:4px;
+    }
     .purpose-grid{grid-template-columns:1fr;}
   }
   `;
@@ -575,11 +610,50 @@ import { useState, useEffect, useRef } from "react";
     marriage: ["Form 3A","Form 3B","Form 3C"],
   };
   const RECORD_TYPES = [
-    { id:"birth",    label:"Birth Request",    icon:"📋" },
-    { id:"marriage", label:"Marriage Request", icon:"💍" },
-    { id:"death",    label:"Death Request",    icon:"📜" },
+    { id:"birth",    label:"Birth Request"    },
+    { id:"marriage", label:"Marriage Request" },
+    { id:"death",    label:"Death Request"    },
   ];
  const BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
+
+  /* ─── HOME SCREEN ICONS ──────────────────────────────────────── */
+  // Flat single-color line icons (inherit the accent via currentColor)
+  // replacing the multi-color emoji so the home screen reads as one
+  // cohesive system.
+  function CardIcon({id}) {
+    const paths = {
+      birth: (
+        <>
+          <rect x="5" y="3" width="14" height="18" rx="2"/>
+          <path d="M9 8h6M9 12h6M9 16h4"/>
+        </>
+      ),
+      marriage: (
+        <>
+          <circle cx="9" cy="14" r="5"/>
+          <circle cx="15" cy="14" r="5"/>
+          <path d="M12 4v3"/>
+        </>
+      ),
+      death: (
+        <>
+          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+          <path d="M14 3v5h5M9 13h6M9 17h4"/>
+        </>
+      ),
+    };
+    return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[id]}</svg>;
+  }
+
+  function BrandIcon() {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 10l9-6 9 6"/>
+        <path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/>
+        <path d="M3 20h18"/>
+      </svg>
+    );
+  }
 
   /* ─── API ────────────────────────────────────────────────────── */
   async function fetchApi(path, body) {
@@ -1053,10 +1127,12 @@ import { useState, useEffect, useRef } from "react";
     return (
       <div className={`conn-banner ${connStatus}`}>
         <span className={`conn-dot ${connStatus}`}/>
-        {label}
-        {connStatus==="error" && (
-          <span style={{marginLeft:8,opacity:0.7}}>— run: <code style={{fontFamily:"monospace"}}>python backend/request.py</code></span>
-        )}
+        <span>
+          {label}
+          {connStatus==="error" && (
+            <span style={{marginLeft:8,opacity:0.7}}>— run: <code style={{fontFamily:"monospace"}}>python backend/request.py</code></span>
+          )}
+        </span>
       </div>
     );
   }
@@ -1402,7 +1478,7 @@ import { useState, useEffect, useRef } from "react";
         <ToastContainer/>
         <div className="landing">
           <div className="brand-badge">
-            <div className="brand-icon">🏛</div>
+            <div className="brand-icon"><BrandIcon/></div>
             <span className="brand-text">Civil Registrar · San Carlos City</span>
           </div>
           <div style={{textAlign:"center",marginBottom:"36px"}}>
@@ -1416,9 +1492,11 @@ import { useState, useEffect, useRef } from "react";
           <div className="cards-row">
             {RECORD_TYPES.map(t=>(
               <button key={t.id} className="type-card" onClick={()=>setActive(t.id)}>
-                <div className="card-icon">{t.icon}</div>
-                <div className="card-title">{t.label}</div>
-                <div className="card-arrow">Request a copy →</div>
+                <div className="card-icon"><CardIcon id={t.id}/></div>
+                <div className="card-text">
+                  <div className="card-title">{t.label}</div>
+                  <div className="card-arrow">Request a copy →</div>
+                </div>
               </button>
             ))}
           </div>
