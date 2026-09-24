@@ -61,32 +61,11 @@ import { useState, useEffect, useRef } from "react";
     font-size:0.85rem;
     color:#5577a0;
     text-align:center;
-    margin:0 auto 28px;
+    margin:0 auto;
     letter-spacing:0.02em;
     line-height:1.5;
     text-wrap:balance;
   }
-
-  /* ── CONNECTION BANNER ── */
-  .conn-banner{
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    width:fit-content;max-width:100%;
-    padding:6px 14px;border-radius:100px;
-    font-size:0.74rem;font-weight:500;line-height:1.4;
-    text-align:center;
-    margin-bottom:36px;
-    background:#fff;
-    border:1px solid #dde6f2;
-    color:#42557a;
-  }
-  .conn-banner.ok{color:#2f6b1f;border-color:#cfe3c6;}
-  .conn-banner.err,.conn-banner.error{color:#a32d2d;border-color:#efcaca;border-radius:12px;}
-  .conn-banner.checking{color:#185fa5;}
-  .conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-  .conn-dot.ok{background:#3f8f21;}
-  .conn-dot.err,.conn-dot.error{background:#d43d3c;}
-  .conn-dot.checking{background:#378add;animation:pulse 1.2s infinite;}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
   /* ── SELECT PROMPT ── */
   .select-prompt{
@@ -575,8 +554,7 @@ import { useState, useEffect, useRef } from "react";
     .brand-badge{margin-bottom:22px;padding-right:14px;}
     .brand-text{font-size:0.66rem;letter-spacing:0.04em;}
     .office-name{font-size:1.75rem;line-height:1.2;letter-spacing:0;margin-bottom:12px;}
-    .office-sub{font-size:0.8rem;max-width:30ch;margin-bottom:24px;}
-    .conn-banner{margin-bottom:28px;}
+    .office-sub{font-size:0.8rem;max-width:30ch;}
     .select-prompt{margin-bottom:14px;}
 
     /* Home screen: request cards → one clean row each
@@ -702,19 +680,6 @@ import { useState, useEffect, useRef } from "react";
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error||`HTTP ${res.status}`);
     return data;
-  }
-
-  async function checkHealth() {
-    try {
-      const res = await fetch(`${BASE_URL}/health`,{method:"GET"});
-      const ct = res.headers.get("content-type")||"";
-      if (!ct.includes("application/json")) throw new Error(`Got HTML (HTTP ${res.status})`);
-      if (!res.ok) { const t = await res.text().catch(()=>""); throw new Error(`HTTP ${res.status} — ${t.slice(0,80)}`); }
-      const data = await res.json();
-      return {ok:data.db==="connected",detail:data};
-    } catch(e) {
-      return {ok:false,detail:{error:e.message}};
-    }
   }
 
   // Each submit function now accepts an optional signature file as its
@@ -1096,47 +1061,6 @@ import { useState, useEffect, useRef } from "react";
     );
   }
 
-  /* ─── CONNECTION BANNER ──────────────────────────────────────── */
-  function ConnectionBanner(){
-    const [connStatus,setConnStatus]=useState("checking");
-    const [detail,setDetail]=useState("");
-    useEffect(()=>{
-      let cancelled=false;
-      async function ping(){
-        setConnStatus("checking");
-        const result=await checkHealth();
-        if(cancelled)return;
-        if(result.ok){
-          setConnStatus("ok");
-          const missing=result.detail?.missing?.length?` · Missing tables: ${result.detail.missing.join(", ")}`:"";
-          setDetail(`Flask connected${missing}`);
-        } else {
-          setConnStatus("error");
-          setDetail(result.detail?.error||"Flask not reachable on port 5001");
-        }
-      }
-      ping();
-      const interval=setInterval(ping,30000);
-      return()=>{ cancelled=true; clearInterval(interval); };
-    },[]);
-    const label={
-      checking:"Checking server connection…",
-      ok:detail||"Flask backend connected",
-      error:detail||"Flask backend not reachable",
-    }[connStatus];
-    return (
-      <div className={`conn-banner ${connStatus}`}>
-        <span className={`conn-dot ${connStatus}`}/>
-        <span>
-          {label}
-          {connStatus==="error" && (
-            <span style={{marginLeft:8,opacity:0.7}}>— run: <code style={{fontFamily:"monospace"}}>python backend/request.py</code></span>
-          )}
-        </span>
-      </div>
-    );
-  }
-
   /* ─── BIRTH FORM ─────────────────────────────────────────────── */
   function BirthForm({onClose}){
     const [copies,setCopies]=useState("One");
@@ -1487,7 +1411,6 @@ import { useState, useEffect, useRef } from "react";
             </div>
             <div className="office-sub">San Carlos City · Negros Occidental · Verification Form Request System</div>
           </div>
-          <ConnectionBanner/>
           <div className="select-prompt">Select record type to request</div>
           <div className="cards-row">
             {RECORD_TYPES.map(t=>(
