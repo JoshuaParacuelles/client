@@ -22,6 +22,14 @@ import { useState, useEffect, useRef } from "react";
     padding:56px 20px;
     background:#f6f8fc;
   }
+  /* ── LOGO ROW ── */
+  .logo-row{
+    display:flex;align-items:center;justify-content:center;gap:16px;
+    margin-bottom:22px;
+  }
+  .logo-img{height:64px;width:auto;max-width:96px;object-fit:contain;display:block;}
+  .logo-img--lcr{mix-blend-mode:multiply;} /* hides the white box around the .jpg on the light page */
+  .logo-divider{width:1px;height:36px;background:#dde6f2;flex-shrink:0;}
   .brand-badge{
     display:inline-flex;
     align-items:center;
@@ -120,9 +128,9 @@ import { useState, useEffect, useRef } from "react";
   .type-card:active{background:#f6f8fc;border-color:#185fa5;}
   .card-icon{
     width:38px;height:38px;border-radius:10px;
-    background:#fff;border:1px solid #dde6f2;
+    background:#185fa5;border:1px solid #185fa5;
     display:flex;align-items:center;
-    justify-content:center;color:#185fa5;flex-shrink:0;
+    justify-content:center;color:#fff;flex-shrink:0;
     transition:background 0.2s,color 0.2s,border-color 0.2s;
   }
   .card-icon svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
@@ -131,7 +139,7 @@ import { useState, useEffect, useRef } from "react";
   .card-arrow{font-size:0.7rem;font-weight:500;color:#6b87a8;transition:color 0.2s,transform 0.2s;display:inline-block;line-height:1.3;}
   @media(hover:hover){
     .type-card:hover{border-color:#185fa5;}
-    .type-card:hover .card-icon{background:#185fa5;border-color:#185fa5;color:#fff;}
+    .type-card:hover .card-icon{background:#0c447c;border-color:#0c447c;}
     .type-card:hover .card-arrow{color:#185fa5;transform:translateX(3px);}
   }
 
@@ -551,6 +559,8 @@ import { useState, useEffect, useRef } from "react";
   @media(max-width:480px){
     /* Home screen: hero */
     .landing{padding-top:36px;padding-left:16px;padding-right:16px;}
+    .logo-row{gap:14px;margin-bottom:18px;}
+    .logo-img{height:52px;max-width:80px;}
     .brand-badge{margin-bottom:22px;padding-right:14px;}
     .brand-text{font-size:0.66rem;letter-spacing:0.04em;}
     .office-name{font-size:1.75rem;line-height:1.2;letter-spacing:0;margin-bottom:12px;}
@@ -698,6 +708,8 @@ import { useState, useEffect, useRef } from "react";
     if (!req.requester_name.trim())         errs.requester_name         = "Full name is required";
     if (!req.requester_relationship.trim()) errs.requester_relationship = "Relationship is required";
     if (!req.requester_address.trim())      errs.requester_address      = "Address is required";
+    // NEW: requester email — required so the office can send the
+    // "Ready for Pickup" notification to the correct Gmail/email address.
     if (!req.requester_email.trim())        errs.requester_email        = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.requester_email.trim()))
                                              errs.requester_email        = "Enter a valid email address";
@@ -949,7 +961,7 @@ import { useState, useEffect, useRef } from "react";
         <div className="form-header-accent2"/>
         <div className="form-header-inner">
           <div className="header-left">
-            <div className="header-label">Local Civil Registrar· San Carlos City, Negros Occidental</div>
+            <div className="header-label">Office of the City Civil Registrar · San Carlos City, Negros Occidental</div>
             <div className="header-title">Verification Form for {recordWord} Record</div>
             <div className="header-subtitle">City of San Carlos · Official Document Request</div>
           </div>
@@ -1399,13 +1411,22 @@ import { useState, useEffect, useRef } from "react";
         <style>{styles}</style>
         <ToastContainer/>
         <div className="landing">
+          <div className="logo-row">
+            <img src="/lcr.jpg" alt="Office of the City Civil Registrar logo" className="logo-img logo-img--lcr"
+              onError={e=>{e.currentTarget.style.display="none";}}/>
+            <span className="logo-divider"/>
+            <img src="/scc.png" alt="City of San Carlos seal" className="logo-img"
+              onError={e=>{e.currentTarget.style.display="none";}}/>
+          </div>
           <div className="brand-badge">
+            <div className="brand-icon"><BrandIcon/></div>
+            <span className="brand-text">Civil Registrar · San Carlos City</span>
           </div>
           <div style={{textAlign:"center",marginBottom:"36px"}}>
             <div className="office-name">
               Office of the<br/>City Civil Registrar
             </div>
-            <div className="office-sub">San Carlos City · Negros Occidental</div>
+            <div className="office-sub">San Carlos City · Negros Occidental · Verification Form Request System</div>
           </div>
           <div className="select-prompt">Select record type to request</div>
           <div className="cards-row">
