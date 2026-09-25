@@ -95,7 +95,7 @@ import { useState, useEffect, useRef } from "react";
   .type-card:active{background:#f6f8fc;border-color:#185fa5;}
   .card-icon{
     width:38px;height:38px;border-radius:10px;
-    background:#185fa5;border:1px solid #185fa5;
+    background:var(--card-icon-color, #185fa5);border:1px solid var(--card-icon-color, #185fa5);
     display:flex;align-items:center;
     justify-content:center;color:#fff;flex-shrink:0;
     transition:background 0.2s,color 0.2s,border-color 0.2s;
@@ -106,7 +106,7 @@ import { useState, useEffect, useRef } from "react";
   .card-arrow{font-size:0.7rem;font-weight:500;color:#6b87a8;transition:color 0.2s,transform 0.2s;display:inline-block;line-height:1.3;}
   @media(hover:hover){
     .type-card:hover{border-color:#185fa5;}
-    .type-card:hover .card-icon{background:#0c447c;border-color:#0c447c;}
+    .type-card:hover .card-icon{background:var(--card-icon-hover, #0c447c);border-color:var(--card-icon-hover, #0c447c);}
     .type-card:hover .card-arrow{color:#185fa5;transform:translateX(3px);}
   }
 
@@ -681,6 +681,14 @@ import { useState, useEffect, useRef } from "react";
       "--modal-tint-border":  "#b5d4f4",
       "--modal-accent":       "rgba(24,95,165,0.33)",
     },
+  };
+
+  // NEW: same Birth/Death/Marriage palette as the modal, reused here so
+  // the landing page card icons visually match the record type they open.
+  const CARD_ICON_COLORS = {
+    birth:    { base: MODAL_THEMES.birth["--modal-primary"],    hover: MODAL_THEMES.birth["--modal-primary-dark"] },
+    death:    { base: MODAL_THEMES.death["--modal-primary"],    hover: MODAL_THEMES.death["--modal-primary-dark"] },
+    marriage: { base: MODAL_THEMES.marriage["--modal-primary"], hover: MODAL_THEMES.marriage["--modal-primary-dark"] },
   };
 
   /* ─── HOME SCREEN ICONS ──────────────────────────────────────── */
@@ -1730,7 +1738,11 @@ import { useState, useEffect, useRef } from "react";
           <div className="select-prompt">Select record type to request</div>
           <div className="cards-row">
             {RECORD_TYPES.map(t=>(
-              <button key={t.id} className="type-card" onClick={()=>setActive(t.id)}>
+              <button key={t.id} className="type-card" onClick={()=>setActive(t.id)}
+                style={{
+                  "--card-icon-color": CARD_ICON_COLORS[t.id].base,
+                  "--card-icon-hover": CARD_ICON_COLORS[t.id].hover,
+                }}>
                 <div className="card-icon"><CardIcon id={t.id}/></div>
                 <div className="card-text">
                   <div className="card-title">{t.label}</div>
