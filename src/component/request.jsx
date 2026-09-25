@@ -651,8 +651,13 @@ import { useState, useEffect, useRef } from "react";
     { id:"marriage", label:"Marriage Request" },
     { id:"death",    label:"Death Request"    },
   ];
- const BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
-
+ const RAW_API_URL = import.meta.env.VITE_API_URL;
+if (!RAW_API_URL) {
+  console.error(
+    "VITE_API_URL is not set. Configure it in Vercel → Settings → Environment Variables, then redeploy."
+  );
+}
+const BASE_URL = `${(RAW_API_URL || "").replace(/\/$/, "")}/api`;
   /* ─── MODAL COLOR THEMES ────────────────────────────────────────
      Drives the modal's primary color and every derived tint based on
      the selected record type: Birth → Yellow, Death → Pink,
