@@ -738,6 +738,29 @@ import { useState, useEffect, useRef } from "react";
   };
 
   /* ─── VALIDATION ─────────────────────────────────────────────── */
+  // NEW: Telephone / Mobile Number validation.
+  // Accepts either local format (starts with 0, exactly 11 digits, e.g.
+  // 09XXXXXXXXX) or international format (+63 followed by 10 digits,
+  // e.g. +639XXXXXXXXX). The field itself stays optional — it's only
+  // validated when the requester actually types something in it.
+  const PH_MOBILE_LOCAL_REGEX = /^0\d{10}$/;      // 0 + 10 digits = 11 digits total
+  const PH_MOBILE_INTL_REGEX  = /^\+63\d{10}$/;   // +63 + 10 digits
+
+  // Strips anything that isn't a digit or a leading "+" as the user types,
+  // so letters and other invalid characters can never be entered at all.
+  function sanitizePhoneInput(raw) {
+    let v = (raw || "").replace(/[^\d+]/g, "");
+    if (v.includes("+")) v = "+" + v.replace(/\+/g, ""); // only one leading "+" allowed
+    return v;
+  }
+
+  function getPhoneError(value) {
+    const v = (value || "").trim();
+    if (!v) return null; // optional field — empty is fine
+    if (PH_MOBILE_LOCAL_REGEX.test(v) || PH_MOBILE_INTL_REGEX.test(v)) return null;
+    return "Enter a valid mobile number (09XXXXXXXXX or +63 9XXXXXXXXX)";
+  }
+
   function validateRequester(req) {
     const errs={};
     if (!req.requester_name.trim())         errs.requester_name         = "Full name is required";
@@ -748,6 +771,10 @@ import { useState, useEffect, useRef } from "react";
     if (!req.requester_email.trim())        errs.requester_email        = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.requester_email.trim()))
                                              errs.requester_email        = "Enter a valid email address";
+    // NEW: telephone/mobile number format — only checked if the requester
+    // entered something; blocks submission when the format is invalid.
+    const phoneErr = getPhoneError(req.requester_telephone);
+    if (phoneErr) errs.requester_telephone = phoneErr;
     return errs;
   }
 
@@ -926,7 +953,11 @@ import { useState, useEffect, useRef } from "react";
         </div>
         <div className="req-field">
           Telephone No.
-          <input type="text" value={data.requester_telephone} onChange={e=>onChange("requester_telephone",e.target.value)}/>
+          <input type="tel" inputMode="tel" className={errors.requester_telephone?"invalid":""}
+            value={data.requester_telephone}
+            onChange={e=>onChange("requester_telephone",sanitizePhoneInput(e.target.value))}
+            placeholder="09XXXXXXXXX or +63 9XXXXXXXXX"/>
+          {errors.requester_telephone && <div className="field-error">{errors.requester_telephone}</div>}
         </div>
         {/* NEW: Email Address — used to send the "Ready for Pickup" notification */}
         <div className="req-field">
