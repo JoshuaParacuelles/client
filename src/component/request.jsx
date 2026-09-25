@@ -531,9 +531,23 @@ import { useState, useEffect, useRef } from "react";
   /* Home: request cards keep the same vertical card style as desktop
      (icon on top, title, "Request a copy" link) — just stacked
      full-width in a single column instead of a 3-up row. */
+  /* Home: request cards stay side-by-side in one row on mobile too —
+     the border/background "box" is dropped so three fit without
+     wrapping, and icon/text sizing shrinks to stay legible. */
   @media(max-width:700px){
-    .cards-row{flex-direction:column;align-items:stretch;width:100%;max-width:420px;gap:14px;}
-    .type-card{width:100%;}
+    .cards-row{flex-wrap:nowrap;width:100%;max-width:420px;gap:8px;justify-content:space-between;}
+    .type-card{
+      width:auto;flex:1 1 0;min-width:0;
+      border:none;background:transparent;
+      padding:0;border-radius:0;
+      align-items:center;text-align:center;gap:8px;
+    }
+    .type-card:active{background:transparent;}
+    .card-icon{width:32px;height:32px;border-radius:8px;}
+    .card-icon svg{width:15px;height:15px;}
+    .card-text{align-items:center;text-align:center;gap:4px;}
+    .card-title{font-size:0.7rem;line-height:1.25;}
+    .card-arrow{font-size:0.58rem;}
   }
 
   @media(max-width:640px){
