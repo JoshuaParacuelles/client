@@ -304,6 +304,19 @@ import { useState, useEffect, useRef } from "react";
   .auth-text{font-size:0.64rem;line-height:1.7;color:#5577a0;}
   .auth-text u{color:#0f1f3d;}
 
+  /* ── REVIEW SCREEN (NEW: confirmation step before final submit) ── */
+  .review-body{padding:20px 24px;}
+  .review-intro{font-size:0.8rem;color:#5577a0;margin-bottom:18px;line-height:1.6;}
+  .review-rows{display:flex;flex-direction:column;gap:0;margin-bottom:4px;}
+  .review-row{
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+    padding:8px 0;border-bottom:1px solid #eef3fb;
+  }
+  .review-row:last-child{border-bottom:none;}
+  .review-label{font-size:0.72rem;color:#8aabbf;font-weight:500;flex-shrink:0;}
+  .review-value{font-size:0.82rem;color:#0f1f3d;text-align:right;word-break:break-word;}
+  .review-value.empty{color:#b7c6da;font-style:italic;}
+
   /* ── REQUESTER SECTION ── */
   .req-section{border:1px solid #e2ecf8;border-radius:10px;margin-top:12px;overflow:hidden;display:grid;grid-template-columns:1fr 1px 108px;}
   .req-left{padding:12px 14px;}
@@ -556,6 +569,9 @@ import { useState, useEffect, useRef } from "react";
     .form-subheader{padding:10px 18px;gap:10px 20px;}
     .form-left{padding:14px 18px;}
     .form-right{padding:14px 18px;}
+    .review-body{padding:14px 18px;flex:1;}
+    .review-row{flex-direction:column;gap:2px;padding:7px 0;}
+    .review-value{text-align:left;}
 
     /* Modal: fields */
     .purpose-grid{grid-template-columns:1fr 1fr;}
@@ -1023,6 +1039,67 @@ import { useState, useEffect, useRef } from "react";
     );
   }
 
+  /* ─── REVIEW / CONFIRMATION SCREEN (NEW) ──────────────────────
+     Shown after the client clicks "Submit Request" and passes
+     validation, but BEFORE anything is actually sent to the server.
+     Reuses the same form-paper/FormHeader/form-actions chrome so it
+     looks like a natural continuation of the form. The client can go
+     "Back to Edit" (no data is lost — the form state is untouched)
+     or "Confirm & Submit", which is the only place that triggers the
+     actual API call.                                                */
+  function ReviewRow({label,value}) {
+    const hasValue = value !== null && value !== undefined && String(value).trim() !== "";
+    return (
+      <div className="review-row">
+        <span className="review-label">{label}</span>
+        <span className={`review-value${hasValue?"":" empty"}`}>{hasValue?value:"—"}</span>
+      </div>
+    );
+  }
+
+  function ReviewSection({title,rows}) {
+    return (
+      <div>
+        <div className="section-heading">{title}</div>
+        <div className="review-rows">
+          {rows.map(r=><ReviewRow key={r.label} label={r.label} value={r.value}/>)}
+        </div>
+      </div>
+    );
+  }
+
+  function ReviewScreen({recordWord,sections,sigFile,printedName,status,onBack,onConfirm}) {
+    const loading = status==="loading";
+    return (
+      <div className="form-paper">
+        <FormHeader recordWord={recordWord}/>
+        <div className="review-body">
+          <div className="review-intro">
+            Please review the details below carefully. Once you confirm, this request will be
+            submitted to the Office of the City Civil Registrar.
+          </div>
+          {sections.map(sec=><ReviewSection key={sec.title} title={sec.title} rows={sec.rows}/>)}
+          <ReviewSection
+            title="Signature"
+            rows={[
+              {label:"Uploaded File", value: sigFile ? sigFile.name : null},
+              {label:"Signature Over Printed Name", value: printedName},
+            ]}
+          />
+        </div>
+        <div className="form-actions">
+          <div className="form-status">
+            {status==="error" && "Submission failed. Check that Flask is running on port 5001."}
+          </div>
+          <button className="btn-cancel" onClick={onBack} disabled={loading}>Back to Edit</button>
+          <button className="btn-submit" onClick={onConfirm} disabled={loading}>
+            {loading ? "Saving…" : "Confirm & Submit"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   function SuccessScreen({result,type,onClose}) {
     return (
       <div className="success-overlay">
@@ -1106,16 +1183,25 @@ import { useState, useEffect, useRef } from "react";
     const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
     const [sigFile,setSigFile]=useState(null);
     const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
+    const [reviewing,setReviewing]=useState(false); // NEW: review/confirmation step
     const updateR=(k,v)=>setRequester(p=>({...p,[k]:v}));
     const updateO=(k,v)=>setOccr(p=>({...p,[k]:v}));
     const toggleIssuance=f=>setIssuance(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
 
-    const handleSubmit=async()=>{
+    // UPDATED: "Submit Request" now only validates and opens the review
+    // screen. Nothing is sent to the server here.
+    const handleSubmit=()=>{
       const errs=validateRequester(requester);
       if(!child.firstname.trim()) errs.child_firstname="Required";
       if(!dob.year.trim())        errs.dob_year="Required";
       setErrors(errs);
       if(Object.keys(errs).length>0){ pushToast({title:"Incomplete form",message:"Please fill in all required fields.",success:false}); return; }
+      setReviewing(true);
+    };
+
+    // NEW: the actual API call — only reached from the review screen's
+    // "Confirm & Submit" button.
+    const handleConfirmSubmit=async()=>{
       setStatus("loading");
       try {
         const res=await api.submitBirth({birth_request:{
@@ -1133,6 +1219,42 @@ import { useState, useEffect, useRef } from "react";
     };
 
     if(status==="success") return <div className="form-paper"><FormHeader recordWord="BIRTH"/><SuccessScreen result={result} type="birth" onClose={onClose}/></div>;
+
+    // NEW: review/confirmation screen, shown before the real submit
+    if(reviewing) return (
+      <ReviewScreen
+        recordWord="BIRTH"
+        sigFile={sigFile}
+        printedName={printedName}
+        status={status}
+        onBack={()=>setReviewing(false)}
+        onConfirm={handleConfirmSubmit}
+        sections={[
+          {title:"Request Details", rows:[
+            {label:"Number of Copies", value: copies==="Others"?copiesOther:copies},
+            {label:"Purpose", value: purposes.join(", ")+(purposeOther?` (${purposeOther})`:"")},
+            {label:"Issuance / Form Type", value: issuance.join(", ")},
+          ]},
+          {title:"Name of Child", rows:[
+            {label:"Firstname", value: child.firstname},
+            {label:"Middlename", value: child.middlename},
+            {label:"Surname", value: child.surname},
+          ]},
+          {title:"Date & Place of Birth", rows:[
+            {label:"Date of Birth", value: [dob.month,dob.date,dob.year].filter(Boolean).join(" ")},
+            {label:"Place of Birth", value:"San Carlos City, Negros Occidental"},
+          ]},
+          {title:"Requesting Party", rows:[
+            {label:"Full Name", value: requester.requester_name},
+            {label:"Relationship", value: requester.requester_relationship},
+            {label:"Address", value: requester.requester_address},
+            {label:"Telephone No.", value: requester.requester_telephone},
+            {label:"Email Address", value: requester.requester_email},
+          ]},
+        ]}
+      />
+    );
+
     return (
       <div className="form-paper">
         <FormHeader recordWord="BIRTH"/>
@@ -1215,16 +1337,25 @@ import { useState, useEffect, useRef } from "react";
     const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
     const [sigFile,setSigFile]=useState(null);
     const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
+    const [reviewing,setReviewing]=useState(false); // NEW: review/confirmation step
     const updateR=(k,v)=>setRequester(p=>({...p,[k]:v}));
     const updateO=(k,v)=>setOccr(p=>({...p,[k]:v}));
     const toggleIssuance=f=>setIssuance(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
 
-    const handleSubmit=async()=>{
+    // UPDATED: "Submit Request" now only validates and opens the review
+    // screen. Nothing is sent to the server here.
+    const handleSubmit=()=>{
       const errs=validateRequester(requester);
       if(!deceased.firstname.trim()) errs.deceased_firstname="Required";
       if(!dod.year.trim())           errs.dod_year="Required";
       setErrors(errs);
       if(Object.keys(errs).length>0){ pushToast({title:"Incomplete form",message:"Please fill in all required fields.",success:false}); return; }
+      setReviewing(true);
+    };
+
+    // NEW: the actual API call — only reached from the review screen's
+    // "Confirm & Submit" button.
+    const handleConfirmSubmit=async()=>{
       setStatus("loading");
       try {
         const res=await api.submitDeath({death_request:{
@@ -1242,6 +1373,42 @@ import { useState, useEffect, useRef } from "react";
     };
 
     if(status==="success") return <div className="form-paper"><FormHeader recordWord="DEATH"/><SuccessScreen result={result} type="death" onClose={onClose}/></div>;
+
+    // NEW: review/confirmation screen, shown before the real submit
+    if(reviewing) return (
+      <ReviewScreen
+        recordWord="DEATH"
+        sigFile={sigFile}
+        printedName={printedName}
+        status={status}
+        onBack={()=>setReviewing(false)}
+        onConfirm={handleConfirmSubmit}
+        sections={[
+          {title:"Request Details", rows:[
+            {label:"Number of Copies", value: copies==="Others"?copiesOther:copies},
+            {label:"Purpose", value: purposes.join(", ")+(purposeOther?` (${purposeOther})`:"")},
+            {label:"Issuance / Form Type", value: issuance.join(", ")},
+          ]},
+          {title:"Name of Deceased", rows:[
+            {label:"Firstname", value: deceased.firstname},
+            {label:"Middlename", value: deceased.middlename},
+            {label:"Surname", value: deceased.surname},
+          ]},
+          {title:"Date & Place of Death", rows:[
+            {label:"Date of Death", value: [dod.month,dod.date,dod.year].filter(Boolean).join(" ")},
+            {label:"Place of Death", value:"San Carlos City, Negros Occidental"},
+          ]},
+          {title:"Requesting Party", rows:[
+            {label:"Full Name", value: requester.requester_name},
+            {label:"Relationship", value: requester.requester_relationship},
+            {label:"Address", value: requester.requester_address},
+            {label:"Telephone No.", value: requester.requester_telephone},
+            {label:"Email Address", value: requester.requester_email},
+          ]},
+        ]}
+      />
+    );
+
     return (
       <div className="form-paper">
         <FormHeader recordWord="DEATH"/>
@@ -1325,16 +1492,25 @@ import { useState, useEffect, useRef } from "react";
     const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
     const [sigFile,setSigFile]=useState(null);
     const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
+    const [reviewing,setReviewing]=useState(false); // NEW: review/confirmation step
     const updateR=(k,v)=>setRequester(p=>({...p,[k]:v}));
     const updateO=(k,v)=>setOccr(p=>({...p,[k]:v}));
     const toggleIssuance=f=>setIssuance(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
 
-    const handleSubmit=async()=>{
+    // UPDATED: "Submit Request" now only validates and opens the review
+    // screen. Nothing is sent to the server here.
+    const handleSubmit=()=>{
       const errs=validateRequester(requester);
       if(!husband.trim()) errs.husband="Required";
       if(!wife.trim())    errs.wife="Required";
       setErrors(errs);
       if(Object.keys(errs).length>0){ pushToast({title:"Incomplete form",message:"Please fill in all required fields.",success:false}); return; }
+      setReviewing(true);
+    };
+
+    // NEW: the actual API call — only reached from the review screen's
+    // "Confirm & Submit" button.
+    const handleConfirmSubmit=async()=>{
       setStatus("loading");
       try {
         const res=await api.submitMarriage({marriage_request:{
@@ -1351,6 +1527,39 @@ import { useState, useEffect, useRef } from "react";
     };
 
     if(status==="success") return <div className="form-paper"><FormHeader recordWord="MARRIAGE"/><SuccessScreen result={result} type="marriage" onClose={onClose}/></div>;
+
+    // NEW: review/confirmation screen, shown before the real submit
+    if(reviewing) return (
+      <ReviewScreen
+        recordWord="MARRIAGE"
+        sigFile={sigFile}
+        printedName={printedName}
+        status={status}
+        onBack={()=>setReviewing(false)}
+        onConfirm={handleConfirmSubmit}
+        sections={[
+          {title:"Request Details", rows:[
+            {label:"Number of Copies", value: copies==="Others"?copiesOther:copies},
+            {label:"Purpose", value: purposes.join(", ")+(purposeOther?` (${purposeOther})`:"")},
+            {label:"Issuance / Form Type", value: issuance.join(", ")},
+          ]},
+          {title:"Marriage Details", rows:[
+            {label:"Husband", value: husband},
+            {label:"Wife (Maiden Name)", value: wife},
+            {label:"Date of Marriage", value: marriageDate},
+            {label:"Place of Marriage", value:"San Carlos City, Negros Occidental"},
+          ]},
+          {title:"Requesting Party", rows:[
+            {label:"Full Name", value: requester.requester_name},
+            {label:"Relationship", value: requester.requester_relationship},
+            {label:"Address", value: requester.requester_address},
+            {label:"Telephone No.", value: requester.requester_telephone},
+            {label:"Email Address", value: requester.requester_email},
+          ]},
+        ]}
+      />
+    );
+
     return (
       <div className="form-paper">
         <FormHeader recordWord="MARRIAGE"/>
