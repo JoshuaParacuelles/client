@@ -528,22 +528,12 @@ import { useState, useEffect, useRef } from "react";
     .form-right .right-panel-title{grid-column:1/-1;}
   }
 
-  /* Home: request cards become one clean row each
-     [icon] [title / subtitle] [chevron] */
+  /* Home: request cards keep the same vertical card style as desktop
+     (icon on top, title, "Request a copy" link) — just stacked
+     full-width in a single column instead of a 3-up row. */
   @media(max-width:700px){
-    .cards-row{flex-direction:column;align-items:stretch;width:100%;max-width:420px;gap:10px;}
-    .type-card{
-      width:100%;flex-direction:row;align-items:center;gap:14px;
-      padding:14px 16px;border-radius:12px;
-    }
-    .card-text{flex:1;gap:2px;}
-    .card-title{font-size:0.95rem;line-height:1.25;}
-    .card-arrow{font-size:0.72rem;transform:none!important;}
-    .type-card::after{
-      content:'';flex-shrink:0;width:7px;height:7px;
-      border-top:1.5px solid #8aabbf;border-right:1.5px solid #8aabbf;
-      transform:rotate(45deg);margin-right:4px;
-    }
+    .cards-row{flex-direction:column;align-items:stretch;width:100%;max-width:420px;gap:14px;}
+    .type-card{width:100%;}
   }
 
   @media(max-width:640px){
