@@ -97,7 +97,7 @@ import { useState, useEffect, useRef } from "react";
     width:38px;height:38px;border-radius:10px;
     background:var(--card-icon-color, #185fa5);border:1px solid var(--card-icon-color, #185fa5);
     display:flex;align-items:center;
-    justify-content:center;color:#fff;flex-shrink:0;
+    justify-content:center;color:#14213d;flex-shrink:0;
     transition:background 0.2s,color 0.2s,border-color 0.2s;
   }
   .card-icon svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
