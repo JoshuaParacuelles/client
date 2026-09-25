@@ -15,6 +15,7 @@ import { useState, useEffect, useRef } from "react";
   /* ── LANDING ── */
   .landing{
     min-height:100vh;
+    min-height:100dvh;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -76,7 +77,6 @@ import { useState, useEffect, useRef } from "react";
     .mobile-navbar-item .nav-icon{font-size:19px;line-height:1;}
     .mobile-navbar-item .nav-label{font-size:0.62rem;font-weight:500;letter-spacing:0.02em;}
     .mobile-navbar-item.active{color:#185fa5;background:#eef3fb;}
-    .landing{padding-bottom:92px;}
   }
 
   /* ── TYPE CARDS ── */
@@ -955,8 +955,7 @@ import { useState, useEffect, useRef } from "react";
           Telephone No.
           <input type="tel" inputMode="tel" className={errors.requester_telephone?"invalid":""}
             value={data.requester_telephone}
-            onChange={e=>onChange("requester_telephone",sanitizePhoneInput(e.target.value))}
-            placeholder="09XXXXXXXXX or +63 9XXXXXXXXX"/>
+            onChange={e=>onChange("requester_telephone",sanitizePhoneInput(e.target.value))}/>
           {errors.requester_telephone && <div className="field-error">{errors.requester_telephone}</div>}
         </div>
         {/* NEW: Email Address — used to send the "Ready for Pickup" notification */}
