@@ -212,7 +212,7 @@ import { useState, useEffect, useRef } from "react";
   /* ── SECTION HEADINGS ── */
   .section-heading{
     font-size:0.6rem;text-transform:uppercase;letter-spacing:0.14em;
-    font-weight:600;color:#185fa5;
+    font-weight:600;color:var(--modal-primary, #185fa5);
     margin-bottom:10px;margin-top:16px;
     display:flex;align-items:center;gap:6px;
   }
@@ -268,7 +268,7 @@ import { useState, useEffect, useRef } from "react";
   .place-box{
     background:#e6f1fb;border:1px solid #b5d4f4;border-radius:8px;
     padding:7px 12px;font-size:0.82rem;font-weight:600;
-    color:#0c447c;text-align:center;text-transform:uppercase;
+    color:var(--modal-primary-dark, #0c447c);text-align:center;text-transform:uppercase;
     margin-bottom:4px;letter-spacing:0.03em;
   }
   .place-sub{font-size:0.58rem;text-align:center;color:#8aabbf;letter-spacing:0.06em;margin-bottom:12px;}
@@ -281,7 +281,7 @@ import { useState, useEffect, useRef } from "react";
   }
   .purpose-header{
     font-size:0.62rem;font-weight:600;text-transform:uppercase;
-    letter-spacing:0.1em;color:#185fa5;margin-bottom:10px;
+    letter-spacing:0.1em;color:var(--modal-primary, #185fa5);margin-bottom:10px;
   }
   .purpose-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px 10px;}
 
@@ -300,7 +300,7 @@ import { useState, useEffect, useRef } from "react";
     padding:10px 12px;margin:12px 0;
     background:#f4f8fd;
   }
-  .auth-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;text-align:center;color:#185fa5;margin-bottom:5px;}
+  .auth-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;text-align:center;color:var(--modal-primary, #185fa5);margin-bottom:5px;}
   .auth-text{font-size:0.64rem;line-height:1.7;color:#5577a0;}
   .auth-text u{color:#0f1f3d;}
 
@@ -322,7 +322,7 @@ import { useState, useEffect, useRef } from "react";
   .req-left{padding:12px 14px;}
   .req-divider{background:#e2ecf8;}
   .req-right{padding:12px;}
-  .req-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#185fa5;margin-bottom:8px;}
+  .req-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--modal-primary, #185fa5);margin-bottom:8px;}
 
   /* ── SIGNATURE UPLOAD AREA ── */
   .sig-upload-wrap{
@@ -346,7 +346,7 @@ import { useState, useEffect, useRef } from "react";
     padding:5px 10px;
     font-size:0.72rem;
     font-weight:500;
-    color:#185fa5;
+    color:var(--modal-primary, #185fa5);
     cursor:pointer;
     white-space:nowrap;
     transition:background 0.15s, border-color 0.15s;
@@ -369,7 +369,7 @@ import { useState, useEffect, useRef } from "react";
     min-width:0;
     flex:1;
   }
-  .sig-file-name.has-file{color:#185fa5;font-weight:500;}
+  .sig-file-name.has-file{color:var(--modal-primary, #185fa5);font-weight:500;}
   .sig-preview{
     width:36px;height:36px;object-fit:cover;
     border-radius:5px;border:1px solid #c8d9f0;
@@ -399,7 +399,7 @@ import { useState, useEffect, useRef } from "react";
   /* ── ISSUANCE PANEL ── */
   .issuance-title{
     font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;
-    color:#185fa5;text-align:center;margin-bottom:8px;font-weight:600;
+    color:var(--modal-primary, #185fa5);text-align:center;margin-bottom:8px;font-weight:600;
   }
   .issuance-item{margin-bottom:6px;}
   .issuance-sep{height:1px;background:#e2ecf8;margin:8px 0;}
@@ -407,7 +407,7 @@ import { useState, useEffect, useRef } from "react";
   /* ── OCCR PANEL ── */
   .right-panel-title{
     font-size:0.58rem;font-weight:600;text-transform:uppercase;
-    letter-spacing:0.1em;color:#185fa5;text-align:center;
+    letter-spacing:0.1em;color:var(--modal-primary, #185fa5);text-align:center;
     border:1px solid #e2ecf8;border-radius:6px;padding:4px;
     margin-bottom:12px;background:#fff;
   }
@@ -465,9 +465,9 @@ import { useState, useEffect, useRef } from "react";
   .success-ref{
     display:inline-flex;align-items:center;gap:8px;
     background:#e6f1fb;border:1px solid #b5d4f4;border-radius:8px;
-    padding:9px 18px;margin-top:16px;font-size:0.74rem;color:#185fa5;
+    padding:9px 18px;margin-top:16px;font-size:0.74rem;color:var(--modal-primary, #185fa5);
   }
-  .success-ref strong{color:#0c447c;font-weight:600;}
+  .success-ref strong{color:var(--modal-primary-dark, #0c447c);font-weight:600;}
   .btn-new{
     margin-top:28px;padding:11px 32px;background:#185fa5;border:none;
     font-family:inherit;font-size:0.85rem;font-weight:600;color:#fff;
