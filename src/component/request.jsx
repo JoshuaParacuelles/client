@@ -179,7 +179,7 @@ import { useState, useEffect, useRef } from "react";
 
   .form-header-divider{
     height:3px;
-    background:linear-gradient(90deg,var(--modal-tint-border, #b5d4f4),#fff0,var(--modal-accent, #378add55));
+    background:linear-gradient(90deg,#b5d4f4,#fff0,#378add55);
   }
 
   /* ── FORM SUBHEADER (Control row) ── */
@@ -197,7 +197,7 @@ import { useState, useEffect, useRef } from "react";
     background:transparent;font-family:inherit;
     outline:none;padding:2px 0;min-width:90px;
   }
-  .sh-value:focus{border-bottom-color:var(--modal-primary, #378add);}
+  .sh-value:focus{border-bottom-color:#378add;}
   .sh-divider{width:1px;height:22px;background:#e2ecf8;flex-shrink:0;}
 
   /* ── FORM BODY GRID ── */
@@ -212,7 +212,7 @@ import { useState, useEffect, useRef } from "react";
   /* ── SECTION HEADINGS ── */
   .section-heading{
     font-size:0.6rem;text-transform:uppercase;letter-spacing:0.14em;
-    font-weight:600;color:var(--modal-primary, #185fa5);
+    font-weight:600;color:#185fa5;
     margin-bottom:10px;margin-top:16px;
     display:flex;align-items:center;gap:6px;
   }
@@ -234,11 +234,11 @@ import { useState, useEffect, useRef } from "react";
     flex-shrink:0;background:#fff;position:relative;border-radius:50%;
     transition:border-color 0.15s;
   }
-  .radio-label:hover .radio-box{border-color:var(--modal-primary, #378add);}
-  .radio-label input[type="radio"]:checked+.radio-box{border-color:var(--modal-primary, #185fa5);}
+  .radio-label:hover .radio-box{border-color:#378add;}
+  .radio-label input[type="radio"]:checked+.radio-box{border-color:#185fa5;}
   .radio-label input[type="radio"]:checked+.radio-box::after{
     content:'';position:absolute;inset:2.5px;
-    background:var(--modal-primary, #185fa5);border-radius:50%;
+    background:#185fa5;border-radius:50%;
   }
 
   .check-label{display:flex;align-items:center;gap:6px;font-size:0.72rem;color:#0f1f3d;cursor:pointer;line-height:1.4;}
@@ -249,8 +249,8 @@ import { useState, useEffect, useRef } from "react";
     background:#fff;border-radius:3px;font-size:9px;font-weight:700;
     color:#fff;transition:background 0.15s,border-color 0.15s;
   }
-  .check-label:hover .check-box{border-color:var(--modal-primary, #378add);}
-  .check-label input[type="checkbox"]:checked+.check-box{background:var(--modal-primary, #185fa5);border-color:var(--modal-primary, #185fa5);}
+  .check-label:hover .check-box{border-color:#378add;}
+  .check-label input[type="checkbox"]:checked+.check-box{background:#185fa5;border-color:#185fa5;}
 
   /* ── NAME / DATE ROWS ── */
   .name-block-fields{}
@@ -262,13 +262,13 @@ import { useState, useEffect, useRef } from "react";
     color:#0f1f3d;outline:none;padding:5px 2px;width:100%;
     transition:border-color 0.15s;
   }
-  .name-col input:focus,.date-col input:focus{border-bottom-color:var(--modal-primary, #185fa5);}
+  .name-col input:focus,.date-col input:focus{border-bottom-color:#185fa5;}
   .sub-label{font-size:0.58rem;text-align:center;color:#8aabbf;margin-top:3px;font-style:italic;}
 
   .place-box{
-    background:var(--modal-tint-bg, #e6f1fb);border:1px solid var(--modal-tint-border, #b5d4f4);border-radius:8px;
+    background:#e6f1fb;border:1px solid #b5d4f4;border-radius:8px;
     padding:7px 12px;font-size:0.82rem;font-weight:600;
-    color:var(--modal-primary-dark, #0c447c);text-align:center;text-transform:uppercase;
+    color:#0c447c;text-align:center;text-transform:uppercase;
     margin-bottom:4px;letter-spacing:0.03em;
   }
   .place-sub{font-size:0.58rem;text-align:center;color:#8aabbf;letter-spacing:0.06em;margin-bottom:12px;}
@@ -281,7 +281,7 @@ import { useState, useEffect, useRef } from "react";
   }
   .purpose-header{
     font-size:0.62rem;font-weight:600;text-transform:uppercase;
-    letter-spacing:0.1em;color:var(--modal-primary, #185fa5);margin-bottom:10px;
+    letter-spacing:0.1em;color:#185fa5;margin-bottom:10px;
   }
   .purpose-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px 10px;}
 
@@ -292,7 +292,7 @@ import { useState, useEffect, useRef } from "react";
     outline:none;padding:2px 0;color:#0f1f3d;
     transition:border-color 0.15s;
   }
-  .specify-row input:focus{border-bottom-color:var(--modal-primary, #185fa5);}
+  .specify-row input:focus{border-bottom-color:#185fa5;}
 
   /* ── AUTH BOX ── */
   .auth-box{
@@ -300,7 +300,7 @@ import { useState, useEffect, useRef } from "react";
     padding:10px 12px;margin:12px 0;
     background:#f4f8fd;
   }
-  .auth-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;text-align:center;color:var(--modal-primary, #185fa5);margin-bottom:5px;}
+  .auth-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;text-align:center;color:#185fa5;margin-bottom:5px;}
   .auth-text{font-size:0.64rem;line-height:1.7;color:#5577a0;}
   .auth-text u{color:#0f1f3d;}
 
@@ -322,7 +322,7 @@ import { useState, useEffect, useRef } from "react";
   .req-left{padding:12px 14px;}
   .req-divider{background:#e2ecf8;}
   .req-right{padding:12px;}
-  .req-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--modal-primary, #185fa5);margin-bottom:8px;}
+  .req-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#185fa5;margin-bottom:8px;}
 
   /* ── SIGNATURE UPLOAD AREA ── */
   .sig-upload-wrap{
@@ -346,18 +346,18 @@ import { useState, useEffect, useRef } from "react";
     padding:5px 10px;
     font-size:0.72rem;
     font-weight:500;
-    color:var(--modal-primary, #185fa5);
+    color:#185fa5;
     cursor:pointer;
     white-space:nowrap;
     transition:background 0.15s, border-color 0.15s;
     flex-shrink:0;
   }
   .sig-upload-label:hover{
-    background:var(--modal-tint-bg, #e6f1fb);
-    border-color:var(--modal-primary, #378add);
+    background:#e6f1fb;
+    border-color:#378add;
   }
   .sig-upload-label svg{
-    width:13px;height:13px;stroke:var(--modal-primary, #185fa5);flex-shrink:0;
+    width:13px;height:13px;stroke:#185fa5;flex-shrink:0;
   }
   .sig-upload-label input[type="file"]{display:none;}
   .sig-file-name{
@@ -369,7 +369,7 @@ import { useState, useEffect, useRef } from "react";
     min-width:0;
     flex:1;
   }
-  .sig-file-name.has-file{color:var(--modal-primary, #185fa5);font-weight:500;}
+  .sig-file-name.has-file{color:#185fa5;font-weight:500;}
   .sig-preview{
     width:36px;height:36px;object-fit:cover;
     border-radius:5px;border:1px solid #c8d9f0;
@@ -392,14 +392,14 @@ import { useState, useEffect, useRef } from "react";
     color:#0f1f3d;outline:none;padding:3px 0;width:100%;margin-top:2px;
     transition:border-color 0.15s;
   }
-  .req-field input:focus{border-bottom-color:var(--modal-primary, #185fa5);}
+  .req-field input:focus{border-bottom-color:#185fa5;}
   input.invalid{border-bottom-color:#e24b4a!important;}
   .field-error{font-size:0.6rem;color:#e24b4a;margin-top:2px;}
 
   /* ── ISSUANCE PANEL ── */
   .issuance-title{
     font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;
-    color:var(--modal-primary, #185fa5);text-align:center;margin-bottom:8px;font-weight:600;
+    color:#185fa5;text-align:center;margin-bottom:8px;font-weight:600;
   }
   .issuance-item{margin-bottom:6px;}
   .issuance-sep{height:1px;background:#e2ecf8;margin:8px 0;}
@@ -407,7 +407,7 @@ import { useState, useEffect, useRef } from "react";
   /* ── OCCR PANEL ── */
   .right-panel-title{
     font-size:0.58rem;font-weight:600;text-transform:uppercase;
-    letter-spacing:0.1em;color:var(--modal-primary, #185fa5);text-align:center;
+    letter-spacing:0.1em;color:#185fa5;text-align:center;
     border:1px solid #e2ecf8;border-radius:6px;padding:4px;
     margin-bottom:12px;background:#fff;
   }
@@ -419,7 +419,7 @@ import { useState, useEffect, useRef } from "react";
     color:#0f1f3d;outline:none;padding:2px 0;
     transition:border-color 0.15s;
   }
-  .right-field input:focus{border-bottom-color:var(--modal-primary, #185fa5);}
+  .right-field input:focus{border-bottom-color:#185fa5;}
   .book-page-row{display:flex;gap:8px;}
   .book-page-row>div{flex:1;}
 
@@ -439,12 +439,12 @@ import { useState, useEffect, useRef } from "react";
   .btn-cancel:hover{background:#e6f1fb;border-color:#85b7eb;}
   .btn-cancel:disabled{opacity:0.5;cursor:not-allowed;}
   .btn-submit{
-    padding:8px 24px;background:var(--modal-primary, #185fa5);border:none;
+    padding:8px 24px;background:#185fa5;border:none;
     font-family:inherit;font-size:0.82rem;font-weight:600;
     color:#fff;cursor:pointer;border-radius:8px;
     letter-spacing:0.04em;transition:background 0.15s,transform 0.1s;
   }
-  .btn-submit:hover{background:var(--modal-primary-dark, #0c447c);}
+  .btn-submit:hover{background:#0c447c;}
   .btn-submit:active{transform:scale(0.98);}
   .btn-submit:disabled{opacity:0.5;cursor:not-allowed;}
 
@@ -452,29 +452,29 @@ import { useState, useEffect, useRef } from "react";
   .success-overlay{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 40px;text-align:center;}
   .success-icon-wrap{
     width:66px;height:66px;border-radius:50%;
-    background:var(--modal-tint-bg, #e6f1fb);border:2px solid var(--modal-tint-border, #85b7eb);
+    background:#e6f1fb;border:2px solid #85b7eb;
     display:flex;align-items:center;justify-content:center;
     margin:0 auto 20px;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
   }
   @keyframes popIn{from{opacity:0;transform:scale(0.4);}to{opacity:1;transform:scale(1);}}
-  .success-check{width:28px;height:28px;stroke:var(--modal-primary, #185fa5);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+  .success-check{width:28px;height:28px;stroke:#185fa5;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;}
   .success-check path{stroke-dasharray:40;stroke-dashoffset:40;animation:drawCheck 0.5s 0.2s ease forwards;}
   @keyframes drawCheck{to{stroke-dashoffset:0;}}
   .success-title{font-family:'DM Serif Display',serif;font-size:1.4rem;font-weight:400;color:#0f1f3d;margin-bottom:8px;}
   .success-sub{font-size:0.84rem;color:#5577a0;line-height:1.7;margin-bottom:4px;}
   .success-ref{
     display:inline-flex;align-items:center;gap:8px;
-    background:var(--modal-tint-bg, #e6f1fb);border:1px solid var(--modal-tint-border, #b5d4f4);border-radius:8px;
-    padding:9px 18px;margin-top:16px;font-size:0.74rem;color:var(--modal-primary, #185fa5);
+    background:#e6f1fb;border:1px solid #b5d4f4;border-radius:8px;
+    padding:9px 18px;margin-top:16px;font-size:0.74rem;color:#185fa5;
   }
-  .success-ref strong{color:var(--modal-primary-dark, #0c447c);font-weight:600;}
+  .success-ref strong{color:#0c447c;font-weight:600;}
   .btn-new{
-    margin-top:28px;padding:11px 32px;background:var(--modal-primary, #185fa5);border:none;
+    margin-top:28px;padding:11px 32px;background:#185fa5;border:none;
     font-family:inherit;font-size:0.85rem;font-weight:600;color:#fff;
     cursor:pointer;border-radius:10px;letter-spacing:0.04em;
     transition:background 0.2s,transform 0.15s;
   }
-  .btn-new:hover{background:var(--modal-primary-dark, #0c447c);transform:translateY(-1px);}
+  .btn-new:hover{background:#0c447c;transform:translateY(-1px);}
 
   /* ── COPIES OTHERS ── */
   .copies-others-input{
@@ -483,7 +483,7 @@ import { useState, useEffect, useRef } from "react";
     font-family:inherit;color:#0f1f3d;width:50px;margin-left:4px;
     transition:border-color 0.15s;
   }
-  .copies-others-input:focus{border-bottom-color:var(--modal-primary, #185fa5);}
+  .copies-others-input:focus{border-bottom-color:#185fa5;}
 
   .marriage-date-input{
     width:100%;border:none;border-bottom:1.5px solid #d4e4f5;
@@ -491,7 +491,7 @@ import { useState, useEffect, useRef } from "react";
     color:#0f1f3d;outline:none;padding:5px 2px;
     transition:border-color 0.15s;
   }
-  .marriage-date-input:focus{border-bottom-color:var(--modal-primary, #185fa5);}
+  .marriage-date-input:focus{border-bottom-color:#185fa5;}
 
   /* ── TOAST ── */
   .toast-wrap{position:fixed;top:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
