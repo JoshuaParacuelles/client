@@ -93,11 +93,12 @@ import { useState, useEffect, useRef } from "react";
   }
   .type-card:focus-visible{outline:2px solid #185fa5;outline-offset:2px;}
   .type-card:active{background:#f6f8fc;border-color:#185fa5;}
+  /* ── CARD ICON: white background, colored border + icon (was solid colored background) ── */
   .card-icon{
     width:38px;height:38px;border-radius:10px;
-    background:var(--card-icon-color, #185fa5);border:1px solid var(--card-icon-color, #185fa5);
+    background:#fff;border:1.5px solid var(--card-icon-color, #185fa5);
     display:flex;align-items:center;
-    justify-content:center;color:#14213d;flex-shrink:0;
+    justify-content:center;color:var(--card-icon-color, #185fa5);flex-shrink:0;
     transition:background 0.2s,color 0.2s,border-color 0.2s;
   }
   .card-icon svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
@@ -106,7 +107,7 @@ import { useState, useEffect, useRef } from "react";
   .card-arrow{font-size:0.7rem;font-weight:500;color:#6b87a8;transition:color 0.2s,transform 0.2s;display:inline-block;line-height:1.3;}
   @media(hover:hover){
     .type-card:hover{border-color:#185fa5;}
-    .type-card:hover .card-icon{background:var(--card-icon-hover, #0c447c);border-color:var(--card-icon-hover, #0c447c);}
+    .type-card:hover .card-icon{background:#fff;border-color:var(--card-icon-hover, #0c447c);color:var(--card-icon-hover, #0c447c);}
     .type-card:hover .card-arrow{color:#185fa5;transform:translateX(3px);}
   }
 
@@ -636,12 +637,15 @@ import { useState, useEffect, useRef } from "react";
 
   /* ── MODAL TEXT: ALL BLACK ──────────────────────────────────
      Exceptions: header banner text stays white (sits on a solid
-     colored background) and error/status text stays red (needs to
-     visually stand out as an error). Everything else in the modal
-     is forced to black regardless of its previous color. */
+     colored background), error/status text stays red (needs to
+     visually stand out as an error), and the Submit Request button
+     stays white (sits on a solid blue background). Everything else
+     in the modal is forced to black regardless of its previous
+     color. */
   .form-paper, .form-paper *{color:#000;}
   .form-header, .form-header *{color:#fff;}
   .field-error, .form-status{color:#e24b4a;}
+  .btn-submit, .btn-submit *{color:#fff;}
   `;
 
   /* ─── CONSTANTS ─────────────────────────────────────────────── */
