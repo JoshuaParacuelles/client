@@ -629,10 +629,19 @@ import { useState, useEffect, useRef } from "react";
     .sh-divider{display:none;}
   }
 
-  @media(max-width:360px){
+   @media(max-width:360px){
     .purpose-grid{grid-template-columns:1fr;}
     .header-badge{display:none;}
   }
+
+  /* ── MODAL TEXT: ALL BLACK ──────────────────────────────────
+     Exceptions: header banner text stays white (sits on a solid
+     colored background) and error/status text stays red (needs to
+     visually stand out as an error). Everything else in the modal
+     is forced to black regardless of its previous color. */
+  .form-paper, .form-paper *{color:#000;}
+  .form-header, .form-header *{color:#fff;}
+  .field-error, .form-status{color:#e24b4a;}
   `;
 
   /* ─── CONSTANTS ─────────────────────────────────────────────── */
