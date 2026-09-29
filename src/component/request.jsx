@@ -669,38 +669,25 @@ if (!RAW_API_URL) {
 }
 const BASE_URL = `${(RAW_API_URL || "").replace(/\/$/, "")}/api`;
 
-/* ─── MODAL COLOR THEMES ────────────────────────────────────────
-   Drives the modal's primary color and every derived tint based on
-   the selected record type: Birth → Yellow, Death → Pink,
-   Marriage → Blue. Applied as CSS custom properties on the modal's
-   outer .form-paper element so every child rule that references
-   var(--modal-primary) etc. picks up the right color automatically. */
-const MODAL_THEMES = {
-  birth: {
-    "--modal-primary":      "#d4a017",
-    "--modal-primary-dark": "#a67d12",
-    "--modal-tint-bg":      "#fdf6e3",
-    "--modal-tint-border":  "#f0d9a0",
-    "--modal-accent":       "rgba(212,160,23,0.33)",
-  },
-  death: {
-    "--modal-primary":      "#c2185b",
-    "--modal-primary-dark": "#93123f",
-    "--modal-tint-bg":      "#fbe4ec",
-    "--modal-tint-border":  "#f0a8c4",
-    "--modal-accent":       "rgba(194,24,91,0.33)",
-  },
-  marriage: {
-    "--modal-primary":      "#185fa5",
-    "--modal-primary-dark": "#0c447c",
-    "--modal-tint-bg":      "#e6f1fb",
-    "--modal-tint-border":  "#b5d4f4",
-    "--modal-accent":       "rgba(24,95,165,0.33)",
-  },
+/* ─── MODAL COLOR THEME ─────────────────────────────────────────
+   One color for all three forms (Birth, Death, Marriage) and the
+   Track screen. To change the color, edit only this object. */
+const FORM_THEME = {
+  "--modal-primary":      "#185fa5",
+  "--modal-primary-dark": "#0c447c",
+  "--modal-tint-bg":      "#e6f1fb",
+  "--modal-tint-border":  "#b5d4f4",
+  "--modal-accent":       "rgba(24,95,165,0.33)",
 };
 
-// Same Birth/Death/Marriage palette as the modal, reused here so
-// the landing page card icons visually match the record type they open.
+const MODAL_THEMES = {
+  birth:    FORM_THEME,
+  death:    FORM_THEME,
+  marriage: FORM_THEME,
+};
+
+// Same palette as the modal, reused here so the landing page card
+// icons visually match the forms they open.
 const CARD_ICON_COLORS = {
   birth:    { base: MODAL_THEMES.birth["--modal-primary"],    hover: MODAL_THEMES.birth["--modal-primary-dark"] },
   death:    { base: MODAL_THEMES.death["--modal-primary"],    hover: MODAL_THEMES.death["--modal-primary-dark"] },
@@ -1619,7 +1606,7 @@ function RequestForm({ kind, onClose }) {
 
 /* ─── TRACK MY REQUEST ───────────────────────────────────────── */
 function TrackForm({ onClose }) {
-  const theme = MODAL_THEMES.marriage; // blue, the neutral house color
+  const theme = MODAL_THEMES.marriage; // same single form color as the request forms
   const [controlNo, setControlNo] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
