@@ -738,1039 +738,861 @@ const BASE_URL = `${(RAW_API_URL || "").replace(/\/$/, "")}/api`;
     return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[id]}</svg>;
   }
 
-  /* ─── API ────────────────────────────────────────────────────── */
-  async function fetchApi(path, body) {
-    let res;
-    try {
-      res = await fetch(`${BASE_URL}${path}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    } catch {
-      throw new Error("Cannot reach the server. Make sure Flask is running: python backend/request.py");
-    }
-    const ct = res.headers.get("content-type")||"";
-    if (!ct.includes("application/json")) {
-      const t = await res.text().catch(()=>"");
-      throw new Error(`Server returned HTTP ${res.status} with non-JSON body.\n${t.slice(0,120)}`);
-    }
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error||`HTTP ${res.status}`);
-    return data;
-  }
+/* ─── EXTRA CSS (theme fixes + tracking screen) ───────────────
+   Rendered as a second <style> after `styles`, so it wins over the
+   hardcoded blue rules without touching them. */
+const extraStyles = `
+/* Theme-aware controls (were hardcoded #185fa5) */
+.form-paper .radio-label:hover .radio-box,
+.form-paper .check-label:hover .check-box{border-color:var(--modal-primary);}
+.form-paper .radio-label input[type="radio"]:checked+.radio-box{border-color:var(--modal-primary);}
+.form-paper .radio-label input[type="radio"]:checked+.radio-box::after{background:var(--modal-primary);}
+.form-paper .check-label input[type="checkbox"]:checked+.check-box{
+  background:var(--modal-primary);border-color:var(--modal-primary);color:#fff;
+}
+.form-paper input:focus{border-bottom-color:var(--modal-primary);}
+.form-paper input.invalid{border-bottom-color:#e24b4a;}
+.form-paper .sig-upload-label svg{stroke:var(--modal-primary);}
+.form-paper .btn-submit,.form-paper .btn-new{background:var(--modal-primary);color:#fff;}
+.form-paper .btn-submit:hover,.form-paper .btn-new:hover{background:var(--modal-primary-dark);}
+.form-paper .success-check{stroke:var(--modal-primary);}
+.form-paper .success-icon-wrap{background:var(--modal-tint-bg);border-color:var(--modal-tint-border);}
+.form-paper .success-ref,.form-paper .place-box{background:var(--modal-tint-bg);border-color:var(--modal-tint-border);}
+.form-paper .form-status,.form-paper .field-error{color:#e24b4a;}
 
-  // NEW: sends the request as multipart/form-data so the uploaded
-  // signature file travels along with the rest of the fields. Used
-  // whenever a signature file has actually been chosen.
-  function buildFormData(payload, file) {
-    const fd = new FormData();
-    Object.entries(payload).forEach(([k, v]) => {
-      fd.append(k, v === null || v === undefined ? "" : v);
-    });
-    if (file) fd.append("signature", file, file.name);
-    return fd;
-  }
+/* Track my request */
+.track-link{
+  margin-top:28px;background:none;border:none;font-family:inherit;
+  font-size:0.82rem;font-weight:500;color:#185fa5;cursor:pointer;
+  padding:8px 14px;border-radius:8px;transition:background 0.15s;
+}
+.track-link:hover{background:#e6f1fb;}
+.track-body{padding:20px 24px;}
+.track-intro{font-size:0.8rem;line-height:1.6;margin-bottom:6px;}
+.track-result{margin-top:22px;border-top:1px solid #e2ecf8;padding-top:16px;}
+.track-status{font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:2px;}
+.track-meta{font-size:0.72rem;opacity:0.7;margin-bottom:6px;}
+.track-steps{display:flex;margin:20px 0 8px;}
+.track-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;text-align:center;font-size:0.68rem;}
+.track-step::before{content:'';position:absolute;top:11px;left:-50%;width:100%;height:2px;background:#dde6f2;}
+.track-step:first-child::before{display:none;}
+.track-step.done::before{background:var(--modal-primary);}
+.track-dot{
+  width:24px;height:24px;border-radius:50%;border:2px solid #dde6f2;background:#fff;
+  position:relative;z-index:1;display:flex;align-items:center;justify-content:center;font-size:11px;
+}
+.track-step.done .track-dot{background:var(--modal-primary);border-color:var(--modal-primary);}
+.form-paper .track-step.done .track-dot{color:#fff;}
+.track-step.current .track-dot{box-shadow:0 0 0 4px var(--modal-tint-bg);}
+.track-rejected{background:#fdecec;border:1px solid #f3b5b4;border-radius:8px;padding:10px 12px;font-size:0.8rem;margin-top:12px;}
 
-  async function fetchApiForm(path, formData) {
-    let res;
-    try {
-      // No Content-Type header here on purpose — the browser sets the
-      // correct multipart boundary automatically for FormData bodies.
-      res = await fetch(`${BASE_URL}${path}`,{method:"POST",body:formData});
-    } catch {
-      throw new Error("Cannot reach the server. Make sure Flask is running: python backend/request.py");
-    }
-    const ct = res.headers.get("content-type")||"";
-    if (!ct.includes("application/json")) {
-      const t = await res.text().catch(()=>"");
-      throw new Error(`Server returned HTTP ${res.status} with non-JSON body.\n${t.slice(0,120)}`);
-    }
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error||`HTTP ${res.status}`);
-    return data;
-  }
+@media(max-width:640px){
+  .track-body{padding:14px 18px;flex:1;}
+  .form-paper input[type="tel"]{font-size:16px;}
+}
+`;
 
-  // Each submit function now accepts an optional signature file as its
-  // second argument. When present, the request is sent as multipart
-  // form-data (so the file actually reaches the backend); otherwise it
-  // falls back to the original plain-JSON submission, unchanged.
-  const api = {
-    submitBirth:    (d, file) => file ? fetchApiForm("/birth/submit",    buildFormData(d.birth_request,    file)) : fetchApi("/birth/submit",d),
-    submitDeath:    (d, file) => file ? fetchApiForm("/death/submit",    buildFormData(d.death_request,    file)) : fetchApi("/death/submit",d),
-    submitMarriage: (d, file) => file ? fetchApiForm("/marriage/submit", buildFormData(d.marriage_request, file)) : fetchApi("/marriage/submit",d),
+/* ─── API ────────────────────────────────────────────────────── */
+const NETWORK_ERROR = "We couldn't reach the server. Please check your internet connection and try again.";
+
+async function send(path, init) {
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, init);
+  } catch {
+    throw new Error(NETWORK_ERROR);
+  }
+  const ct = res.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) {
+    throw new Error(`The server sent an unexpected response (HTTP ${res.status}). Please try again later.`);
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || `Request failed (HTTP ${res.status}).`);
+  return data;
+}
+
+const postJson = (path, body) =>
+  send(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+// multipart/form-data so the signature file travels with the fields.
+// No Content-Type header on purpose: the browser sets the boundary.
+function buildFormData(payload, file) {
+  const fd = new FormData();
+  Object.entries(payload).forEach(([k, v]) => fd.append(k, v === null || v === undefined ? "" : v));
+  if (file) fd.append("signature", file, file.name);
+  return fd;
+}
+
+const api = {
+  submitRequest: (kind, payload, file) =>
+    file
+      ? send(`/${kind}/submit`, { method: "POST", body: buildFormData(payload, file) })
+      : postJson(`/${kind}/submit`, { [`${kind}_request`]: payload }),
+  trackRequest: (control_no, email) => postJson("/track", { control_no, email }),
+};
+
+/* ─── VALIDATION ─────────────────────────────────────────────── */
+const PH_MOBILE_LOCAL_REGEX = /^0\d{10}$/;
+const PH_MOBILE_INTL_REGEX = /^\+63\d{10}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const SIG_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+const MAX_SIG_BYTES = 2 * 1024 * 1024;
+
+function getSignatureError(file) {
+  if (!SIG_TYPES.includes(file.type)) return "Use a PNG, JPG or WEBP image, or a PDF.";
+  if (file.size > MAX_SIG_BYTES) return "File is too large. Maximum size is 2 MB.";
+  return null;
+}
+
+function sanitizePhoneInput(raw) {
+  let v = (raw || "").replace(/[^\d+]/g, "");
+  if (v.includes("+")) v = "+" + v.replace(/\+/g, "");
+  return v;
+}
+
+function getPhoneError(value) {
+  const v = (value || "").trim();
+  if (!v) return null;
+  if (PH_MOBILE_LOCAL_REGEX.test(v) || PH_MOBILE_INTL_REGEX.test(v)) return null;
+  return "Enter a valid mobile number (09XXXXXXXXX or +63 9XXXXXXXXX)";
+}
+
+function validateRequester(req) {
+  const errs = {};
+  if (!req.requester_name.trim()) errs.requester_name = "Full name is required";
+  if (!req.requester_relationship.trim()) errs.requester_relationship = "Relationship is required";
+  if (!req.requester_address.trim()) errs.requester_address = "Address is required";
+  if (!req.requester_email.trim()) errs.requester_email = "Email is required";
+  else if (!EMAIL_REGEX.test(req.requester_email.trim())) errs.requester_email = "Enter a valid email address";
+  const phoneErr = getPhoneError(req.requester_telephone);
+  if (phoneErr) errs.requester_telephone = phoneErr;
+  return errs;
+}
+
+// Only checked purposes are sent, and the "Others" text is attached only
+// when "OTHERS (SPECIFY)" is still ticked and something was typed.
+function buildPurposes(selected, other) {
+  return selected
+    .map((p) => (p === "OTHERS (SPECIFY)" && other.trim() ? `OTHERS (${other.trim()})` : p))
+    .join(", ");
+}
+
+/* ─── SHARED COMPONENTS ──────────────────────────────────────── */
+function Checkbox({ label, checked, onChange }) {
+  return (
+    <label className="check-label">
+      <input type="checkbox" checked={checked} onChange={onChange} />
+      <span className="check-box">{checked ? "✓" : ""}</span>
+      {label}
+    </label>
+  );
+}
+function Radio({ label, name, checked, onChange }) {
+  return (
+    <label className="radio-label">
+      <input type="radio" name={name} checked={checked} onChange={onChange} />
+      <span className="radio-box" />
+      {label}
+    </label>
+  );
+}
+
+function PurposeSection({ selected, onChange }) {
+  return (
+    <div className="purpose-section">
+      <div className="purpose-header">Purpose — Check Appropriate Box</div>
+      <div className="purpose-grid">
+        {PURPOSES.map((p, i) =>
+          p ? (
+            <Checkbox key={i} label={p} checked={selected.includes(p)}
+              onChange={() => onChange(selected.includes(p) ? selected.filter((x) => x !== p) : [...selected, p])} />
+          ) : <div key={i} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CopiesRow({ copies, setCopies, name, othersValue, setOthersValue, error }) {
+  return (
+    <div className="copies-row">
+      <div className="copies-row-label">Number of Copies — Please check appropriate box</div>
+      <div className="copies-options">
+        {["One", "Two", "Three"].map((c) => (
+          <Radio key={c} label={c} name={name} checked={copies === c} onChange={() => setCopies(c)} />
+        ))}
+        <label className="radio-label">
+          <input type="radio" name={name} checked={copies === "Others"} onChange={() => setCopies("Others")} />
+          <span className="radio-box" />
+          Others:
+          <input type="text" inputMode="numeric" className="copies-others-input" value={othersValue}
+            onChange={(e) => setOthersValue(e.target.value.replace(/\D/g, ""))} disabled={copies !== "Others"} />
+        </label>
+      </div>
+      {error && <div className="field-error">{error}</div>}
+    </div>
+  );
+}
+
+function AuthClause() {
+  return (
+    <div className="auth-box">
+      <div className="auth-title">Authorization Clause</div>
+      <p className="auth-text">
+        I understand that pursuant to PD 603 (Child & Youth Welfare Code), birth certificate
+        documents cannot be released without{" "}
+        <u>proper authorization from the owner, his/her parent (if minor), his/her spouse,
+        direct descendant, or authorized guardian/institution-in-charge</u>.
+        / The DAPA of 2012 (R.A. 10173)
+      </p>
+    </div>
+  );
+}
+
+/* ─── SIGNATURE FILE UPLOAD ──────────────────────────────────── */
+// Now rejects wrong types / files over 2 MB immediately, matching the backend.
+function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
+  const fileRef = useRef(null);
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState("");
+
+  const reset = () => {
+    onChange(null);
+    setPreview(null);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
-  /* ─── VALIDATION ─────────────────────────────────────────────── */
-  // NEW: Telephone / Mobile Number validation.
-  // Accepts either local format (starts with 0, exactly 11 digits, e.g.
-  // 09XXXXXXXXX) or international format (+63 followed by 10 digits,
-  // e.g. +639XXXXXXXXX). The field itself stays optional — it's only
-  // validated when the requester actually types something in it.
-  const PH_MOBILE_LOCAL_REGEX = /^0\d{10}$/;      // 0 + 10 digits = 11 digits total
-  const PH_MOBILE_INTL_REGEX  = /^\+63\d{10}$/;   // +63 + 10 digits
-
-  // Strips anything that isn't a digit or a leading "+" as the user types,
-  // so letters and other invalid characters can never be entered at all.
-  function sanitizePhoneInput(raw) {
-    let v = (raw || "").replace(/[^\d+]/g, "");
-    if (v.includes("+")) v = "+" + v.replace(/\+/g, ""); // only one leading "+" allowed
-    return v;
-  }
-
-  function getPhoneError(value) {
-    const v = (value || "").trim();
-    if (!v) return null; // optional field — empty is fine
-    if (PH_MOBILE_LOCAL_REGEX.test(v) || PH_MOBILE_INTL_REGEX.test(v)) return null;
-    return "Enter a valid mobile number (09XXXXXXXXX or +63 9XXXXXXXXX)";
-  }
-
-  function validateRequester(req) {
-    const errs={};
-    if (!req.requester_name.trim())         errs.requester_name         = "Full name is required";
-    if (!req.requester_relationship.trim()) errs.requester_relationship = "Relationship is required";
-    if (!req.requester_address.trim())      errs.requester_address      = "Address is required";
-    // NEW: requester email — required so the office can send the
-    // "Ready for Pickup" notification to the correct Gmail/email address.
-    if (!req.requester_email.trim())        errs.requester_email        = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.requester_email.trim()))
-                                             errs.requester_email        = "Enter a valid email address";
-    // NEW: telephone/mobile number format — only checked if the requester
-    // entered something; blocks submission when the format is invalid.
-    const phoneErr = getPhoneError(req.requester_telephone);
-    if (phoneErr) errs.requester_telephone = phoneErr;
-    return errs;
-  }
-
-  /* ─── SHARED COMPONENTS ──────────────────────────────────────── */
-  function Checkbox({label,checked,onChange}) {
-    return (
-      <label className="check-label">
-        <input type="checkbox" checked={checked} onChange={onChange}/>
-        <span className="check-box">{checked?"✓":""}</span>
-        {label}
-      </label>
-    );
-  }
-  function Radio({label,name,checked,onChange}) {
-    return (
-      <label className="radio-label">
-        <input type="radio" name={name} checked={checked} onChange={onChange}/>
-        <span className="radio-box"/>
-        {label}
-      </label>
-    );
-  }
-
-  function PurposeSection({selected,onChange}) {
-    return (
-      <div className="purpose-section">
-        <div className="purpose-header">Purpose — Check Appropriate Box</div>
-        <div className="purpose-grid">
-          {PURPOSES.map((p,i)=>
-            p ? (
-              <Checkbox key={i} label={p} checked={selected.includes(p)}
-                onChange={()=>onChange(selected.includes(p)?selected.filter(x=>x!==p):[...selected,p])}/>
-            ) : <div key={i}/>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  function CopiesRow({copies,setCopies,name,othersValue,setOthersValue}) {
-    return (
-      <div className="copies-row">
-        <div className="copies-row-label">Number of Copies — Please check appropriate box</div>
-        <div className="copies-options">
-          {["One","Two","Three"].map(c=>(
-            <Radio key={c} label={c} name={name} checked={copies===c} onChange={()=>setCopies(c)}/>
-          ))}
-          <label className="radio-label">
-            <input type="radio" name={name} checked={copies==="Others"} onChange={()=>setCopies("Others")}/>
-            <span className="radio-box"/>
-            Others:
-            <input type="text" className="copies-others-input" value={othersValue}
-              onChange={e=>setOthersValue(e.target.value)} disabled={copies!=="Others"}/>
-          </label>
-        </div>
-      </div>
-    );
-  }
-
-  function AuthClause() {
-    return (
-      <div className="auth-box">
-        <div className="auth-title">Authorization Clause</div>
-        <p className="auth-text">
-          I understand that pursuant to PD 603 (Child &amp; Youth Welfare Code), birth certificate
-          documents cannot be released without{" "}
-          <u>proper authorization from the owner, his/her parent (if minor), his/her spouse,
-          direct descendant, or authorized guardian/institution-in-charge</u>.
-          / The DAPA of 2012 (R.A. 10173)
-        </p>
-      </div>
-    );
-  }
-
-  /* ─── SIGNATURE FILE UPLOAD ──────────────────────────────────── */
-  // UPDATED: now also carries a "Signature Over Printed Name" text
-  // field alongside the file picker, so the requester can both upload
-  // a signature file and type the name that should print under it.
-  function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
-    const fileRef = useRef(null);
-    const [preview, setPreview] = useState(null);
-
-    const handleChange = (e) => {
-      const f = e.target.files[0] || null;
-      onChange(f);
-      if (f && f.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (ev) => setPreview(ev.target.result);
-        reader.readAsDataURL(f);
-      } else {
-        setPreview(null);
-      }
-    };
-
-    const handleClear = () => {
-      onChange(null);
+  const handleChange = (e) => {
+    const f = e.target.files[0] || null;
+    if (!f) return;
+    const err = getSignatureError(f);
+    if (err) { setError(err); reset(); return; }
+    setError("");
+    onChange(f);
+    if (f.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreview(ev.target.result);
+      reader.readAsDataURL(f);
+    } else {
       setPreview(null);
-      if (fileRef.current) fileRef.current.value = "";
-    };
+    }
+  };
 
-    return (
-      <>
-        <div className="sig-upload-wrap">
-          <label className="sig-upload-label">
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            Choose File
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*,.pdf"
-              onChange={handleChange}
-            />
-          </label>
-          {preview ? (
-            <img src={preview} alt="signature preview" className="sig-preview"/>
-          ) : (
-            <span className={`sig-file-name${file?" has-file":""}`}>
-              {file ? file.name : "No file chosen"}
-            </span>
-          )}
-          {file && (
-            <button type="button" className="sig-clear-btn" onClick={handleClear} title="Remove">×</button>
-          )}
-        </div>
-        <div className="req-field">
-          Signature Over Printed Name
-          <input
-            type="text"
-            value={printedName}
-            onChange={e=>onPrintedNameChange(e.target.value)}
-            placeholder="Type the name that appears under your signature"
-          />
-        </div>
-      </>
-    );
-  }
+  return (
+    <>
+      <div className="sig-upload-wrap">
+        <label className="sig-upload-label">
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          Choose File
+          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={handleChange} />
+        </label>
+        {preview ? (
+          <img src={preview} alt="signature preview" className="sig-preview" />
+        ) : (
+          <span className={`sig-file-name${file ? " has-file" : ""}`}>{file ? file.name : "No file chosen"}</span>
+        )}
+        {file && (
+          <button type="button" className="sig-clear-btn" onClick={() => { setError(""); reset(); }} title="Remove">×</button>
+        )}
+      </div>
+      {error && <div className="field-error">{error}</div>}
+      <div className="sig-note">PNG, JPG, WEBP or PDF · max 2 MB</div>
+      <div className="req-field">
+        Signature Over Printed Name
+        <input type="text" value={printedName} onChange={(e) => onPrintedNameChange(e.target.value)}
+          placeholder="Type the name that appears under your signature" />
+      </div>
+    </>
+  );
+}
 
-  /* ─── REQUESTER FIELDS ───────────────────────────────────────── */
-  // UPDATED: forwards printedName / onPrintedNameChange down to
-  // SignatureUpload, and now also renders an "Email Address" field
-  // (required) so the office can send the "Ready for Pickup" email
-  // notification to the requester. Everything else here is unchanged.
-  function RequesterFields({data,onChange,errors,sigFile,onSigChange,printedName,onPrintedNameChange}) {
-    return (
-      <div className="req-left">
-        <div className="req-title">Requesting Party</div>
-        <SignatureUpload
-          file={sigFile}
-          onChange={onSigChange}
-          printedName={printedName}
-          onPrintedNameChange={onPrintedNameChange}
-        />
-        <div className="req-field">
-          Full Name *
-          <input type="text" className={errors.requester_name?"invalid":""}
-            value={data.requester_name} onChange={e=>onChange("requester_name",e.target.value)}
-            placeholder="Juan Dela Cruz"/>
-          {errors.requester_name && <div className="field-error">{errors.requester_name}</div>}
+/* ─── REQUESTER FIELDS ───────────────────────────────────────── */
+function RequesterFields({ data, onChange, errors, sigFile, onSigChange, printedName, onPrintedNameChange }) {
+  const text = (key, label, extra = {}) => (
+    <div className="req-field">
+      {label}
+      <input type="text" className={errors[key] ? "invalid" : ""} value={data[key]}
+        onChange={(e) => onChange(key, e.target.value)} {...extra} />
+      {errors[key] && <div className="field-error">{errors[key]}</div>}
+    </div>
+  );
+  return (
+    <div className="req-left">
+      <div className="req-title">Requesting Party</div>
+      <SignatureUpload file={sigFile} onChange={onSigChange} printedName={printedName} onPrintedNameChange={onPrintedNameChange} />
+      {text("requester_name", "Full Name *", { placeholder: "Juan Dela Cruz" })}
+      {text("requester_relationship", "Relationship to document owner *", { placeholder: "Self / Parent / Spouse" })}
+      {text("requester_address", "Address *")}
+      {text("requester_telephone", "Telephone No.", {
+        type: "tel", inputMode: "tel",
+        onChange: (e) => onChange("requester_telephone", sanitizePhoneInput(e.target.value)),
+      })}
+      {text("requester_email", "Email Address *", { type: "email", placeholder: "juandelacruz@gmail.com" })}
+    </div>
+  );
+}
+
+function IssuancePanel({ forms, selected, onToggle }) {
+  return (
+    <div className="req-right">
+      <div className="issuance-title">Issuance</div>
+      {forms.map((f) => (
+        <div key={f} className="issuance-item">
+          <Checkbox label={f} checked={selected.includes(f)} onChange={() => onToggle(f)} />
         </div>
-        <div className="req-field">
-          Relationship to document owner *
-          <input type="text" className={errors.requester_relationship?"invalid":""}
-            value={data.requester_relationship} onChange={e=>onChange("requester_relationship",e.target.value)}
-            placeholder="Self / Parent / Spouse"/>
-          {errors.requester_relationship && <div className="field-error">{errors.requester_relationship}</div>}
-        </div>
-        <div className="req-field">
-          Address *
-          <input type="text" className={errors.requester_address?"invalid":""}
-            value={data.requester_address} onChange={e=>onChange("requester_address",e.target.value)}/>
-          {errors.requester_address && <div className="field-error">{errors.requester_address}</div>}
-        </div>
-        <div className="req-field">
-          Telephone No.
-          <input type="tel" inputMode="tel" className={errors.requester_telephone?"invalid":""}
-            value={data.requester_telephone}
-            onChange={e=>onChange("requester_telephone",sanitizePhoneInput(e.target.value))}/>
-          {errors.requester_telephone && <div className="field-error">{errors.requester_telephone}</div>}
-        </div>
-        {/* NEW: Email Address — used to send the "Ready for Pickup" notification */}
-        <div className="req-field">
-          Email Address *
-          <input type="email" className={errors.requester_email?"invalid":""}
-            value={data.requester_email} onChange={e=>onChange("requester_email",e.target.value)}
-            placeholder="juandelacruz@gmail.com"/>
-          {errors.requester_email && <div className="field-error">{errors.requester_email}</div>}
+      ))}
+      <div className="issuance-sep" />
+      <div className="issuance-item">
+        <Checkbox label="Machine Copy" checked={selected.includes("Machine Copy")} onChange={() => onToggle("Machine Copy")} />
+      </div>
+    </div>
+  );
+}
+
+function OccrPanel({ data, onChange }) {
+  return (
+    <div className="form-right">
+      <div className="right-panel-title">For OCCR Personnel Only</div>
+      <div className="right-field">
+        <label>Registry No.</label>
+        <input type="text" value={data.registry_no} onChange={(e) => onChange("registry_no", e.target.value)} />
+      </div>
+      <div className="right-field">
+        <label>Date of Registration</label>
+        <input type="date" value={data.date_of_registration} onChange={(e) => onChange("date_of_registration", e.target.value)} />
+      </div>
+      <div className="right-field">
+        <div className="book-page-row">
+          <div>
+            <label>Book</label>
+            <input type="text" value={data.book} onChange={(e) => onChange("book", e.target.value)} />
+          </div>
+          <div>
+            <label>Page</label>
+            <input type="text" value={data.page} onChange={(e) => onChange("page", e.target.value)} />
+          </div>
         </div>
       </div>
-    );
-  }
+      <div className="right-field">
+        <label>Search by</label>
+        <input type="text" value={data.search_by} onChange={(e) => onChange("search_by", e.target.value)} />
+      </div>
+    </div>
+  );
+}
 
-  function IssuancePanel({forms,selected,onToggle}) {
-    return (
-      <div className="req-right">
-        <div className="issuance-title">Issuance</div>
-        {forms.map(f=>(
-          <div key={f} className="issuance-item">
-            <Checkbox label={f} checked={selected.includes(f)} onChange={()=>onToggle(f)}/>
-          </div>
+function FormHeader({ recordWord }) {
+  return (
+    <div className="form-header">
+      <div className="form-header-accent" />
+      <div className="form-header-accent2" />
+      <div className="form-header-inner">
+        <div className="header-left"><div className="header-title">{recordWord}</div></div>
+        <div className="header-badge">{recordWord}</div>
+      </div>
+      <div className="form-header-divider" />
+    </div>
+  );
+}
+
+function FormSubheader() {
+  const today = new Date().toLocaleDateString("en-PH");
+  return (
+    <div className="form-subheader">
+      <div className="sh-field">
+        <span className="sh-label">Control No.</span>
+        <input className="sh-value" type="text" readOnly placeholder="Auto-generated" style={{ width: 110 }} />
+      </div>
+      <div className="sh-divider" />
+      <div className="sh-field">
+        <span className="sh-label">Date</span>
+        <input className="sh-value" type="text" defaultValue={today} readOnly style={{ width: 90 }} />
+      </div>
+    </div>
+  );
+}
+
+// Shows the real error from the server instead of dev-only hints.
+function FormActions({ status, errorMessage, onCancel, onSubmit, cancelLabel = "Cancel", submitLabel = "Submit Request" }) {
+  const loading = status === "loading";
+  return (
+    <div className="form-actions">
+      <div className="form-status">{status === "error" && (errorMessage || "Submission failed. Please try again.")}</div>
+      <button className="btn-cancel" onClick={onCancel} disabled={loading}>{cancelLabel}</button>
+      <button className="btn-submit" onClick={onSubmit} disabled={loading}>{loading ? "Saving…" : submitLabel}</button>
+    </div>
+  );
+}
+
+/* ─── REVIEW / SUCCESS ───────────────────────────────────────── */
+function ReviewRow({ label, value }) {
+  const hasValue = value !== null && value !== undefined && String(value).trim() !== "";
+  return (
+    <div className="review-row">
+      <span className="review-label">{label}</span>
+      <span className={`review-value${hasValue ? "" : " empty"}`}>{hasValue ? value : "—"}</span>
+    </div>
+  );
+}
+
+function ReviewSection({ title, rows }) {
+  return (
+    <div>
+      <div className="section-heading">{title}</div>
+      <div className="review-rows">{rows.map((r) => <ReviewRow key={r.label} label={r.label} value={r.value} />)}</div>
+    </div>
+  );
+}
+
+function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, status, errorMessage, onBack, onConfirm }) {
+  return (
+    <div className="form-paper" style={theme}>
+      <FormHeader recordWord={recordWord} />
+      <div className="review-body">
+        <div className="review-intro">
+          Please review the details below carefully. Once you confirm, this request will be
+          submitted to the Office of the City Civil Registrar.
+        </div>
+        {sections.map((sec) => <ReviewSection key={sec.title} title={sec.title} rows={sec.rows} />)}
+        <ReviewSection title="Signature" rows={[
+          { label: "Uploaded File", value: sigFile ? sigFile.name : null },
+          { label: "Signature Over Printed Name", value: printedName },
+        ]} />
+      </div>
+      <FormActions status={status} errorMessage={errorMessage} onCancel={onBack} onSubmit={onConfirm}
+        cancelLabel="Back to Edit" submitLabel="Confirm & Submit" />
+    </div>
+  );
+}
+
+function SuccessScreen({ result, type, onClose }) {
+  return (
+    <div className="success-overlay">
+      <div className="success-icon-wrap">
+        <svg className="success-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
+      </div>
+      <div className="success-title">Request Submitted!</div>
+      <div className="success-sub">Your <strong>{type}</strong> record request has been saved.</div>
+      <div className="success-sub">
+        Keep your reference number and the email you used. You can use both to track your request from the home page.
+      </div>
+      <div className="success-ref">
+        Ref:{" "}<strong>{result.control_no || `CTL-${result.record_id}`}</strong>
+        {" "}·{" "}ID:{" "}<strong>#{result.record_id}</strong>
+      </div>
+      <button className="btn-new" onClick={onClose}>Done</button>
+    </div>
+  );
+}
+
+/* ─── TOAST SYSTEM ───────────────────────────────────────────── */
+let _toastSetters = [];
+let _toastSeq = 0; // monotonic id: Date.now() could collide on rapid toasts
+function useToasts() {
+  const [toasts, setToasts] = useState([]);
+  useEffect(() => {
+    _toastSetters.push(setToasts);
+    return () => { _toastSetters = _toastSetters.filter((s) => s !== setToasts); };
+  }, []);
+  return toasts;
+}
+function pushToast(toast) {
+  const id = ++_toastSeq;
+  _toastSetters.forEach((set) => set((prev) => [...prev, { ...toast, id }]));
+}
+function removeToast(id) {
+  _toastSetters.forEach((set) => set((prev) => prev.filter((t) => t.id !== id)));
+}
+function ToastContainer() {
+  const toasts = useToasts();
+  return <div className="toast-wrap">{toasts.map((t) => <Toast key={t.id} {...t} />)}</div>;
+}
+function Toast({ id, title, message, duration = 5000, success = true }) {
+  const [hiding, setHiding] = useState(false);
+  const dismiss = () => { setHiding(true); setTimeout(() => removeToast(id), 300); };
+  useEffect(() => { const t = setTimeout(dismiss, duration); return () => clearTimeout(t); }, []);
+  const c = success ? "#185fa5" : "#e24b4a";
+  return (
+    <div className={`toast${hiding ? " hiding" : ""}`}>
+      <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {success ? (<><circle cx="12" cy="12" r="10" /><path d="M9 12l2 2 4-4" /></>)
+                 : (<><circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" /></>)}
+      </svg>
+      <div className="toast-body">
+        <div className="toast-title">{title}</div>
+        <div className="toast-msg">{message}</div>
+      </div>
+      <button className="toast-close" onClick={dismiss}>×</button>
+      <div className="toast-progress">
+        <div className="toast-progress-bar" style={{ animationDuration: `${duration}ms`, background: c }} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── FORM CONFIG (replaces the three duplicated forms) ────────
+   Each record type only declares what differs: the "subject" blocks
+   (name / date / free text), where the place goes, and labels.
+   Field keys are the exact column names the backend expects. */
+const PLACE = "San Carlos City, Negros Occidental";
+
+const FORM_CONFIGS = {
+  birth: {
+    word: "BIRTH",
+    blocks: [
+      { type: "name", heading: "Name of Child", keys: ["child_firstname", "child_middlename", "child_surname"], required: ["child_firstname"] },
+      { type: "date", heading: "Date of Birth", keys: ["birth_month", "birth_date", "birth_year"], required: ["birth_year"], yearPlaceholder: "2000" },
+    ],
+    place: { heading: "Place of Birth", key: "place_of_birth" },
+  },
+  death: {
+    word: "DEATH",
+    blocks: [
+      { type: "name", heading: "Name of Deceased", keys: ["deceased_firstname", "deceased_middlename", "deceased_surname"], required: ["deceased_firstname"] },
+      { type: "date", heading: "Date of Death", keys: ["death_month", "death_date", "death_year"], required: ["death_year"], yearPlaceholder: "2024" },
+    ],
+    place: { heading: "Place of Death", key: "place_of_death" },
+  },
+  marriage: {
+    word: "MARRIAGE",
+    blocks: [
+      { type: "text", heading: "Name of Husband", keys: ["husband_fullname"], required: ["husband_fullname"],
+        placeholder: "Complete name of husband", hint: "(Kumpletong Pangalan sa Bana)" },
+      { type: "text", heading: "Maiden Name of Wife", keys: ["wife_maiden_name"], required: ["wife_maiden_name"],
+        placeholder: "Complete maiden name of wife", hint: "(Kumpletong Pangalan sa Asawa. Apelido pagka DALAGA)" },
+      { type: "text", heading: "Date of Marriage", keys: ["marriage_date"], required: [],
+        placeholder: "e.g. January 1, 2020", hint: "(Kumpletong Bulan, petsa ug tuig sa pag kasai)" },
+    ],
+    place: { heading: "Place of Marriage", key: "place_of_marriage" },
+  },
+};
+
+function SubjectField({ k, cls, placeholder, sub, values, setValue, errors }) {
+  return (
+    <div className={cls}>
+      <input type="text" className={errors[k] ? "invalid" : ""} value={values[k]}
+        onChange={(e) => setValue(k, e.target.value)} placeholder={placeholder} />
+      <span className="sub-label">{sub}</span>
+      {errors[k] && <div className="field-error">{errors[k]}</div>}
+    </div>
+  );
+}
+
+function SubjectBlock({ block, values, setValue, errors }) {
+  const common = { values, setValue, errors };
+  let body;
+  if (block.type === "name") {
+    const subs = ["(Firstname)", "(Middlename)", "(Surname)"];
+    body = (
+      <div className="name-row">
+        {block.keys.map((k, i) => (
+          <SubjectField key={k} k={k} cls="name-col" sub={subs[i]} placeholder={i === 0 ? "Juan" : ""} {...common} />
         ))}
-        <div className="issuance-sep"/>
-        <div className="issuance-item">
-          <Checkbox label="Machine Copy" checked={selected.includes("Machine Copy")} onChange={()=>onToggle("Machine Copy")}/>
-        </div>
+      </div>
+    );
+  } else if (block.type === "date") {
+    const subs = ["(Month)", "(Date)", "(Year)"];
+    const ph = ["January", "1", block.yearPlaceholder];
+    body = (
+      <div className="date-row">
+        {block.keys.map((k, i) => (
+          <SubjectField key={k} k={k} cls="date-col" sub={subs[i]} placeholder={ph[i]} {...common} />
+        ))}
+      </div>
+    );
+  } else {
+    body = (
+      <div className="name-row">
+        <SubjectField k={block.keys[0]} cls="name-col" sub={block.hint} placeholder={block.placeholder} {...common} />
       </div>
     );
   }
+  return (<><div className="section-heading">{block.heading}</div>{body}</>);
+}
 
-  function OccrPanel({data,onChange}) {
-    return (
-      <div className="form-right">
-        <div className="right-panel-title">For OCCR Personnel Only</div>
-        <div className="right-field">
-          <label>Registry No.</label>
-          <input type="text" value={data.registry_no} onChange={e=>onChange("registry_no",e.target.value)}/>
-        </div>
-        <div className="right-field">
-          <label>Date of Registration</label>
-          <input type="date" value={data.date_of_registration} onChange={e=>onChange("date_of_registration",e.target.value)}/>
-        </div>
-        <div className="right-field">
-          <div className="book-page-row">
-            <div>
-              <label>Book</label>
-              <input type="text" value={data.book} onChange={e=>onChange("book",e.target.value)}/>
-            </div>
-            <div>
-              <label>Page</label>
-              <input type="text" value={data.page} onChange={e=>onChange("page",e.target.value)}/>
-            </div>
-          </div>
-        </div>
-        <div className="right-field">
-          <label>Search by</label>
-          <input type="text" value={data.search_by} onChange={e=>onChange("search_by",e.target.value)}/>
-        </div>
-      </div>
-    );
-  }
+/* ─── GENERIC REQUEST FORM ───────────────────────────────────── */
+function RequestForm({ kind, onClose }) {
+  const cfg = FORM_CONFIGS[kind];
+  const theme = MODAL_THEMES[kind];
 
-  // UPDATED: the header now displays only the selected record type
-  // (BIRTH / MARRIAGE / DEATH) — the office name, "Verification Form
-  // for ... Record" line, and "City of San Carlos · Official Document
-  // Request" subtitle have been removed per the new design.
-  function FormHeader({recordWord}) {
-    return (
-      <div className="form-header">
-        <div className="form-header-accent"/>
-        <div className="form-header-accent2"/>
-        <div className="form-header-inner">
-          <div className="header-left">
-            <div className="header-title">{recordWord}</div>
-          </div>
-          <div className="header-badge">{recordWord}</div>
-        </div>
-        <div className="form-header-divider"/>
-      </div>
-    );
-  }
+  const [copies, setCopies] = useState("One");
+  const [copiesOther, setCopiesOther] = useState("");
+  const [purposes, setPurposes] = useState([]);
+  const [purposeOther, setPurposeOther] = useState("");
+  const [issuance, setIssuance] = useState([]);
+  const [status, setStatus] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [result, setResult] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [subject, setSubject] = useState(() =>
+    Object.fromEntries(cfg.blocks.flatMap((b) => b.keys).map((k) => [k, ""])));
+  const [requester, setRequester] = useState({
+    requester_name: "", requester_relationship: "", requester_address: "", requester_telephone: "", requester_email: "",
+  });
+  const [occr, setOccr] = useState({ registry_no: "", date_of_registration: "", book: "", page: "", search_by: "" });
+  const [sigFile, setSigFile] = useState(null);
+  const [printedName, setPrintedName] = useState("");
+  const [reviewing, setReviewing] = useState(false);
 
-  function FormSubheader() {
-    const today = new Date().toLocaleDateString("en-PH");
-    return (
-      <div className="form-subheader">
-        <div className="sh-field">
-          <span className="sh-label">Control No.</span>
-          <input className="sh-value" type="text" readOnly placeholder="Auto-generated" style={{width:110}}/>
-        </div>
-        <div className="sh-divider"/>
-        <div className="sh-field">
-          <span className="sh-label">Date</span>
-          <input className="sh-value" type="text" defaultValue={today} readOnly style={{width:90}}/>
-        </div>
-      </div>
-    );
-  }
+  const setValue = (k, v) => setSubject((p) => ({ ...p, [k]: v }));
+  const updateR = (k, v) => setRequester((p) => ({ ...p, [k]: v }));
+  const updateO = (k, v) => setOccr((p) => ({ ...p, [k]: v }));
+  const toggleIssuance = (f) => setIssuance((p) => (p.includes(f) ? p.filter((x) => x !== f) : [...p, f]));
 
-  function FormActions({status,onClose,onSubmit}) {
-    const loading = status==="loading";
-    return (
-      <div className="form-actions">
-        <div className="form-status">
-          {status==="error" && "Submission failed. Check that Flask is running on port 5001."}
-        </div>
-        <button className="btn-cancel" onClick={onClose} disabled={loading}>Cancel</button>
-        <button className="btn-submit" onClick={onSubmit} disabled={loading}>
-          {loading ? "Saving…" : "Submit Request"}
-        </button>
-      </div>
-    );
-  }
+  const numCopies = copies === "Others" ? copiesOther : copies;
+  const purposeText = buildPurposes(purposes, purposeOther);
 
-  /* ─── REVIEW / CONFIRMATION SCREEN (NEW) ──────────────────────
-     Shown after the client clicks "Submit Request" and passes
-     validation, but BEFORE anything is actually sent to the server.
-     Reuses the same form-paper/FormHeader/form-actions chrome so it
-     looks like a natural continuation of the form. The client can go
-     "Back to Edit" (no data is lost — the form state is untouched)
-     or "Confirm & Submit", which is the only place that triggers the
-     actual API call.                                                */
-  function ReviewRow({label,value}) {
-    const hasValue = value !== null && value !== undefined && String(value).trim() !== "";
-    return (
-      <div className="review-row">
-        <span className="review-label">{label}</span>
-        <span className={`review-value${hasValue?"":" empty"}`}>{hasValue?value:"—"}</span>
-      </div>
-    );
-  }
+  // Validates only; opens the review screen. Nothing is sent here.
+  const handleSubmit = () => {
+    const errs = validateRequester(requester);
+    cfg.blocks.forEach((b) => b.required.forEach((k) => { if (!subject[k].trim()) errs[k] = "Required"; }));
+    if (copies === "Others" && !(parseInt(copiesOther, 10) > 0)) errs.num_copies = "Enter a number of copies";
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      pushToast({ title: "Incomplete form", message: "Please fill in all required fields.", success: false });
+      return;
+    }
+    setReviewing(true);
+  };
 
-  function ReviewSection({title,rows}) {
-    return (
-      <div>
-        <div className="section-heading">{title}</div>
-        <div className="review-rows">
-          {rows.map(r=><ReviewRow key={r.label} label={r.label} value={r.value}/>)}
-        </div>
-      </div>
-    );
-  }
+  // The only place that actually talks to the server.
+  const handleConfirmSubmit = async () => {
+    setStatus("loading");
+    setErrorMessage("");
+    try {
+      const res = await api.submitRequest(kind, {
+        ...subject,
+        [cfg.place.key]: PLACE,
+        num_copies: numCopies,
+        purposes: purposeText,
+        form_type: issuance.join(", "),
+        ...requester,
+        ...occr,
+        signature_printed_name: printedName,
+      }, sigFile);
+      setResult(res);
+      setStatus("success");
+      pushToast({ title: `${cfg.word[0]}${cfg.word.slice(1).toLowerCase()} request submitted!`,
+        message: `Reference: ${res.control_no || "CTL-" + res.record_id}`, success: true });
+    } catch (e) {
+      setStatus("error");
+      setErrorMessage(e.message);
+      pushToast({ title: "Submission failed", message: e.message, success: false });
+    }
+  };
 
-  // UPDATED: accepts a `theme` prop (one of MODAL_THEMES) and applies it
-  // as inline CSS custom properties on the form-paper wrapper so the
-  // review screen's primary color matches the record type being reviewed.
-  function ReviewScreen({recordWord,theme,sections,sigFile,printedName,status,onBack,onConfirm}) {
-    const loading = status==="loading";
+  if (status === "success") {
     return (
       <div className="form-paper" style={theme}>
-        <FormHeader recordWord={recordWord}/>
-        <div className="review-body">
-          <div className="review-intro">
-            Please review the details below carefully. Once you confirm, this request will be
-            submitted to the Office of the City Civil Registrar.
+        <FormHeader recordWord={cfg.word} />
+        <SuccessScreen result={result} type={kind} onClose={onClose} />
+      </div>
+    );
+  }
+
+  if (reviewing) {
+    const sections = [
+      { title: "Request Details", rows: [
+        { label: "Number of Copies", value: numCopies },
+        { label: "Purpose", value: purposeText },
+        { label: "Issuance / Form Type", value: issuance.join(", ") },
+      ] },
+      { title: "Record Details", rows: [
+        ...cfg.blocks.map((b) => ({ label: b.heading, value: b.keys.map((k) => subject[k]).filter(Boolean).join(" ") })),
+        { label: cfg.place.heading, value: PLACE },
+      ] },
+      { title: "Requesting Party", rows: [
+        { label: "Full Name", value: requester.requester_name },
+        { label: "Relationship", value: requester.requester_relationship },
+        { label: "Address", value: requester.requester_address },
+        { label: "Telephone No.", value: requester.requester_telephone },
+        { label: "Email Address", value: requester.requester_email },
+      ] },
+    ];
+    return (
+      <ReviewScreen recordWord={cfg.word} theme={theme} sections={sections} sigFile={sigFile}
+        printedName={printedName} status={status} errorMessage={errorMessage}
+        onBack={() => { setStatus(null); setReviewing(false); }} onConfirm={handleConfirmSubmit} />
+    );
+  }
+
+  return (
+    <div className="form-paper" style={theme}>
+      <FormHeader recordWord={cfg.word} />
+      <FormSubheader />
+      <div className="form-body">
+        <div className="form-left">
+          <CopiesRow copies={copies} setCopies={setCopies} name={`copies-${kind}`}
+            othersValue={copiesOther} setOthersValue={setCopiesOther} error={errors.num_copies} />
+          {cfg.blocks.map((b) => (
+            <SubjectBlock key={b.heading} block={b} values={subject} setValue={setValue} errors={errors} />
+          ))}
+          <div className="section-heading">{cfg.place.heading}</div>
+          <div className="place-box">{PLACE}</div>
+          <div className="place-sub">Hospital / Barangay / City / Municipality</div>
+          <PurposeSection selected={purposes} onChange={setPurposes} />
+          {purposes.includes("OTHERS (SPECIFY)") && (
+            <div className="specify-row">
+              <span>Specify:</span>
+              <input type="text" value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
+            </div>
+          )}
+          <AuthClause />
+          <div className="req-section">
+            <RequesterFields data={requester} onChange={updateR} errors={errors}
+              sigFile={sigFile} onSigChange={setSigFile} printedName={printedName} onPrintedNameChange={setPrintedName} />
+            <div className="req-divider" />
+            <IssuancePanel forms={FORM_TYPES[kind]} selected={issuance} onToggle={toggleIssuance} />
           </div>
-          {sections.map(sec=><ReviewSection key={sec.title} title={sec.title} rows={sec.rows}/>)}
-          <ReviewSection
-            title="Signature"
-            rows={[
-              {label:"Uploaded File", value: sigFile ? sigFile.name : null},
-              {label:"Signature Over Printed Name", value: printedName},
-            ]}
-          />
+        </div>
+        <OccrPanel data={occr} onChange={updateO} />
+      </div>
+      <FormActions status={status} errorMessage={errorMessage} onCancel={onClose} onSubmit={handleSubmit} />
+    </div>
+  );
+}
+
+/* ─── TRACK MY REQUEST ───────────────────────────────────────── */
+function TrackForm({ onClose }) {
+  const theme = MODAL_THEMES.marriage; // blue, the neutral house color
+  const [controlNo, setControlNo] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState(null);
+
+  const handleTrack = async (e) => {
+    e.preventDefault();
+    if (!controlNo.trim() || !email.trim()) { setError("Enter both your control number and email."); return; }
+    setLoading(true); setError(""); setResult(null);
+    try {
+      setResult(await api.trackRequest(controlNo.trim(), email.trim()));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fmt = (d) => (d ? new Date(d).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "—");
+
+  return (
+    <div className="form-paper" style={theme}>
+      <FormHeader recordWord="TRACK REQUEST" />
+      <form onSubmit={handleTrack}>
+        <div className="track-body">
+          <p className="track-intro">
+            Enter the control number you received after submitting, and the email address used on the request.
+          </p>
+          <div className="req-field">
+            Control Number
+            <input type="text" value={controlNo} onChange={(e) => setControlNo(e.target.value)}
+              placeholder="BR-20260929-00042" autoCapitalize="characters" />
+          </div>
+          <div className="req-field">
+            Email Address
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juandelacruz@gmail.com" />
+          </div>
+          {error && <div className="field-error" style={{ marginTop: 10 }}>{error}</div>}
+
+          {result && (
+            <div className="track-result">
+              <div className="track-status">{result.status_label}</div>
+              <div className="track-meta">
+                {result.control_no} · {result.record_type} record · {result.subject || "—"} · {result.num_copies || "—"} cop{result.num_copies === "One" ? "y" : "ies"}
+              </div>
+              {result.is_rejected ? (
+                <div className="track-rejected">
+                  This request was rejected. Please visit the Office of the City Civil Registrar for details.
+                </div>
+              ) : (
+                <div className="track-steps">
+                  {result.steps.map((s, i) => (
+                    <div key={s} className={`track-step${i <= result.current_step_index ? " done" : ""}${i === result.current_step_index ? " current" : ""}`}>
+                      <div className="track-dot">{i <= result.current_step_index ? "✓" : ""}</div>
+                      {result.step_labels[i]}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="track-meta">Submitted {fmt(result.submitted_at)} · Last updated {fmt(result.updated_at)}</div>
+            </div>
+          )}
         </div>
         <div className="form-actions">
-          <div className="form-status">
-            {status==="error" && "Submission failed. Check that Flask is running on port 5001."}
+          <div className="form-status" />
+          <button type="button" className="btn-cancel" onClick={onClose}>Close</button>
+          <button type="submit" className="btn-submit" disabled={loading}>{loading ? "Checking…" : "Track"}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+/* ─── MODAL WRAPPER ──────────────────────────────────────────── */
+function Modal({ type, onClose }) {
+  // Keep the latest onClose in a ref so the effect subscribes once,
+  // even though App passes a fresh inline arrow on every render.
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    const fn = (e) => { if (e.key === "Escape") closeRef.current(); };
+    document.addEventListener("keydown", fn);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", fn); document.body.style.overflow = ""; };
+  }, []);
+  return (
+    <div className="overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      {type === "track" ? <TrackForm onClose={onClose} /> : <RequestForm kind={type} onClose={onClose} />}
+    </div>
+  );
+}
+
+/* ─── ROOT APP ───────────────────────────────────────────────── */
+export default function App() {
+  const [active, setActive] = useState(null);
+  return (
+    <>
+      <style>{styles}</style>
+      <style>{extraStyles}</style>
+      <ToastContainer />
+      <div className="landing">
+        <div className="logo-row">
+          <img src="/lcr.jpg" alt="Office of the City Civil Registrar logo" className="logo-img logo-img--lcr"
+            onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <span className="logo-divider" />
+          <img src="/scc.png" alt="City of San Carlos seal" className="logo-img"
+            onError={(e) => { e.currentTarget.style.display = "none"; }} />
+        </div>
+        <div style={{ textAlign: "center", marginBottom: "36px" }}>
+          <div className="office-name">
+            Local Civil Registrar
+            <span className="office-loc">San Carlos City, Negros Occidental</span>
           </div>
-          <button className="btn-cancel" onClick={onBack} disabled={loading}>Back to Edit</button>
-          <button className="btn-submit" onClick={onConfirm} disabled={loading}>
-            {loading ? "Saving…" : "Confirm & Submit"}
-          </button>
         </div>
+        <div className="select-prompt">Select record type to request</div>
+        <div className="cards-row">
+          {RECORD_TYPES.map((t) => (
+            <button key={t.id} className="type-card" onClick={() => setActive(t.id)}
+              style={{ "--card-icon-color": CARD_ICON_COLORS[t.id].base, "--card-icon-hover": CARD_ICON_COLORS[t.id].hover }}>
+              <div className="card-icon"><CardIcon id={t.id} /></div>
+              <div className="card-text">
+                <div className="card-title">{t.label}</div>
+                <div className="card-arrow">Request a copy →</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        <button className="track-link" onClick={() => setActive("track")}>Already submitted? Track my request →</button>
+        {active && <Modal type={active} onClose={() => setActive(null)} />}
       </div>
-    );
-  }
-
-  function SuccessScreen({result,type,onClose}) {
-    return (
-      <div className="success-overlay">
-        <div className="success-icon-wrap">
-          <svg className="success-check" viewBox="0 0 24 24">
-            <path d="M20 6L9 17l-5-5"/>
-          </svg>
-        </div>
-        <div className="success-title">Request Submitted!</div>
-        <div className="success-sub">Your <strong>{type}</strong> record request has been saved to the database.</div>
-        <div className="success-sub">Please visit the Office of the City Civil Registrar to follow up.</div>
-        <div className="success-ref">
-          Ref:&nbsp;<strong>{result.control_no||`CTL-${result.record_id}`}</strong>
-          &nbsp;·&nbsp;ID:&nbsp;<strong>#{result.record_id}</strong>
-        </div>
-        <button className="btn-new" onClick={onClose}>Submit Another Request</button>
-      </div>
-    );
-  }
-
-  /* ─── TOAST SYSTEM ───────────────────────────────────────────── */
-  let _toastSetters=[];
-  function useToasts(){
-    const [toasts,setToasts]=useState([]);
-    useEffect(()=>{
-      _toastSetters.push(setToasts);
-      return ()=>{ _toastSetters=_toastSetters.filter(s=>s!==setToasts); };
-    },[]);
-    return toasts;
-  }
-  function pushToast(toast){
-    const id=Date.now();
-    _toastSetters.forEach(set=>set(prev=>[...prev,{...toast,id}]));
-  }
-  function removeToast(id){
-    _toastSetters.forEach(set=>set(prev=>prev.filter(t=>t.id!==id)));
-  }
-  function ToastContainer(){
-    const toasts=useToasts();
-    return <div className="toast-wrap">{toasts.map(t=><Toast key={t.id} {...t}/>)}</div>;
-  }
-  function Toast({id,title,message,duration=5000,success=true}){
-    const [hiding,setHiding]=useState(false);
-    const dismiss=()=>{ setHiding(true); setTimeout(()=>removeToast(id),300); };
-    useEffect(()=>{ const t=setTimeout(dismiss,duration); return()=>clearTimeout(t); },[]);
-    const c=success?"#185fa5":"#e24b4a";
-    return (
-      <div className={`toast${hiding?" hiding":""}`}>
-        <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          {success?(
-            <><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></>
-          ):(
-            <><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></>
-          )}
-        </svg>
-        <div className="toast-body">
-          <div className="toast-title">{title}</div>
-          <div className="toast-msg">{message}</div>
-        </div>
-        <button className="toast-close" onClick={dismiss}>×</button>
-        <div className="toast-progress">
-          <div className="toast-progress-bar" style={{animationDuration:`${duration}ms`,background:c}}/>
-        </div>
-      </div>
-    );
-  }
-
-  /* ─── BIRTH FORM ─────────────────────────────────────────────── */
-  function BirthForm({onClose}){
-    const theme = MODAL_THEMES.birth; // NEW: drives this modal's primary color (Yellow)
-    const [copies,setCopies]=useState("One");
-    const [copiesOther,setCopiesOther]=useState("");
-    const [purposes,setPurposes]=useState([]);
-    const [purposeOther,setPurposeOther]=useState("");
-    const [issuance,setIssuance]=useState([]);
-    const [status,setStatus]=useState(null);
-    const [result,setResult]=useState(null);
-    const [errors,setErrors]=useState({});
-    const [child,setChild]=useState({firstname:"",middlename:"",surname:""});
-    const [dob,setDob]=useState({month:"",date:"",year:""});
-    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:"",requester_email:""});
-    const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
-    const [sigFile,setSigFile]=useState(null);
-    const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
-    const [reviewing,setReviewing]=useState(false); // NEW: review/confirmation step
-    const updateR=(k,v)=>setRequester(p=>({...p,[k]:v}));
-    const updateO=(k,v)=>setOccr(p=>({...p,[k]:v}));
-    const toggleIssuance=f=>setIssuance(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
-
-    // UPDATED: "Submit Request" now only validates and opens the review
-    // screen. Nothing is sent to the server here.
-    const handleSubmit=()=>{
-      const errs=validateRequester(requester);
-      if(!child.firstname.trim()) errs.child_firstname="Required";
-      if(!dob.year.trim())        errs.dob_year="Required";
-      setErrors(errs);
-      if(Object.keys(errs).length>0){ pushToast({title:"Incomplete form",message:"Please fill in all required fields.",success:false}); return; }
-      setReviewing(true);
-    };
-
-    // NEW: the actual API call — only reached from the review screen's
-    // "Confirm & Submit" button.
-    const handleConfirmSubmit=async()=>{
-      setStatus("loading");
-      try {
-        const res=await api.submitBirth({birth_request:{
-          child_firstname:child.firstname,child_middlename:child.middlename,child_surname:child.surname,
-          birth_month:dob.month,birth_date:dob.date,birth_year:dob.year,
-          place_of_birth:"San Carlos City, Negros Occidental",
-          num_copies:copies==="Others"?copiesOther:copies,
-          purposes:purposes.join(", ")+(purposeOther?` (${purposeOther})`:""),
-          form_type:issuance.join(", "),status:"PENDING",...requester,...occr,
-          signature_printed_name:printedName,
-        }}, sigFile);
-        setResult(res); setStatus("success");
-        pushToast({title:"Birth request submitted!",message:`Reference: ${res.control_no||"CTL-"+res.record_id}`,success:true});
-      } catch(e){ setStatus("error"); pushToast({title:"Submission failed",message:e.message,success:false}); }
-    };
-
-    if(status==="success") return <div className="form-paper" style={theme}><FormHeader recordWord="BIRTH"/><SuccessScreen result={result} type="birth" onClose={onClose}/></div>;
-
-    // NEW: review/confirmation screen, shown before the real submit
-    if(reviewing) return (
-      <ReviewScreen
-        recordWord="BIRTH"
-        theme={theme}
-        sigFile={sigFile}
-        printedName={printedName}
-        status={status}
-        onBack={()=>setReviewing(false)}
-        onConfirm={handleConfirmSubmit}
-        sections={[
-          {title:"Request Details", rows:[
-            {label:"Number of Copies", value: copies==="Others"?copiesOther:copies},
-            {label:"Purpose", value: purposes.join(", ")+(purposeOther?` (${purposeOther})`:"")},
-            {label:"Issuance / Form Type", value: issuance.join(", ")},
-          ]},
-          {title:"Name of Child", rows:[
-            {label:"Firstname", value: child.firstname},
-            {label:"Middlename", value: child.middlename},
-            {label:"Surname", value: child.surname},
-          ]},
-          {title:"Date & Place of Birth", rows:[
-            {label:"Date of Birth", value: [dob.month,dob.date,dob.year].filter(Boolean).join(" ")},
-            {label:"Place of Birth", value:"San Carlos City, Negros Occidental"},
-          ]},
-          {title:"Requesting Party", rows:[
-            {label:"Full Name", value: requester.requester_name},
-            {label:"Relationship", value: requester.requester_relationship},
-            {label:"Address", value: requester.requester_address},
-            {label:"Telephone No.", value: requester.requester_telephone},
-            {label:"Email Address", value: requester.requester_email},
-          ]},
-        ]}
-      />
-    );
-
-    return (
-      <div className="form-paper" style={theme}>
-        <FormHeader recordWord="BIRTH"/>
-        <FormSubheader/>
-        <div className="form-body">
-          <div className="form-left">
-            <CopiesRow copies={copies} setCopies={setCopies} name="copies-birth" othersValue={copiesOther} setOthersValue={setCopiesOther}/>
-            <div className="section-heading">Name of Child</div>
-            <div className="name-row">
-              <div className="name-col">
-                <input type="text" className={errors.child_firstname?"invalid":""} value={child.firstname}
-                  onChange={e=>setChild(p=>({...p,firstname:e.target.value}))} placeholder="Juan"/>
-                <span className="sub-label">(Firstname)</span>
-                {errors.child_firstname && <div className="field-error">{errors.child_firstname}</div>}
-              </div>
-              <div className="name-col">
-                <input type="text" value={child.middlename} onChange={e=>setChild(p=>({...p,middlename:e.target.value}))}/>
-                <span className="sub-label">(Middlename)</span>
-              </div>
-              <div className="name-col">
-                <input type="text" value={child.surname} onChange={e=>setChild(p=>({...p,surname:e.target.value}))}/>
-                <span className="sub-label">(Surname)</span>
-              </div>
-            </div>
-            <div className="section-heading">Date of Birth</div>
-            <div className="date-row">
-              <div className="date-col">
-                <input type="text" value={dob.month} onChange={e=>setDob(p=>({...p,month:e.target.value}))} placeholder="January"/>
-                <span className="sub-label">(Month)</span>
-              </div>
-              <div className="date-col">
-                <input type="text" value={dob.date} onChange={e=>setDob(p=>({...p,date:e.target.value}))} placeholder="1"/>
-                <span className="sub-label">(Date)</span>
-              </div>
-              <div className="date-col">
-                <input type="text" className={errors.dob_year?"invalid":""} value={dob.year}
-                  onChange={e=>setDob(p=>({...p,year:e.target.value}))} placeholder="2000"/>
-                <span className="sub-label">(Year)</span>
-                {errors.dob_year && <div className="field-error">{errors.dob_year}</div>}
-              </div>
-            </div>
-            <div className="section-heading">Place of Birth</div>
-            <div className="place-box">San Carlos City, Negros Occidental</div>
-            <div className="place-sub">Hospital / Barangay / City / Municipality</div>
-            <PurposeSection selected={purposes} onChange={setPurposes}/>
-            {purposes.includes("OTHERS (SPECIFY)") && (
-              <div className="specify-row"><span>Specify:</span><input type="text" value={purposeOther} onChange={e=>setPurposeOther(e.target.value)}/></div>
-            )}
-            <AuthClause/>
-            <div className="req-section">
-              <RequesterFields
-                data={requester} onChange={updateR} errors={errors}
-                sigFile={sigFile} onSigChange={setSigFile}
-                printedName={printedName} onPrintedNameChange={setPrintedName}
-              />
-              <div className="req-divider"/>
-              <IssuancePanel forms={FORM_TYPES.birth} selected={issuance} onToggle={toggleIssuance}/>
-            </div>
-          </div>
-          <OccrPanel data={occr} onChange={updateO}/>
-        </div>
-        <FormActions status={status} onClose={onClose} onSubmit={handleSubmit}/>
-      </div>
-    );
-  }
-
-  /* ─── DEATH FORM ─────────────────────────────────────────────── */
-  function DeathForm({onClose}){
-    const theme = MODAL_THEMES.death; // NEW: drives this modal's primary color (Pink)
-    const [copies,setCopies]=useState("One");
-    const [copiesOther,setCopiesOther]=useState("");
-    const [purposes,setPurposes]=useState([]);
-    const [purposeOther,setPurposeOther]=useState("");
-    const [issuance,setIssuance]=useState([]);
-    const [status,setStatus]=useState(null);
-    const [result,setResult]=useState(null);
-    const [errors,setErrors]=useState({});
-    const [deceased,setDeceased]=useState({firstname:"",middlename:"",surname:""});
-    const [dod,setDod]=useState({month:"",date:"",year:""});
-    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:"",requester_email:""});
-    const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
-    const [sigFile,setSigFile]=useState(null);
-    const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
-    const [reviewing,setReviewing]=useState(false); // NEW: review/confirmation step
-    const updateR=(k,v)=>setRequester(p=>({...p,[k]:v}));
-    const updateO=(k,v)=>setOccr(p=>({...p,[k]:v}));
-    const toggleIssuance=f=>setIssuance(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
-
-    // UPDATED: "Submit Request" now only validates and opens the review
-    // screen. Nothing is sent to the server here.
-    const handleSubmit=()=>{
-      const errs=validateRequester(requester);
-      if(!deceased.firstname.trim()) errs.deceased_firstname="Required";
-      if(!dod.year.trim())           errs.dod_year="Required";
-      setErrors(errs);
-      if(Object.keys(errs).length>0){ pushToast({title:"Incomplete form",message:"Please fill in all required fields.",success:false}); return; }
-      setReviewing(true);
-    };
-
-    // NEW: the actual API call — only reached from the review screen's
-    // "Confirm & Submit" button.
-    const handleConfirmSubmit=async()=>{
-      setStatus("loading");
-      try {
-        const res=await api.submitDeath({death_request:{
-          deceased_firstname:deceased.firstname,deceased_middlename:deceased.middlename,deceased_surname:deceased.surname,
-          death_month:dod.month,death_date:dod.date,death_year:dod.year,
-          place_of_death:"San Carlos City, Negros Occidental",
-          num_copies:copies==="Others"?copiesOther:copies,
-          purposes:purposes.join(", ")+(purposeOther?` (${purposeOther})`:""),
-          form_type:issuance.join(", "),status:"PENDING",...requester,...occr,
-          signature_printed_name:printedName,
-        }}, sigFile);
-        setResult(res); setStatus("success");
-        pushToast({title:"Death request submitted!",message:`Reference: ${res.control_no||"CTL-"+res.record_id}`,success:true});
-      } catch(e){ setStatus("error"); pushToast({title:"Submission failed",message:e.message,success:false}); }
-    };
-
-    if(status==="success") return <div className="form-paper" style={theme}><FormHeader recordWord="DEATH"/><SuccessScreen result={result} type="death" onClose={onClose}/></div>;
-
-    // NEW: review/confirmation screen, shown before the real submit
-    if(reviewing) return (
-      <ReviewScreen
-        recordWord="DEATH"
-        theme={theme}
-        sigFile={sigFile}
-        printedName={printedName}
-        status={status}
-        onBack={()=>setReviewing(false)}
-        onConfirm={handleConfirmSubmit}
-        sections={[
-          {title:"Request Details", rows:[
-            {label:"Number of Copies", value: copies==="Others"?copiesOther:copies},
-            {label:"Purpose", value: purposes.join(", ")+(purposeOther?` (${purposeOther})`:"")},
-            {label:"Issuance / Form Type", value: issuance.join(", ")},
-          ]},
-          {title:"Name of Deceased", rows:[
-            {label:"Firstname", value: deceased.firstname},
-            {label:"Middlename", value: deceased.middlename},
-            {label:"Surname", value: deceased.surname},
-          ]},
-          {title:"Date & Place of Death", rows:[
-            {label:"Date of Death", value: [dod.month,dod.date,dod.year].filter(Boolean).join(" ")},
-            {label:"Place of Death", value:"San Carlos City, Negros Occidental"},
-          ]},
-          {title:"Requesting Party", rows:[
-            {label:"Full Name", value: requester.requester_name},
-            {label:"Relationship", value: requester.requester_relationship},
-            {label:"Address", value: requester.requester_address},
-            {label:"Telephone No.", value: requester.requester_telephone},
-            {label:"Email Address", value: requester.requester_email},
-          ]},
-        ]}
-      />
-    );
-
-    return (
-      <div className="form-paper" style={theme}>
-        <FormHeader recordWord="DEATH"/>
-        <FormSubheader/>
-        <div className="form-body">
-          <div className="form-left">
-            <CopiesRow copies={copies} setCopies={setCopies} name="copies-death" othersValue={copiesOther} setOthersValue={setCopiesOther}/>
-            <div className="section-heading">Name of Deceased</div>
-            <div className="name-row">
-              <div className="name-col">
-                <input type="text" className={errors.deceased_firstname?"invalid":""} value={deceased.firstname}
-                  onChange={e=>setDeceased(p=>({...p,firstname:e.target.value}))} placeholder="Juan"/>
-                <span className="sub-label">(Firstname)</span>
-                {errors.deceased_firstname && <div className="field-error">{errors.deceased_firstname}</div>}
-              </div>
-              <div className="name-col">
-                <input type="text" value={deceased.middlename} onChange={e=>setDeceased(p=>({...p,middlename:e.target.value}))}/>
-                <span className="sub-label">(Middlename)</span>
-              </div>
-              <div className="name-col">
-                <input type="text" value={deceased.surname} onChange={e=>setDeceased(p=>({...p,surname:e.target.value}))}/>
-                <span className="sub-label">(Surname)</span>
-              </div>
-            </div>
-            <div className="section-heading">Date of Death</div>
-            <div className="date-row">
-              <div className="date-col">
-                <input type="text" value={dod.month} onChange={e=>setDod(p=>({...p,month:e.target.value}))} placeholder="January"/>
-                <span className="sub-label">(Month)</span>
-              </div>
-              <div className="date-col">
-                <input type="text" value={dod.date} onChange={e=>setDod(p=>({...p,date:e.target.value}))} placeholder="1"/>
-                <span className="sub-label">(Date)</span>
-              </div>
-              <div className="date-col">
-                <input type="text" className={errors.dod_year?"invalid":""} value={dod.year}
-                  onChange={e=>setDod(p=>({...p,year:e.target.value}))} placeholder="2024"/>
-                <span className="sub-label">(Year)</span>
-                {errors.dod_year && <div className="field-error">{errors.dod_year}</div>}
-              </div>
-            </div>
-            <div className="section-heading">Place of Death</div>
-            <div className="place-box">San Carlos City, Negros Occidental</div>
-            <div className="place-sub">Hospital / Barangay / City / Municipality</div>
-            <PurposeSection selected={purposes} onChange={setPurposes}/>
-            {purposes.includes("OTHERS (SPECIFY)") && (
-              <div className="specify-row"><span>Specify:</span><input type="text" value={purposeOther} onChange={e=>setPurposeOther(e.target.value)}/></div>
-            )}
-            <AuthClause/>
-            <div className="req-section">
-              <RequesterFields
-                data={requester} onChange={updateR} errors={errors}
-                sigFile={sigFile} onSigChange={setSigFile}
-                printedName={printedName} onPrintedNameChange={setPrintedName}
-              />
-              <div className="req-divider"/>
-              <IssuancePanel forms={FORM_TYPES.death} selected={issuance} onToggle={toggleIssuance}/>
-            </div>
-          </div>
-          <OccrPanel data={occr} onChange={updateO}/>
-        </div>
-        <FormActions status={status} onClose={onClose} onSubmit={handleSubmit}/>
-      </div>
-    );
-  }
-
-  /* ─── MARRIAGE FORM ──────────────────────────────────────────── */
-  function MarriageForm({onClose}){
-    const theme = MODAL_THEMES.marriage; // NEW: drives this modal's primary color (Blue)
-    const [copies,setCopies]=useState("One");
-    const [copiesOther,setCopiesOther]=useState("");
-    const [purposes,setPurposes]=useState([]);
-    const [purposeOther,setPurposeOther]=useState("");
-    const [issuance,setIssuance]=useState([]);
-    const [status,setStatus]=useState(null);
-    const [result,setResult]=useState(null);
-    const [errors,setErrors]=useState({});
-    const [husband,setHusband]=useState("");
-    const [wife,setWife]=useState("");
-    const [marriageDate,setMarriageDate]=useState("");
-    const [requester,setRequester]=useState({requester_name:"",requester_relationship:"",requester_address:"",requester_telephone:"",requester_email:""});
-    const [occr,setOccr]=useState({registry_no:"",date_of_registration:"",book:"",page:"",search_by:""});
-    const [sigFile,setSigFile]=useState(null);
-    const [printedName,setPrintedName]=useState(""); // NEW: "Signature Over Printed Name"
-    const [reviewing,setReviewing]=useState(false); // NEW: review/confirmation step
-    const updateR=(k,v)=>setRequester(p=>({...p,[k]:v}));
-    const updateO=(k,v)=>setOccr(p=>({...p,[k]:v}));
-    const toggleIssuance=f=>setIssuance(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
-
-    // UPDATED: "Submit Request" now only validates and opens the review
-    // screen. Nothing is sent to the server here.
-    const handleSubmit=()=>{
-      const errs=validateRequester(requester);
-      if(!husband.trim()) errs.husband="Required";
-      if(!wife.trim())    errs.wife="Required";
-      setErrors(errs);
-      if(Object.keys(errs).length>0){ pushToast({title:"Incomplete form",message:"Please fill in all required fields.",success:false}); return; }
-      setReviewing(true);
-    };
-
-    // NEW: the actual API call — only reached from the review screen's
-    // "Confirm & Submit" button.
-    const handleConfirmSubmit=async()=>{
-      setStatus("loading");
-      try {
-        const res=await api.submitMarriage({marriage_request:{
-          husband_fullname:husband,wife_maiden_name:wife,marriage_date:marriageDate,
-          place_of_marriage:"San Carlos City, Negros Occidental",
-          num_copies:copies==="Others"?copiesOther:copies,
-          purposes:purposes.join(", ")+(purposeOther?` (${purposeOther})`:""),
-          form_type:issuance.join(", "),status:"PENDING",...requester,...occr,
-          signature_printed_name:printedName,
-        }}, sigFile);
-        setResult(res); setStatus("success");
-        pushToast({title:"Marriage request submitted!",message:`Reference: ${res.control_no||"CTL-"+res.record_id}`,success:true});
-      } catch(e){ setStatus("error"); pushToast({title:"Submission failed",message:e.message,success:false}); }
-    };
-
-    if(status==="success") return <div className="form-paper" style={theme}><FormHeader recordWord="MARRIAGE"/><SuccessScreen result={result} type="marriage" onClose={onClose}/></div>;
-
-    // NEW: review/confirmation screen, shown before the real submit
-    if(reviewing) return (
-      <ReviewScreen
-        recordWord="MARRIAGE"
-        theme={theme}
-        sigFile={sigFile}
-        printedName={printedName}
-        status={status}
-        onBack={()=>setReviewing(false)}
-        onConfirm={handleConfirmSubmit}
-        sections={[
-          {title:"Request Details", rows:[
-            {label:"Number of Copies", value: copies==="Others"?copiesOther:copies},
-            {label:"Purpose", value: purposes.join(", ")+(purposeOther?` (${purposeOther})`:"")},
-            {label:"Issuance / Form Type", value: issuance.join(", ")},
-          ]},
-          {title:"Marriage Details", rows:[
-            {label:"Husband", value: husband},
-            {label:"Wife (Maiden Name)", value: wife},
-            {label:"Date of Marriage", value: marriageDate},
-            {label:"Place of Marriage", value:"San Carlos City, Negros Occidental"},
-          ]},
-          {title:"Requesting Party", rows:[
-            {label:"Full Name", value: requester.requester_name},
-            {label:"Relationship", value: requester.requester_relationship},
-            {label:"Address", value: requester.requester_address},
-            {label:"Telephone No.", value: requester.requester_telephone},
-            {label:"Email Address", value: requester.requester_email},
-          ]},
-        ]}
-      />
-    );
-
-    return (
-      <div className="form-paper" style={theme}>
-        <FormHeader recordWord="MARRIAGE"/>
-        <FormSubheader/>
-        <div className="form-body">
-          <div className="form-left">
-            <CopiesRow copies={copies} setCopies={setCopies} name="copies-marriage" othersValue={copiesOther} setOthersValue={setCopiesOther}/>
-            <div className="section-heading">Name of Husband</div>
-            <div className="name-row">
-              <div className="name-col">
-                <input type="text" className={errors.husband?"invalid":""} value={husband}
-                  onChange={e=>setHusband(e.target.value)} placeholder="Complete name of husband"/>
-                <span className="sub-label">(Kumpletong Pangalan sa Bana)</span>
-                {errors.husband && <div className="field-error">{errors.husband}</div>}
-              </div>
-            </div>
-            <div className="section-heading">Maiden Name of Wife</div>
-            <div className="name-row">
-              <div className="name-col">
-                <input type="text" className={errors.wife?"invalid":""} value={wife}
-                  onChange={e=>setWife(e.target.value)} placeholder="Complete maiden name of wife"/>
-                <span className="sub-label">(Kumpletong Pangalan sa Asawa. Apelido pagka DALAGA)</span>
-                {errors.wife && <div className="field-error">{errors.wife}</div>}
-              </div>
-            </div>
-            <div className="section-heading">Date of Marriage</div>
-            <input type="text" className="marriage-date-input" value={marriageDate}
-              onChange={e=>setMarriageDate(e.target.value)} placeholder="e.g. January 1, 2020"/>
-            <div className="sub-label" style={{marginBottom:10}}>(Kumpletong Bulan, petsa ug tuig sa pag kasai)</div>
-            <div className="section-heading">Place of Marriage</div>
-            <div className="place-box">San Carlos City, Negros Occidental</div>
-            <div className="place-sub">Hospital / Barangay / City / Municipality</div>
-            <PurposeSection selected={purposes} onChange={setPurposes}/>
-            {purposes.includes("OTHERS (SPECIFY)") && (
-              <div className="specify-row"><span>Specify:</span><input type="text" value={purposeOther} onChange={e=>setPurposeOther(e.target.value)}/></div>
-            )}
-            <AuthClause/>
-            <div className="req-section">
-              <RequesterFields
-                data={requester} onChange={updateR} errors={errors}
-                sigFile={sigFile} onSigChange={setSigFile}
-                printedName={printedName} onPrintedNameChange={setPrintedName}
-              />
-              <div className="req-divider"/>
-              <IssuancePanel forms={FORM_TYPES.marriage} selected={issuance} onToggle={toggleIssuance}/>
-            </div>
-          </div>
-          <OccrPanel data={occr} onChange={updateO}/>
-        </div>
-        <FormActions status={status} onClose={onClose} onSubmit={handleSubmit}/>
-      </div>
-    );
-  }
-
-  /* ─── MODAL WRAPPER ──────────────────────────────────────────── */
-  function Modal({type,onClose}){
-    useEffect(()=>{
-      const fn=e=>{ if(e.key==="Escape") onClose(); };
-      document.addEventListener("keydown",fn);
-      document.body.style.overflow="hidden";
-      return()=>{ document.removeEventListener("keydown",fn); document.body.style.overflow=""; };
-    },[onClose]);
-    return (
-      <div className="overlay" onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}>
-        {type==="birth"    && <BirthForm    onClose={onClose}/>}
-        {type==="marriage" && <MarriageForm onClose={onClose}/>}
-        {type==="death"    && <DeathForm    onClose={onClose}/>}
-      </div>
-    );
-  }
-
-  /* ─── ROOT APP ───────────────────────────────────────────────── */
-  export default function App(){
-    const [active,setActive]=useState(null);
-    return (
-      <>
-        <style>{styles}</style>
-        <ToastContainer/>
-        <div className="landing">
-          <div className="logo-row">
-            <img src="/lcr.jpg" alt="Office of the City Civil Registrar logo" className="logo-img logo-img--lcr"
-              onError={e=>{e.currentTarget.style.display="none";}}/>
-            <span className="logo-divider"/>
-            <img src="/scc.png" alt="City of San Carlos seal" className="logo-img"
-              onError={e=>{e.currentTarget.style.display="none";}}/>
-          </div>
-          <div style={{textAlign:"center",marginBottom:"36px"}}>
-            <div className="office-name">
-              Local Civil Registrar
-              <span className="office-loc">San Carlos City, Negros Occidental</span>
-            </div>
-          </div>
-          <div className="select-prompt">Select record type to request</div>
-          <div className="cards-row">
-            {RECORD_TYPES.map(t=>(
-              <button key={t.id} className="type-card" onClick={()=>setActive(t.id)}
-                style={{
-                  "--card-icon-color": CARD_ICON_COLORS[t.id].base,
-                  "--card-icon-hover": CARD_ICON_COLORS[t.id].hover,
-                }}>
-                <div className="card-icon"><CardIcon id={t.id}/></div>
-                <div className="card-text">
-                  <div className="card-title">{t.label}</div>
-                  <div className="card-arrow">Request a copy →</div>
-                </div>
-              </button>
-            ))}
-          </div>
-          {active && <Modal type={active} onClose={()=>setActive(null)}/>}
-        </div>
-      </>
-    );
-  }
+    </>
+  );
+}
