@@ -219,6 +219,14 @@ export function ConsentCheckbox({ checked, onChange, error }) {
 
 /* ─── CSS (rendered after the app's own styles so it wins) ───── */
 export const LEGAL_CSS = `
+/* Footer always pinned to the bottom of the screen, on every device */
+html,body{height:100%;margin:0;}
+body{display:block;min-height:100vh;min-height:100dvh;}
+#root{display:flex;flex-direction:column;width:100%;min-height:100vh;min-height:100dvh;}
+.landing{flex:1 0 auto;min-height:0;}
+.legal-wrap{flex:1 0 auto;}
+.site-footer{margin-top:auto;flex-shrink:0;width:100%;}
+
 /* Legal pages */
 .legal-wrap{min-height:100vh;background:#f6f8fc;display:flex;flex-direction:column;}
 .legal-top{max-width:780px;width:100%;margin:0 auto;padding:20px 16px 0;}
@@ -242,6 +250,22 @@ mark.ph{background:#fff1b8;color:#5c4400;padding:0 3px;border-radius:3px;}
   padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));font-size:0.78rem;color:#3f5b7d;}
 .site-footer nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;margin-bottom:8px;}
 .site-footer a{color:#185fa5;text-decoration:underline;padding:6px 2px;}
+/* Home page: content centered on screen, slim footer pinned to the bottom */
+body,#root{background:#f6f8fc;}
+#root{min-height:100vh;min-height:100dvh;}
+.landing{
+  min-height:100vh;min-height:100dvh;
+  padding:24px 20px 56px;
+  justify-content:center;
+}
+.landing + .site-footer{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));
+  font-size:0.72rem;line-height:1.4;
+}
+.landing + .site-footer nav{gap:0 16px;margin-bottom:2px;}
+.landing + .site-footer a{padding:2px 0;}
+.landing + .site-footer p{margin:0;}
 @media(max-width:640px){.legal-card{padding:20px 18px;width:calc(100% - 24px);}}
 
 /* Consent + review */
