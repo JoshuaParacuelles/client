@@ -92,10 +92,11 @@ body,#root{
 }
 .type-card:focus-visible{outline:2px solid #185fa5;outline-offset:2px;}
 .type-card:active{background:#f6f8fc;border-color:#185fa5;}
-/* ── CARD ICON: white background, colored border + icon (was solid colored background) ── */
+/* ── CARD ICON: background + border + icon color come from per-card CSS variables ── */
 .card-icon{
   width:38px;height:38px;border-radius:10px;
-  background:#fff;border:1.5px solid var(--card-icon-color, #185fa5);
+  background:var(--card-icon-bg, #fff);
+  border:1.5px solid var(--card-icon-color, #185fa5);
   display:flex;align-items:center;
   justify-content:center;color:var(--card-icon-color, #185fa5);flex-shrink:0;
   transition:background 0.2s,color 0.2s,border-color 0.2s;
@@ -106,7 +107,7 @@ body,#root{
 .card-arrow{font-size:0.7rem;font-weight:500;color:#6b87a8;transition:color 0.2s,transform 0.2s;display:inline-block;line-height:1.3;}
 @media(hover:hover){
   .type-card:hover{border-color:#185fa5;}
-  .type-card:hover .card-icon{background:#fff;border-color:var(--card-icon-hover, #0c447c);color:var(--card-icon-hover, #0c447c);}
+  .type-card:hover .card-icon{background:var(--card-icon-bg-hover, #fff);border-color:var(--card-icon-hover, #0c447c);color:var(--card-icon-hover, #0c447c);}
   .type-card:hover .card-arrow{color:#185fa5;transform:translateX(3px);}
 }
 
@@ -685,12 +686,15 @@ const MODAL_THEMES = {
   marriage: FORM_THEME,
 };
 
-// Same palette as the modal, reused here so the landing page card
-// icons visually match the forms they open.
+/* ─── HOME-SCREEN ICON COLORS ───────────────────────────────────
+   Only the three icons on the landing page use these. The forms
+   keep using FORM_THEME above, so their colors are not affected.
+     bg / bgHover     = icon tile fill
+     base / hover     = icon outline + glyph color */
 const CARD_ICON_COLORS = {
-  birth:    { base: MODAL_THEMES.birth["--modal-primary"],    hover: MODAL_THEMES.birth["--modal-primary-dark"] },
-  death:    { base: MODAL_THEMES.death["--modal-primary"],    hover: MODAL_THEMES.death["--modal-primary-dark"] },
-  marriage: { base: MODAL_THEMES.marriage["--modal-primary"], hover: MODAL_THEMES.marriage["--modal-primary-dark"] },
+  birth:    { bg: "#ffffff", bgHover: "#ffffff", base: "#185fa5", hover: "#0c447c" }, // white
+  marriage: { bg: "#fce7f3", bgHover: "#fbcfe8", base: "#be185d", hover: "#9d174d" }, // pink
+  death:    { bg: "#fef3c7", bgHover: "#fde68a", base: "#b45309", hover: "#92400e" }, // yellow
 };
 
 /* ─── HOME SCREEN ICONS ──────────────────────────────────────── */
@@ -1797,7 +1801,12 @@ export default function App() {
         <div className="cards-row">
           {RECORD_TYPES.map((t) => (
             <button key={t.id} className="type-card" onClick={() => setActive(t.id)}
-              style={{ "--card-icon-color": CARD_ICON_COLORS[t.id].base, "--card-icon-hover": CARD_ICON_COLORS[t.id].hover }}>
+              style={{
+                "--card-icon-bg": CARD_ICON_COLORS[t.id].bg,
+                "--card-icon-bg-hover": CARD_ICON_COLORS[t.id].bgHover,
+                "--card-icon-color": CARD_ICON_COLORS[t.id].base,
+                "--card-icon-hover": CARD_ICON_COLORS[t.id].hover,
+              }}>
               <div className="card-icon"><CardIcon id={t.id} /></div>
               <div className="card-text">
                 <div className="card-title">{t.label}</div>
