@@ -661,6 +661,7 @@ const RECORD_TYPES = [
   { id:"marriage", label:"Marriage Request" },
   { id:"death",    label:"Death Request"    },
 ];
+const CODE_LENGTH = 6; // must match CODE_LENGTH in backend/email_verification.py
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 if (!RAW_API_URL) {
   console.error(
@@ -726,7 +727,7 @@ function CardIcon({id}) {
   return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[id]}</svg>;
 }
 
-/* ─── EXTRA CSS (theme fixes + tracking screen + control-number UI) ───
+/* ─── EXTRA CSS (theme fixes + tracking screen + control-number UI + email verification) ───
    Rendered as a second <style> after `styles`, so it wins over the
    hardcoded blue rules without touching them. */
 const extraStyles = `
@@ -820,6 +821,26 @@ const extraStyles = `
   text-decoration:underline;padding:7px 4px;opacity:0.7;
 }
 
+/* Email verification step */
+.verify-form{display:flex;flex-direction:column;flex:1;}
+.verify-form .review-body{flex:1;}
+.verify-email{word-break:break-all;font-weight:600;}
+.form-paper .req-field input.otp-input[type="text"]{
+  font-size:1.6rem;font-weight:600;letter-spacing:0.45em;padding:8px 2px 8px 0.45em;
+  text-align:center;border-bottom-width:2px;margin-top:6px;
+}
+.verify-note{
+  margin-top:12px;font-size:0.76rem;line-height:1.55;
+  background:var(--modal-tint-bg);border:1px solid var(--modal-tint-border);
+  border-radius:8px;padding:9px 12px;
+}
+.form-paper .verify-resend{
+  margin-top:10px;background:none;border:none;font-family:inherit;
+  font-size:0.76rem;font-weight:600;color:var(--modal-primary);
+  cursor:pointer;text-decoration:underline;padding:6px 0;
+}
+.form-paper .verify-resend:disabled{opacity:0.55;cursor:not-allowed;text-decoration:none;}
+
 @media(max-width:640px){
   .track-body{padding:14px 18px;flex:1;}
   .form-paper input[type="tel"]{font-size:16px;}
@@ -841,7 +862,13 @@ async function send(path, init) {
     throw new Error(`The server sent an unexpected response (HTTP ${res.status}). Please try again later.`);
   }
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.error || `Request failed (HTTP ${res.status}).`);
+  if (!res.ok) {
+    // `code` and `retryAfter` let callers react to specific server errors.
+    const err = new Error(data?.error || `Request failed (HTTP ${res.status}).`);
+    err.code = data?.code;
+    err.retryAfter = data?.retry_after;
+    throw err;
+  }
   return data;
 }
 
@@ -863,6 +890,8 @@ const api = {
       ? send(`/${kind}/submit`, { method: "POST", body: buildFormData(payload, file) })
       : postJson(`/${kind}/submit`, { [`${kind}_request`]: payload }),
   trackRequest: (control_no, email) => postJson("/track", { control_no, email }),
+  sendVerificationCode: (email) => postJson("/verify/send", { email }),
+  confirmVerificationCode: (email, code) => postJson("/verify/confirm", { email, code }),
 };
 
 /* ─── RECENT REQUEST (localStorage) + CLIPBOARD ──────────────── */
@@ -1223,6 +1252,106 @@ function FormActions({ status, errorMessage, onCancel, onSubmit, cancelLabel = "
   );
 }
 
+/* ─── EMAIL VERIFICATION STEP ────────────────────────────────── */
+// Sends a one-time code to the requester's email and exchanges it for a
+// verification token. The request cannot be submitted without that token.
+function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
+  const [code, setCode] = useState("");
+  const [info, setInfo] = useState("");
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const autoSentRef = useRef(false);
+
+  const sendCode = async () => {
+    setSending(true);
+    setError("");
+    setInfo("");
+    try {
+      const res = await api.sendVerificationCode(email);
+      setCooldown(res.resend_in ?? 60);
+      setCode("");
+      const minutes = Math.round((res.expires_in ?? 600) / 60);
+      setInfo(`We sent a ${CODE_LENGTH}-digit code to ${email}. It expires in ${minutes} minutes. Check your spam folder if you don't see it.`);
+    } catch (e) {
+      if (e.retryAfter) {
+        // A code was sent moments ago and is still valid.
+        setCooldown(e.retryAfter);
+        setInfo("A code was sent recently. Enter it below, or wait to request a new one.");
+      } else {
+        setError(e.message);
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Send once on arrival. The ref stops React StrictMode (dev) from sending twice.
+  useEffect(() => {
+    if (autoSentRef.current) return;
+    autoSentRef.current = true;
+    sendCode();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    if (code.length !== CODE_LENGTH) {
+      setError(`Enter the ${CODE_LENGTH}-digit code.`);
+      return;
+    }
+    setVerifying(true);
+    setError("");
+    try {
+      const res = await api.confirmVerificationCode(email, code);
+      onVerified(res.verification_token);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  return (
+    <div className="form-paper" style={theme}>
+      <FormHeader recordWord={recordWord} />
+      <form className="verify-form" onSubmit={handleVerify} noValidate>
+        <div className="review-body">
+          <div className="section-heading">Verify your email</div>
+          <p className="review-intro">
+            To protect your request, we need to confirm that you own this email address.
+            Enter the {CODE_LENGTH}-digit code we sent to <span className="verify-email">{email}</span>.
+          </p>
+          <label className="req-field">
+            Verification Code
+            <input type="text" className="otp-input" inputMode="numeric" autoComplete="one-time-code"
+              maxLength={CODE_LENGTH} placeholder={"0".repeat(CODE_LENGTH)} aria-label="Verification code"
+              value={code} autoFocus
+              onChange={(e) => { setError(""); setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH)); }} />
+          </label>
+          {info && <p className="verify-note" role="status">{info}</p>}
+          <button type="button" className="verify-resend" onClick={sendCode} disabled={sending || verifying || cooldown > 0}>
+            {sending ? "Sending…" : cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+          </button>
+        </div>
+        <div className="form-actions">
+          <div className="form-status" role="status" aria-live="polite">{error}</div>
+          <button type="button" className="btn-cancel" onClick={onBack} disabled={verifying}>Back to Edit</button>
+          <button type="submit" className="btn-submit" disabled={verifying || code.length !== CODE_LENGTH}>
+            {verifying ? "Verifying…" : "Verify & Continue"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 /* ─── REVIEW / SUCCESS ───────────────────────────────────────── */
 function ReviewRow({ label, value }) {
   const hasValue = value !== null && value !== undefined && String(value).trim() !== "";
@@ -1362,7 +1491,7 @@ function ToastContainer() {
 function Toast({ id, title, message, duration = 5000, success = true }) {
   const [hiding, setHiding] = useState(false);
   const dismiss = () => { setHiding(true); setTimeout(() => removeToast(id), 300); };
-  useEffect(() => { const t = setTimeout(dismiss, duration); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(dismiss, duration); return () => clearTimeout(t); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const c = success ? "#185fa5" : "#e24b4a";
   return (
     <div className={`toast${hiding ? " hiding" : ""}`}>
@@ -1464,6 +1593,7 @@ function SubjectBlock({ block, values, setValue, errors }) {
 }
 
 /* ─── GENERIC REQUEST FORM ───────────────────────────────────── */
+// Steps: "form" -> "verify" (email code) -> "review" -> submitted.
 function RequestForm({ kind, onClose }) {
   const cfg = FORM_CONFIGS[kind];
   const theme = MODAL_THEMES[kind];
@@ -1485,9 +1615,15 @@ function RequestForm({ kind, onClose }) {
   const [occr, setOccr] = useState({ registry_no: "", date_of_registration: "", book: "", page: "", search_by: "" });
   const [sigFile, setSigFile] = useState(null);
   const [printedName, setPrintedName] = useState("");
-  const [reviewing, setReviewing] = useState(false);
+  const [step, setStep] = useState("form");
+  const [verification, setVerification] = useState({ email: "", token: "" });
   const [consent, setConsent] = useState(false);
   const [remember, setRemember] = useState(false);
+
+  // Each step is shorter than the form: start it from the top of the modal.
+  useEffect(() => {
+    document.querySelector(".overlay")?.scrollTo({ top: 0 });
+  }, [step]);
 
   const setValue = (k, v) => setSubject((p) => ({ ...p, [k]: v }));
   const updateR = (k, v) => setRequester((p) => ({ ...p, [k]: v }));
@@ -1496,8 +1632,10 @@ function RequestForm({ kind, onClose }) {
 
   const numCopies = copies === "Others" ? copiesOther : copies;
   const purposeText = buildPurposes(purposes, purposeOther);
+  const emailKey = requester.requester_email.trim().toLowerCase();
 
-  // Validates only; opens the review screen. Nothing is sent here.
+  // Validates only. Goes to the email-verification step (or straight to
+  // review if this exact email was already verified). Nothing is submitted here.
   const handleSubmit = () => {
     const errs = validateRequester(requester);
     cfg.blocks.forEach((b) => b.required.forEach((k) => { if (!subject[k].trim()) errs[k] = "Required"; }));
@@ -1508,11 +1646,24 @@ function RequestForm({ kind, onClose }) {
       pushToast({ title: "Incomplete form", message: "Please fill in all required fields.", success: false });
       return;
     }
-    setReviewing(true);
+    const alreadyVerified = verification.token && verification.email === emailKey;
+    setStatus(null);
+    setErrorMessage("");
+    setStep(alreadyVerified ? "review" : "verify");
   };
 
-  // The only place that actually talks to the server.
+  const handleVerified = (token) => {
+    setVerification({ email: emailKey, token });
+    setStep("review");
+    pushToast({ title: "Email verified", message: "Your email address has been confirmed.", success: true });
+  };
+
+  // The only place that actually saves the request on the server.
   const handleConfirmSubmit = async () => {
+    if (!verification.token || verification.email !== emailKey) {
+      setStep("verify");
+      return;
+    }
     setStatus("loading");
     setErrorMessage("");
     try {
@@ -1526,6 +1677,7 @@ function RequestForm({ kind, onClose }) {
         ...occr,
         signature_printed_name: printedName,
         consent: "true",
+        verification_token: verification.token,
       }, sigFile);
 
       // Backup for the tracker's "Use my recent request" button.
@@ -1543,6 +1695,14 @@ function RequestForm({ kind, onClose }) {
         duration: 10000,
       });
     } catch (e) {
+      if (e.code === "EMAIL_NOT_VERIFIED") {
+        // The verification expired or was already used: ask for a fresh code.
+        setVerification({ email: "", token: "" });
+        setStatus(null);
+        setStep("verify");
+        pushToast({ title: "Please verify again", message: e.message, success: false });
+        return;
+      }
       setStatus("error");
       setErrorMessage(e.message);
       pushToast({ title: "Submission failed", message: e.message, success: false });
@@ -1558,7 +1718,14 @@ function RequestForm({ kind, onClose }) {
     );
   }
 
-  if (reviewing) {
+  if (step === "verify") {
+    return (
+      <VerifyScreen recordWord={cfg.word} theme={theme} email={requester.requester_email.trim()}
+        onVerified={handleVerified} onBack={() => setStep("form")} />
+    );
+  }
+
+  if (step === "review") {
     const sections = [
       { title: "Request Details", rows: [
         { label: "Number of Copies", value: numCopies },
@@ -1574,13 +1741,13 @@ function RequestForm({ kind, onClose }) {
         { label: "Relationship", value: requester.requester_relationship },
         { label: "Address", value: requester.requester_address },
         { label: "Telephone No.", value: requester.requester_telephone },
-        { label: "Email Address", value: requester.requester_email },
+        { label: "Email Address", value: `${requester.requester_email.trim()} ✓ Verified` },
       ] },
     ];
     return (
       <ReviewScreen recordWord={cfg.word} theme={theme} sections={sections} sigFile={sigFile} remember={remember} onRememberChange={setRemember}
         printedName={printedName} status={status} errorMessage={errorMessage}
-        onBack={() => { setStatus(null); setReviewing(false); }} onConfirm={handleConfirmSubmit} />
+        onBack={() => { setStatus(null); setStep("form"); }} onConfirm={handleConfirmSubmit} />
     );
   }
 
@@ -1616,7 +1783,8 @@ function RequestForm({ kind, onClose }) {
         </div>
         <OccrPanel data={occr} onChange={updateO} />
       </div>
-      <FormActions status={status} errorMessage={errorMessage} onCancel={onClose} onSubmit={handleSubmit} />
+      <FormActions status={status} errorMessage={errorMessage} onCancel={onClose} onSubmit={handleSubmit}
+        submitLabel="Continue" />
     </div>
   );
 }
@@ -1631,7 +1799,7 @@ function TrackForm({ onClose }) {
   const [result, setResult] = useState(null);
   const [recent, setRecent] = useState(() => loadRecentRequest());
 
-  const useRecent = () => {
+  const applyRecent = () => {
     if (!recent) return;
     setControlNo(recent.control_no);
     setEmail(recent.requester_email);
@@ -1679,7 +1847,7 @@ function TrackForm({ onClose }) {
                 <strong>{recent.control_no}</strong> · {maskEmail(recent.requester_email)}
               </div>
               <div className="recent-actions">
-                <button type="button" className="recent-use" onClick={useRecent}>Use my recent request</button>
+                <button type="button" className="recent-use" onClick={applyRecent}>Use my recent request</button>
                 <button type="button" className="recent-forget" onClick={forgetRecent} aria-label="Forget the request saved on this device">Forget</button>
               </div>
             </div>
