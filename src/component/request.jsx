@@ -749,6 +749,9 @@ const extraStyles = `
 .form-paper .success-ref,.form-paper .place-box{background:var(--modal-tint-bg);border-color:var(--modal-tint-border);}
 .form-paper .form-status,.form-paper .field-error{color:#e24b4a;}
 
+/* Same card width on every step (form, verify, review, success, track) */
+.overlay > .form-paper{width:100%;max-width:720px;flex:0 0 auto;margin:0 auto;}
+
 /* Track my request */
 .track-link{
   margin-top:28px;background:none;border:none;font-family:inherit;
@@ -775,9 +778,10 @@ const extraStyles = `
 .track-step.current .track-dot{box-shadow:0 0 0 4px var(--modal-tint-bg);}
 .track-rejected{background:#fdecec;border:1px solid #f3b5b4;border-radius:8px;padding:10px 12px;font-size:0.8rem;margin-top:12px;}
 
-/* Success: control number card */
+/* Success: control number card (fills the card width, like the review screen) */
+.success-overlay{padding:48px 24px;}
 .ctl-card{
-  margin-top:18px;width:100%;max-width:380px;
+  margin-top:18px;width:100%;max-width:100%;
   border:1.5px dashed var(--modal-primary);border-radius:12px;
   background:var(--modal-tint-bg);padding:16px 18px;
 }
@@ -798,7 +802,7 @@ const extraStyles = `
 .form-paper .btn-copy.copied{background:#fff;color:var(--modal-primary);}
 .btn-copy svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 .save-warning{
-  margin-top:14px;max-width:380px;font-size:0.76rem;line-height:1.55;text-align:left;
+  margin-top:14px;width:100%;max-width:100%;font-size:0.76rem;line-height:1.55;text-align:left;
   background:#fff8e6;border:1px solid #f0d9a0;border-radius:8px;padding:10px 12px;
 }
 
@@ -844,6 +848,7 @@ const extraStyles = `
 @media(max-width:640px){
   .track-body{padding:14px 18px;flex:1;}
   .form-paper input[type="tel"]{font-size:16px;}
+  .success-overlay{padding:40px 18px;}
 }
 `;
 
@@ -1501,7 +1506,7 @@ function Toast({ id, title, message, duration = 5000, success = true }) {
       </svg>
       <div className="toast-body">
         <div className="toast-title">{title}</div>
-        <div className="toast-msg">{message}</div>
+        {message ? <div className="toast-msg">{message}</div> : null}
       </div>
       <button className="toast-close" onClick={dismiss} aria-label="Dismiss notification">×</button>
       <div className="toast-progress">
@@ -1690,7 +1695,7 @@ function RequestForm({ kind, onClose }) {
       setStatus("success");
       pushToast({
         title: `${cfg.word[0]}${cfg.word.slice(1).toLowerCase()} request submitted. Save your control number!`,
-        message: "",
+        message: `Control No: ${res.control_no || "CTL-" + res.record_id}`,
         success: true,
         duration: 10000,
       });
