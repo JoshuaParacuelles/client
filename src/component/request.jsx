@@ -1690,7 +1690,7 @@ function RequestForm({ kind, onClose }) {
       setStatus("success");
       pushToast({
         title: `${cfg.word[0]}${cfg.word.slice(1).toLowerCase()} request submitted. Save your control number!`,
-        message: `Control No: ${res.control_no || "CTL-" + res.record_id}. Copy or write it down. You'll need it and your email to track this request.`,
+        message: "",
         success: true,
         duration: 10000,
       });
