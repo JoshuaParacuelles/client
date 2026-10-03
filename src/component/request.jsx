@@ -2504,32 +2504,46 @@ function Modal({ type, onClose }) {
   );
 }
 
-/* ─── HISTORY BUTTON + DRAWER (Tailwind) ─────────────────────── */
+/* ─── HISTORY BUTTON + DRAWER (Tailwind, fully responsive) ───── */
 const HISTORY_TYPES = {
   birth:    { label: "Birth",    cls: "bg-[#e6f1fb] text-[#185fa5]" },
   marriage: { label: "Marriage", cls: "bg-[#fce7f3] text-[#be185d]" },
   death:    { label: "Death",    cls: "bg-[#fef3c7] text-[#b45309]" },
 };
 
-const historyKeyframes = `@keyframes lcr-drawer-in{from{transform:translateX(100%)}to{transform:none}}
-@keyframes lcr-fade-in{from{opacity:0}to{opacity:1}}`;
+const historyKeyframes = `
+@keyframes lcr-drawer-in{from{transform:translateX(100%)}to{transform:none}}
+@keyframes lcr-fade-in{from{opacity:0}to{opacity:1}}
+@media (max-width:639px){
+  @keyframes lcr-drawer-in{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+}`;
 
 const fmtWhen = (iso) => {
   const d = new Date(iso);
   return isNaN(d) ? "—" : d.toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
 };
 
+/* Floating button: icon-only on phones, icon + label from 640px up.
+   Always at least 44x44 so it is easy to tap. */
 function HistoryButton({ count, onClick }) {
   return (
-    <button type="button" onClick={onClick} aria-label={`Recent requests (${count})`}
-      className="fixed right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-40 inline-flex items-center gap-2 rounded-full border border-[#dde6f2] bg-white px-3.5 py-2 text-[0.78rem] font-medium text-[#185fa5] shadow-sm transition hover:border-[#185fa5] hover:bg-[#eef3fb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#185fa5]">
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Recent requests (${count})`}
+      className="fixed z-40 inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#dde6f2] bg-white px-3 text-[0.78rem] font-medium text-[#185fa5] shadow-sm transition
+                 right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))]
+                 sm:right-[max(1rem,env(safe-area-inset-right))] sm:top-[max(1rem,env(safe-area-inset-top))] sm:px-4
+                 hover:border-[#185fa5] hover:bg-[#eef3fb]
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5] focus-visible:ring-offset-2"
+    >
+      <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 shrink-0" fill="none" stroke="currentColor"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
       </svg>
-      <span className="hidden sm:inline">Recent requests</span>
+      <span className="hidden sm:inline whitespace-nowrap">Recent requests</span>
       {count > 0 && (
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#185fa5] px-1 text-[0.65rem] font-semibold text-white">
+        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#185fa5] px-1 text-[0.65rem] font-semibold leading-none text-white">
           {count}
         </span>
       )}
@@ -2537,6 +2551,8 @@ function HistoryButton({ count, onClick }) {
   );
 }
 
+/* Drawer: bottom-anchored full-width sheet on phones,
+   right-side panel on tablets and desktops. */
 function HistoryDrawer({ items, onClose }) {
   const [copiedNo, setCopiedNo] = useState(null);
   const timerRef = useRef(null);
@@ -2544,7 +2560,7 @@ function HistoryDrawer({ items, onClose }) {
 
   useEffect(() => {
     const opener = document.activeElement;
-    closeRef.current?.focus();
+    closeRef.current?.focus({ preventScroll: true });
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -2573,23 +2589,48 @@ function HistoryDrawer({ items, onClose }) {
   return (
     <div className="fixed inset-0 z-150" role="dialog" aria-modal="true" aria-labelledby="history-title">
       <style>{historyKeyframes}</style>
-      <div onClick={onClose}
-        className="absolute inset-0 bg-[#0a1937]/45 animate-[lcr-fade-in_.2s_ease] motion-reduce:animate-none" />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-white shadow-2xl animate-[lcr-drawer-in_.25s_ease-out] motion-reduce:animate-none">
-        <header className="flex items-start justify-between gap-3 border-b border-[#e2ecf8] px-5 pb-4 pt-5">
-          <div>
-            <h2 id="history-title" className="font-['DM_Serif_Display'] text-xl text-[#0f1f3d]">Recent requests</h2>
+
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        className="absolute inset-0 bg-[#0a1937]/45 animate-[lcr-fade-in_.2s_ease] motion-reduce:animate-none"
+      />
+
+      {/* Panel */}
+      <aside
+        className="absolute right-0 top-0 flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl
+                   sm:max-w-sm sm:rounded-l-2xl lg:max-w-md
+                   animate-[lcr-drawer-in_.25s_ease-out] motion-reduce:animate-none"
+      >
+        {/* Header */}
+        <header
+          className="flex shrink-0 items-start justify-between gap-3 border-b border-[#e2ecf8] px-4 pb-3 sm:px-5 sm:pb-4
+                     pt-[max(1rem,env(safe-area-inset-top))] sm:pt-[max(1.25rem,env(safe-area-inset-top))]
+                     [@media(max-height:480px)]:pb-2 [@media(max-height:480px)]:pt-2"
+        >
+          <div className="min-w-0">
+            <h2 id="history-title" className="font-['DM_Serif_Display'] text-lg text-[#0f1f3d] sm:text-xl">
+              Recent requests
+            </h2>
             <p className="mt-0.5 text-[0.72rem] text-[#6b87a8]">Saved on this device only</p>
           </div>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close recent requests"
-            className="-mr-1 grid h-9 w-9 place-items-center rounded-lg text-2xl leading-none text-[#6b87a8] transition hover:bg-[#eef3fb] hover:text-[#0f1f3d]">
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close recent requests"
+            className="-mr-1 grid h-11 w-11 shrink-0 place-items-center rounded-lg text-2xl leading-none text-[#6b87a8] transition
+                       hover:bg-[#eef3fb] hover:text-[#0f1f3d]
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5]"
+          >
             ×
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        {/* List (scrolls inside the drawer) */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {items.length === 0 ? (
-            <div className="mt-16 text-center text-sm text-[#6b87a8]">
+            <div className="mt-12 text-center text-sm text-[#6b87a8] sm:mt-16 [@media(max-height:480px)]:mt-4">
               <p className="font-medium text-[#0f1f3d]">No requests yet</p>
               <p className="mt-1">Control numbers appear here after you submit a request.</p>
             </div>
@@ -2604,22 +2645,34 @@ function HistoryDrawer({ items, onClose }) {
                       <span className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${t.cls}`}>
                         {t.label}
                       </span>
-                      <button type="button" onClick={() => removeFromHistory(it.control_no)}
+                      <button
+                        type="button"
+                        onClick={() => removeFromHistory(it.control_no)}
                         aria-label={`Remove ${it.control_no} from history`}
-                        className="text-[0.7rem] text-[#8aabbf] underline-offset-2 transition hover:text-[#e24b4a] hover:underline">
+                        className="-mr-2 inline-flex min-h-10 items-center px-2 text-[0.72rem] text-[#8aabbf] underline-offset-2 transition
+                                   hover:text-[#e24b4a] hover:underline
+                                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5] rounded-md"
+                      >
                         Remove
                       </button>
                     </div>
-                    <p className="mt-2 break-all font-mono text-[0.95rem] font-semibold tracking-wide text-[#0f1f3d] select-all">
+
+                    <p className="mt-1 break-all font-mono text-[0.88rem] font-semibold tracking-wide text-[#0f1f3d] select-all sm:text-[0.95rem]">
                       {it.control_no}
                     </p>
                     <p className="mt-0.5 text-[0.7rem] text-[#6b87a8]">Submitted {fmtWhen(it.submitted_at)}</p>
-                    <button type="button" onClick={() => handleCopy(it.control_no)} aria-live="polite"
-                      className={`mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border px-3 text-[0.8rem] font-semibold transition ${
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(it.control_no)}
+                      aria-live="polite"
+                      className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border px-3 text-[0.82rem] font-semibold transition
+                                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5] focus-visible:ring-offset-2 ${
                         copied
                           ? "border-[#185fa5] bg-white text-[#185fa5]"
                           : "border-[#185fa5] bg-[#185fa5] text-white hover:bg-[#0c447c]"
-                      }`}>
+                      }`}
+                    >
                       {copied ? "Copied ✓" : "Copy Control Number"}
                     </button>
                   </li>
@@ -2629,14 +2682,22 @@ function HistoryDrawer({ items, onClose }) {
           )}
         </div>
 
-        <footer className="border-t border-[#e2ecf8] bg-[#f4f8fd] px-5 py-3">
+        {/* Footer */}
+        <footer
+          className="shrink-0 border-t border-[#e2ecf8] bg-[#f4f8fd] px-4 pt-3 sm:px-5
+                     pb-[max(0.75rem,env(safe-area-inset-bottom))]
+                     [@media(max-height:480px)]:pt-2"
+        >
           <p className="text-[0.68rem] leading-relaxed text-[#6b87a8]">
             To track a request, you'll also need the email address used on it.
           </p>
           {items.length > 0 && (
-            <button type="button"
+            <button
+              type="button"
               onClick={() => { if (window.confirm("Clear all saved requests from this device?")) clearHistory(); }}
-              className="mt-2 text-[0.75rem] font-medium text-[#e24b4a] underline-offset-2 hover:underline">
+              className="mt-1 inline-flex min-h-10 items-center text-[0.78rem] font-medium text-[#e24b4a] underline-offset-2
+                         hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5] rounded-md"
+            >
               Clear history
             </button>
           )}
