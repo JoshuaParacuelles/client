@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
 
-/* ─── CSS ─────────────────────────────────────────────────── */
-/* NOTE: the old `*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}`
-   rule was removed. It was unlayered and would override Tailwind's p-*/m-* utilities.
-   Tailwind's Preflight (from `@import "tailwindcss"`) already provides that reset. */
+
 const styles = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
