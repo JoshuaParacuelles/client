@@ -2571,7 +2571,7 @@ function HistoryDrawer({ items, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[150]" role="dialog" aria-modal="true" aria-labelledby="history-title">
+    <div className="fixed inset-0 z-150" role="dialog" aria-modal="true" aria-labelledby="history-title">
       <style>{historyKeyframes}</style>
       <div onClick={onClose}
         className="absolute inset-0 bg-[#0a1937]/45 animate-[lcr-fade-in_.2s_ease] motion-reduce:animate-none" />
