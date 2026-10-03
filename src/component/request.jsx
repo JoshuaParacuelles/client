@@ -1095,6 +1095,100 @@ img,svg{max-width:100%;}
 @media(max-height:520px) and (orientation:landscape){
   .overlay{padding-top:8px;padding-bottom:8px;}
 }
+
+/* ══════════════════════════════════════════════════════════════
+   ORGANIZED + ALIGNED FILL-UP FORM (Birth / Marriage / Death)
+   Every field is a labeled box: label on top (left-aligned),
+   input below, error under it. Same height, radius and spacing
+   everywhere so rows line up. Kept LAST so it wins.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Section headings: consistent rhythm */
+.form-left .section-heading{margin-top:22px;margin-bottom:10px;}
+.form-left .section-heading:first-child{margin-top:0;}
+
+/* Name / date / text rows: a real grid so columns line up */
+.form-left .name-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:4px;}
+.form-left .name-row:has(> .name-col:only-child){grid-template-columns:minmax(0,1fr);}
+.form-left .date-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,0.8fr) minmax(0,1fr);gap:12px;margin-bottom:4px;}
+.form-left .name-col,.form-left .date-col{display:flex;flex-direction:column;min-width:0;}
+
+/* Label ABOVE the input, left-aligned (was centered under it) */
+.form-left .sub-label{
+  order:-1;text-align:left;font-style:normal;
+  font-size:0.66rem;font-weight:600;letter-spacing:0.02em;
+  margin:0 0 5px;color:#000;
+}
+
+/* One consistent input style across the whole form */
+.form-paper .form-left input:not(.copies-others-input){
+  width:100%;margin-top:0;
+  border:1.5px solid #c8d9f0;border-radius:8px;
+  background:#fff;padding:9px 11px;
+  font-family:inherit;font-size:0.85rem;line-height:1.3;
+  transition:border-color 0.15s, box-shadow 0.15s;
+}
+.form-paper .form-left input:not(.copies-others-input):focus{
+  border-color:var(--modal-primary);
+  box-shadow:0 0 0 3px var(--modal-tint-bg);
+  outline:none;
+}
+.form-paper .form-left input.invalid{border-color:#e24b4a;}
+.form-paper .form-left input::placeholder{color:#8aabbf;}
+.form-left .field-error{margin-top:4px;font-size:0.66rem;}
+
+/* Requester fields: label on top, equal spacing */
+.form-left .req-field{display:block;margin-top:12px;font-size:0.7rem;font-weight:600;color:#000;}
+.form-left .req-field input{margin-top:5px;}
+.form-left .req-left > div:not(.req-title){min-width:0;}
+.form-left .req-title{margin-bottom:10px;}
+
+/* Copies: neat row of options */
+.form-left .copies-options{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:10px 22px;}
+.form-left .copies-others-input{width:56px;border-bottom:1.5px solid #c8d9f0;}
+
+/* Checkboxes: box stays aligned with the FIRST line of long labels */
+.form-left .check-label{align-items:flex-start;}
+.form-left .check-box{margin-top:1px;}
+.form-left .purpose-grid{align-items:start;gap:9px 14px;}
+
+/* "Specify" row lines up with the form inputs */
+.form-left .specify-row{align-items:center;}
+.form-left .specify-row input:not(.copies-others-input){flex:1;}
+
+/* Requester + issuance: stack cleanly on tablets and phones
+   (the old 3-column layout squeezed the inputs next to a 120px panel) */
+@media(max-width:760px){
+  .form-left .req-section{grid-template-columns:minmax(0,1fr);}
+  .form-left .req-divider{height:1px;width:auto;}
+  .form-left .req-right{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding:12px 14px;
+  }
+  .form-left .issuance-title{width:100%;text-align:left;margin-bottom:0;}
+  .form-left .issuance-item{margin-bottom:0;}
+  .form-left .issuance-sep{display:none;}
+}
+
+/* Phone: one clear column */
+@media(max-width:640px){
+  .form-left .name-row{grid-template-columns:minmax(0,1fr);gap:10px;}
+  .form-left .date-row{gap:10px;}
+  .form-left .copies-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;}
+  .form-left .copies-options .radio-label:last-child{grid-column:1/-1;}
+  .form-left .purpose-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:340px){
+  .form-left .date-row{grid-template-columns:minmax(0,1fr);}
+  .form-left .copies-options{grid-template-columns:minmax(0,1fr);}
+  .form-left .purpose-grid{grid-template-columns:minmax(0,1fr);}
+}
+
+/* OCCR panel: labels and inputs aligned like the main form */
+.form-right .right-field label{font-weight:600;color:#000;}
+.form-paper .form-right input{
+  border:1.5px solid #c8d9f0;border-radius:8px;background:#fff;padding:7px 9px;
+}
+.form-paper .form-right input:focus{border-color:var(--modal-primary);outline:none;}
 `;
 
 /* ─── API ────────────────────────────────────────────────────── */
