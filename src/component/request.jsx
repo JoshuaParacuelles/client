@@ -1681,6 +1681,10 @@ function FormActions({ status, errorMessage, onCancel, onSubmit, cancelLabel = "
 /* ─── EMAIL VERIFICATION STEP ────────────────────────────────── */
 // Sends a one-time code to the requester's email and exchanges it for a
 // verification token. The request cannot be submitted without that token.
+/* ─── EMAIL VERIFICATION STEP ────────────────────────────────── */
+// Replace the existing VerifyScreen function in App.jsx with this one.
+// Change vs. before: a failed send (network/CORS/server error) no longer
+// uses up one of the "resend" attempts. Only successful sends are counted.
 function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
   const MAX_SENDS = 5; // keep in sync with the server's 5/hour per-email limit
   const [code, setCode] = useState("");
@@ -1698,12 +1702,12 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     if (busyRef.current) return;
     if (sendsLeft <= 0) { setError("Resend limit reached. Please try again in an hour."); return; }
     busyRef.current = true;
-    setSendCount((n) => n + 1);
     setSending(true);
     setError("");
     setInfo("");
     try {
       const res = await api.sendVerificationCode(email);
+      setSendCount((n) => n + 1); // count only real, successful sends
       setCooldown(res.resend_in ?? 60);
       setCode("");
       const minutes = Math.round((res.expires_in ?? 600) / 60);
@@ -1756,6 +1760,15 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     }
   };
 
+  // Button label: shows "Send code" if nothing has been sent yet (e.g. first send failed).
+  const resendLabel = sending
+    ? "Sending…"
+    : cooldown > 0
+      ? `Resend code in ${cooldown}s`
+      : sendCount === 0
+        ? "Send code"
+        : `Resend code (${sendsLeft} left)`;
+
   return (
     <div className="form-paper" style={theme}>
       <FormHeader recordWord={recordWord} step={1} />
@@ -1776,7 +1789,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
           {info && <p className="verify-note" role="status">{info}</p>}
           <button type="button" className="verify-resend" onClick={sendCode}
             disabled={sending || verifying || cooldown > 0 || sendsLeft <= 0}>
-            {sending ? "Sending…" : cooldown > 0 ? `Resend code in ${cooldown}s` : `Resend code (${sendsLeft} left)`}
+            {resendLabel}
           </button>
         </div>
         <div className="form-actions">
@@ -1790,7 +1803,6 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     </div>
   );
 }
-
 /* ─── REVIEW / SUCCESS ───────────────────────────────────────── */
 function ReviewRow({ label, value }) {
   const hasValue = value !== null && value !== undefined && String(value).trim() !== "";
