@@ -1219,25 +1219,34 @@ img,svg{max-width:100%;}
 .form-paper .form-right input:focus{border-color:var(--modal-primary);outline:none;}
 
 /* ══════════════════════════════════════════════════════════════
-   WIDE TOAST NOTIFICATIONS (final override — wins over everything above)
-   Desktop/tablet: 460px-wide stack in the top-right corner.
-   Phone: full width minus 12px margins. Long titles wrap inside the
-   card instead of squeezing into a narrow box.
+   TOAST (final override): always pinned to the TOP-RIGHT corner.
+   Hugs its text: 220px min, 300px max, never wider than the screen.
    ══════════════════════════════════════════════════════════════ */
 .toast-wrap{
-  width:min(460px,calc(100vw - 40px));
-  align-items:stretch;
+  position:fixed;
+  top:calc(12px + env(safe-area-inset-top,0px));
+  right:calc(12px + env(safe-area-inset-right,0px));
+  bottom:auto;left:auto;
+  transform:none;
+  z-index:2000;
+  width:max-content;
+  max-width:calc(100vw - 24px);
+  display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+  pointer-events:none;
 }
 .toast{
-  width:100%;min-width:0;max-width:none;
-  padding:16px 18px;gap:14px;
+  width:auto;
+  min-width:min(220px,calc(100vw - 24px));
+  max-width:min(300px,calc(100vw - 24px));
+  padding:10px 12px;gap:10px;
 }
 .toast-body{flex:1;min-width:0;}
-.toast-title{font-size:0.9rem;line-height:1.35;}
-.toast-msg{font-size:0.8rem;overflow-wrap:anywhere;}
-@media(max-width:640px){
-  .toast-wrap{width:auto;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));}
-  .toast{padding:14px 16px;}
+.toast-title{font-size:0.82rem;line-height:1.3;margin-bottom:2px;}
+.toast-msg{font-size:0.74rem;line-height:1.4;overflow-wrap:anywhere;}
+.toast-icon{width:18px;height:18px;}
+.toast-close{font-size:18px;}
+@media(min-width:641px){
+  .toast-wrap{top:20px;right:20px;}
 }
 `;
 
@@ -1958,7 +1967,12 @@ function useToasts() {
 }
 function pushToast(toast) {
   const id = ++_toastSeq;
-  _toastSetters.forEach((set) => set((prev) => [...prev, { ...toast, id }]));
+  // Every click shows a toast. If the same message is already on screen, it is
+  // replaced by a fresh one (animation + timer restart) instead of stacking copies.
+  _toastSetters.forEach((set) => set((prev) => [
+    ...prev.filter((t) => !(t.title === toast.title && t.message === toast.message)),
+    { ...toast, id },
+  ]));
 }
 function removeToast(id) {
   _toastSetters.forEach((set) => set((prev) => prev.filter((t) => t.id !== id)));
