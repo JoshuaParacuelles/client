@@ -2313,12 +2313,20 @@ function TrackForm({ onClose }) {
 
   const handleTrack = async (e) => {
     e.preventDefault();
-    if (!controlNo.trim() || !email.trim()) { setError("Enter both your control number and email."); return; }
+    if (!controlNo.trim() || !email.trim()) {
+      const msg = "Enter both your control number and email.";
+      setError(msg);
+      pushToast({ title: "Missing details", message: msg, success: false });
+      return;
+    }
     setLoading(true); setError(""); setResult(null);
     try {
-      setResult(await api.trackRequest(controlNo.trim(), email.trim()));
+      const res = await api.trackRequest(controlNo.trim(), email.trim());
+      setResult(res);
+      pushToast({ title: "Request found", message: res.status_label || res.control_no, success: true });
     } catch (err) {
       setError(err.message);
+      pushToast({ title: "Couldn't track request", message: err.message, success: false });
     } finally {
       setLoading(false);
     }
