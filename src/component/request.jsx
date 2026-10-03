@@ -1218,6 +1218,10 @@ img,svg{max-width:100%;}
 }
 .form-paper .form-right input:focus{border-color:var(--modal-primary);outline:none;}
 
+/* "Others" copies option: the radio's own <label> + a separate text input,
+   so each input has exactly one associated label. */
+.radio-label .radio-others-label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+
 /* ══════════════════════════════════════════════════════════════
    TOAST (final override): always pinned to the TOP-RIGHT corner.
    Hugs its text: 220px min, 300px max, never wider than the screen.
@@ -1343,6 +1347,9 @@ async function copyToClipboard(text) {
     const ta = document.createElement("textarea");
     ta.value = text;
     ta.setAttribute("readonly", "");
+    ta.setAttribute("aria-hidden", "true");
+    ta.id = "clipboard_helper";
+    ta.name = "clipboard_helper";
     ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
     document.body.appendChild(ta);
     ta.select();
@@ -1479,6 +1486,7 @@ function PurposeSection({ selected, onChange }) {
 
 function CopiesRow({ copies, setCopies, name, othersValue, setOthersValue, error }) {
   const othersRadioId = useId();
+  const othersCountId = `${name}-others-count`;
   return (
     <div className="copies-row">
       <div className="copies-row-label">Number of Copies — Please check appropriate box</div>
@@ -1486,13 +1494,19 @@ function CopiesRow({ copies, setCopies, name, othersValue, setOthersValue, error
         {["One", "Two", "Three"].map((c) => (
           <Radio key={c} label={c} name={name} checked={copies === c} onChange={() => setCopies(c)} />
         ))}
-        <label className="radio-label">
-          <input id={othersRadioId} type="radio" name={name} value="Others" checked={copies === "Others"} onChange={() => setCopies("Others")} />
-          <span className="radio-box" />
-          Others:
-          <input id={`${name}-others-count`} name={`${name}-others-count`} type="text" inputMode="numeric" aria-label="Number of copies (other)" className="copies-others-input" value={othersValue}
+        {/* The radio and the count box are separate controls: each gets its own
+            label association (the text box is labelled via aria-label + id/name). */}
+        <div className="radio-label">
+          <label className="radio-others-label" htmlFor={othersRadioId}>
+            <input id={othersRadioId} type="radio" name={name} value="Others"
+              checked={copies === "Others"} onChange={() => setCopies("Others")} />
+            <span className="radio-box" />
+            Others:
+          </label>
+          <input id={othersCountId} name={othersCountId} type="text" inputMode="numeric"
+            aria-label="Number of copies (other)" className="copies-others-input" value={othersValue}
             onChange={(e) => setOthersValue(e.target.value.replace(/\D/g, ""))} disabled={copies !== "Others"} />
-        </label>
+        </div>
       </div>
       {error && <div className="field-error" role="alert">{error}</div>}
     </div>
@@ -1545,7 +1559,7 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
   return (
     <>
       <div className="sig-upload-wrap">
-        <label className="sig-upload-label">
+        <label className="sig-upload-label" htmlFor="signature_file">
           <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
@@ -1564,7 +1578,7 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
         )}
       </div>
       <div className="sig-note">PNG, JPG, WEBP or PDF · max 2 MB</div>
-      <label className="req-field">
+      <label className="req-field" htmlFor="signature_printed_name">
         Signature Over Printed Name
         <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName} onChange={(e) => onPrintedNameChange(e.target.value)}
           placeholder="Type the name that appears under your signature" />
@@ -1577,7 +1591,7 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
 function RequesterFields({ data, onChange, errors, sigFile, onSigChange, printedName, onPrintedNameChange }) {
   const text = (key, label, extra = {}) => (
     <div>
-      <label className="req-field">
+      <label className="req-field" htmlFor={key}>
         {label}
         <input id={key} name={key} type="text" className={errors[key] ? "invalid" : ""} value={data[key]}
           aria-invalid={!!errors[key]} aria-required={label.endsWith("*")}
@@ -1682,12 +1696,12 @@ function FormSubheader() {
   return (
     <div className="form-subheader">
       <div className="sh-field">
-        <span className="sh-label">Control No.</span>
+        <label className="sh-label" htmlFor="control_no">Control No.</label>
         <input id="control_no" name="control_no" className="sh-value" type="text" readOnly aria-label="Control number (assigned after submission)" placeholder="Auto-generated" style={{ width: 110 }} />
       </div>
       <div className="sh-divider" />
       <div className="sh-field">
-        <span className="sh-label">Date</span>
+        <label className="sh-label" htmlFor="request_date">Date</label>
         <input id="request_date" name="request_date" className="sh-value" type="text" defaultValue={today} readOnly aria-label="Date of request" style={{ width: 90 }} />
       </div>
     </div>
@@ -1700,8 +1714,8 @@ function FormActions({ status, onCancel, onSubmit, cancelLabel = "Cancel", submi
   return (
     <div className="form-actions">
       <div className="form-status" aria-hidden="true" />
-      <button className="btn-cancel" onClick={onCancel} disabled={loading}>{cancelLabel}</button>
-      <button className="btn-submit" onClick={onSubmit} disabled={loading} aria-busy={loading}>
+      <button type="button" className="btn-cancel" onClick={onCancel} disabled={loading}>{cancelLabel}</button>
+      <button type="button" className="btn-submit" onClick={onSubmit} disabled={loading} aria-busy={loading}>
         {loading ? <><Spinner />Saving…</> : submitLabel}
       </button>
     </div>
@@ -1804,7 +1818,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
             To protect your request, we need to confirm that you own this email address.
             Enter the {CODE_LENGTH}-digit code we sent to <span className="verify-email">{email}</span>.
           </p>
-          <label className="req-field">
+          <label className="req-field" htmlFor="verification_code">
             Verification Code
             <input id="verification_code" name="verification_code" type="text" className="otp-input" inputMode="numeric" autoComplete="one-time-code"
               maxLength={CODE_LENGTH} placeholder={"0".repeat(CODE_LENGTH)} aria-label="Verification code"
@@ -1938,7 +1952,7 @@ function SuccessScreen({ result, type, email, savedOnDevice, onClose }) {
         your request.{savedOnDevice ? " As you chose, it is also saved on this device." : " Keep a note or screenshot of it."}
       </div>
 
-      <button className="btn-new" onClick={onClose}>Done</button>
+      <button type="button" className="btn-new" onClick={onClose}>Done</button>
     </div>
   );
 }
@@ -1985,7 +1999,7 @@ function Toast({ id, title, message, duration = 5000, success = true }) {
         <div className="toast-title">{title}</div>
         {message ? <div className="toast-msg">{message}</div> : null}
       </div>
-      <button className="toast-close" onClick={dismiss} aria-label="Dismiss notification">×</button>
+      <button type="button" className="toast-close" onClick={dismiss} aria-label="Dismiss notification">×</button>
       <div className="toast-progress">
         <div className="toast-progress-bar" style={{ animationDuration: `${duration}ms`, background: c }} />
       </div>
@@ -2030,13 +2044,15 @@ const FORM_CONFIGS = {
   },
 };
 
+// The visible caption under each input is a <label> bound to that input,
+// so every subject field has an id, a name AND an associated label.
 function SubjectField({ k, cls, placeholder, sub, heading, values, setValue, errors }) {
   return (
     <div className={cls}>
       <input id={k} name={k} type="text" className={errors[k] ? "invalid" : ""} value={values[k]}
         onChange={(e) => setValue(k, e.target.value)} placeholder={placeholder}
         aria-label={`${heading} ${sub}`} aria-invalid={!!errors[k]} />
-      <span className="sub-label">{sub}</span>
+      <label className="sub-label" htmlFor={k}>{sub}</label>
       {errors[k] && <div className="field-error" role="alert">{errors[k]}</div>}
     </div>
   );
@@ -2256,7 +2272,7 @@ function RequestForm({ kind, onClose }) {
           <PurposeSection selected={purposes} onChange={setPurposes} />
           {purposes.includes("OTHERS (SPECIFY)") && (
             <div className="specify-row">
-              <span>Specify:</span>
+              <label htmlFor="purpose_other">Specify:</label>
               <input id="purpose_other" name="purpose_other" type="text" aria-label="Specify other purpose" value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
             </div>
           )}
@@ -2344,12 +2360,12 @@ function TrackForm({ onClose }) {
             </div>
           )}
 
-          <label className="req-field">
+          <label className="req-field" htmlFor="track_control_no">
             Control Number
             <input id="track_control_no" name="control_no" type="text" value={controlNo} onChange={(e) => setControlNo(e.target.value)}
               placeholder="BR-20260929-00042" autoCapitalize="characters" />
           </label>
-          <label className="req-field">
+          <label className="req-field" htmlFor="track_email">
             Email Address
             <input id="track_email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juandelacruz@gmail.com" />
           </label>
@@ -2461,7 +2477,7 @@ export default function App() {
         <h2 className="select-prompt">Select record type to request</h2>
         <div className="cards-row">
           {RECORD_TYPES.map((t) => (
-            <button key={t.id} className="type-card" onClick={() => setActive(t.id)}
+            <button key={t.id} type="button" className="type-card" onClick={() => setActive(t.id)}
               style={{
                 "--card-icon-bg": CARD_ICON_COLORS[t.id].bg,
                 "--card-icon-bg-hover": CARD_ICON_COLORS[t.id].bgHover,
@@ -2476,7 +2492,7 @@ export default function App() {
             </button>
           ))}
         </div>
-        <button className="track-link" onClick={() => setActive("track")}>Already submitted? Track my request →</button>
+        <button type="button" className="track-link" onClick={() => setActive("track")}>Already submitted? Track my request →</button>
         {active && <Modal type={active} onClose={() => setActive(null)} />}
       </main>
       <SiteFooter />
