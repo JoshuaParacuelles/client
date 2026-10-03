@@ -2294,7 +2294,6 @@ function TrackForm({ onClose }) {
   const [controlNo, setControlNo] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [recent, setRecent] = useState(() => loadRecentRequest());
 
@@ -2302,7 +2301,6 @@ function TrackForm({ onClose }) {
     if (!recent) return;
     setControlNo(recent.control_no);
     setEmail(recent.requester_email);
-    setError("");
     setResult(null);
   };
 
@@ -2314,18 +2312,15 @@ function TrackForm({ onClose }) {
   const handleTrack = async (e) => {
     e.preventDefault();
     if (!controlNo.trim() || !email.trim()) {
-      const msg = "Enter both your control number and email.";
-      setError(msg);
-      pushToast({ title: "Missing details", message: msg, success: false });
+      pushToast({ title: "Missing details", message: "Enter both your control number and email.", success: false });
       return;
     }
-    setLoading(true); setError(""); setResult(null);
+    setLoading(true); setResult(null);
     try {
       const res = await api.trackRequest(controlNo.trim(), email.trim());
       setResult(res);
       pushToast({ title: "Request found", message: res.status_label || res.control_no, success: true });
     } catch (err) {
-      setError(err.message);
       pushToast({ title: "Couldn't track request", message: err.message, success: false });
     } finally {
       setLoading(false);
@@ -2373,7 +2368,6 @@ function TrackForm({ onClose }) {
             We use these only to look up your request. See our{" "}
             <a href="#/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy (opens in a new tab)</a>.
           </p>
-          {error && <div className="field-error" role="alert" style={{ marginTop: 10 }}>{error}</div>}
 
           {result && (
             <div className="track-result" role="status">
