@@ -850,6 +850,27 @@ const extraStyles = `
   .form-paper input[type="tel"]{font-size:16px;}
   .success-overlay{padding:40px 18px;}
 }
+
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;
+  border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:8px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+button:disabled{cursor:progress;}
+@media(prefers-reduced-motion:reduce){.spinner{animation-duration:1.5s!important;animation-iteration-count:infinite!important;}}
+
+.form-header .wizard{list-style:none;display:flex;align-items:center;padding:0 28px 16px;margin:0;position:relative;z-index:1;}
+.form-header .wizard-step{display:flex;align-items:center;gap:8px;flex:1;font-size:.7rem;color:rgba(255,255,255,.7);}
+.form-header .wizard-step:last-child{flex:0 0 auto;}
+.form-header .wizard-step:not(:last-child)::after{content:"";flex:1;height:2px;background:rgba(255,255,255,.25);margin:0 10px;}
+.form-header .wizard-step.done:not(:last-child)::after{background:#fff;}
+.form-header .wizard-dot{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.55);
+  display:grid;place-items:center;font-size:.68rem;font-weight:600;flex-shrink:0;}
+.form-header .wizard-step.done .wizard-dot{background:rgba(255,255,255,.2);border-color:#fff;color:#fff;}
+.form-header .wizard-step.current{color:#fff;font-weight:600;}
+.form-header .wizard-step.current .wizard-dot{background:#fff;border-color:#fff;color:var(--modal-primary);}
+@media(max-width:640px){
+  .form-header .wizard{padding:0 18px 14px;}
+  .form-header .wizard-step:not(.current) .wizard-label{display:none;}
+}
 `;
 
 /* ─── RESPONSIVE CSS (all screen sizes, orientations and input types) ───
@@ -1296,8 +1317,8 @@ async function copyToClipboard(text) {
 }
 
 /* ─── VALIDATION ─────────────────────────────────────────────── */
-const PH_MOBILE_LOCAL_REGEX = /^0\d{10}$/;
-const PH_MOBILE_INTL_REGEX = /^\+63\d{10}$/;
+const PH_MOBILE_LOCAL_REGEX = /^09\d{9}$/;
+const PH_MOBILE_INTL_REGEX = /^\+639\d{9}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const SIG_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
@@ -1306,6 +1327,17 @@ const MAX_SIG_BYTES = 2 * 1024 * 1024;
 function getSignatureError(file) {
   if (!SIG_TYPES.includes(file.type)) return "Use a PNG, JPG or WEBP image, or a PDF.";
   if (file.size > MAX_SIG_BYTES) return "File is too large. Maximum size is 2 MB.";
+  return null;
+}
+
+// Checks the file's real content (magic bytes), not just the type the browser reports.
+async function sniffSignature(file) {
+  const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const is = (...sig) => sig.every((v, i) => b[i] === v);
+  if (is(0x89, 0x50, 0x4e, 0x47)) return "image/png";
+  if (is(0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (is(0x52, 0x49, 0x46, 0x46) && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "image/webp";
+  if (is(0x25, 0x50, 0x44, 0x46)) return "application/pdf";
   return null;
 }
 
@@ -1334,6 +1366,31 @@ function validateRequester(req) {
   return errs;
 }
 
+// Date validation (mirrors the server)
+const MONTHS = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+const parseMonth = (v) => {
+  const s = v.trim().toLowerCase().replace(/\.$/, "");
+  if (/^\d{1,2}$/.test(s)) { const n = +s; return n >= 1 && n <= 12 ? n : 0; }
+  return s.length >= 3 ? MONTHS.findIndex((m) => m.startsWith(s)) + 1 : 0; // 0 = invalid
+};
+
+function validateSubjectDates(kind, s) {
+  if (kind === "marriage") return {};
+  const [yk, mk, dk] = [`${kind}_year`, `${kind}_month`, `${kind}_date`];
+  const errs = {}, now = new Date(), thisYear = now.getFullYear();
+  const y = s[yk].trim(), m = s[mk].trim(), d = s[dk].trim();
+  let year = 0, month = 0, day = 0;
+  if (y) { /^\d{4}$/.test(y) && +y >= 1850 && +y <= thisYear ? (year = +y) : (errs[yk] = `Enter a valid 4-digit year (1850–${thisYear})`); }
+  if (m) { month = parseMonth(m); if (!month) errs[mk] = "Enter a valid month"; }
+  if (d) { /^\d{1,2}$/.test(d) && +d >= 1 && +d <= 31 ? (day = +d) : (errs[dk] = "Enter a valid day (1–31)"); }
+  if (year && month && day) {
+    const dt = new Date(year, month - 1, day);
+    if (dt.getMonth() !== month - 1) errs[dk] = "That date does not exist";
+    else if (dt > now) errs[dk] = "Date cannot be in the future";
+  } else if (year && month && new Date(year, month - 1, 1) > now) errs[mk] = "Date cannot be in the future";
+  return errs;
+}
+
 // Only checked purposes are sent, and the "Others" text is attached only
 // when "OTHERS (SPECIFY)" is still ticked and something was typed.
 function buildPurposes(selected, other) {
@@ -1343,6 +1400,8 @@ function buildPurposes(selected, other) {
 }
 
 /* ─── SHARED COMPONENTS ──────────────────────────────────────── */
+function Spinner() { return <span className="spinner" aria-hidden="true" />; }
+
 function Checkbox({ label, checked, onChange }) {
   return (
     <label className="check-label">
@@ -1427,11 +1486,12 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const f = e.target.files[0] || null;
     if (!f) return;
     const err = getSignatureError(f);
     if (err) { setError(err); reset(); return; }
+    if (!(await sniffSignature(f))) { setError("This file isn't a real PNG, JPG, WEBP or PDF."); reset(); return; }
     setError("");
     onChange(f);
     if (f.type.startsWith("image/")) {
@@ -1553,7 +1613,26 @@ function OccrPanel({ data, onChange }) {
   );
 }
 
-function FormHeader({ recordWord }) {
+/* ─── WIZARD PROGRESS (header) ───────────────────────────────── */
+const WIZARD_STEPS = ["Fill Form", "Verify Email", "Review & Submit"];
+
+function WizardSteps({ current }) {
+  return (
+    <ol className="wizard" aria-label="Progress">
+      {WIZARD_STEPS.map((label, i) => {
+        const state = i < current ? "done" : i === current ? "current" : "todo";
+        return (
+          <li key={label} className={`wizard-step ${state}`} aria-current={state === "current" ? "step" : undefined}>
+            <span className="wizard-dot" aria-hidden="true">{state === "done" ? "✓" : i + 1}</span>
+            <span className="wizard-label">{label}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function FormHeader({ recordWord, step }) {
   return (
     <div className="form-header">
       <div className="form-header-accent" />
@@ -1562,6 +1641,7 @@ function FormHeader({ recordWord }) {
         <div className="header-left"><h2 id="dialog-title" className="header-title">{recordWord}</h2></div>
         <div className="header-badge" aria-hidden="true">{recordWord}</div>
       </div>
+      {step !== undefined && <WizardSteps current={step} />}
       <div className="form-header-divider" />
     </div>
   );
@@ -1591,7 +1671,9 @@ function FormActions({ status, errorMessage, onCancel, onSubmit, cancelLabel = "
     <div className="form-actions">
       <div className="form-status" role="status" aria-live="polite">{status === "error" && (errorMessage || "Submission failed. Please try again.")}</div>
       <button className="btn-cancel" onClick={onCancel} disabled={loading}>{cancelLabel}</button>
-      <button className="btn-submit" onClick={onSubmit} disabled={loading}>{loading ? "Saving…" : submitLabel}</button>
+      <button className="btn-submit" onClick={onSubmit} disabled={loading} aria-busy={loading}>
+        {loading ? <><Spinner />Saving…</> : submitLabel}
+      </button>
     </div>
   );
 }
@@ -1600,15 +1682,23 @@ function FormActions({ status, errorMessage, onCancel, onSubmit, cancelLabel = "
 // Sends a one-time code to the requester's email and exchanges it for a
 // verification token. The request cannot be submitted without that token.
 function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
+  const MAX_SENDS = 5; // keep in sync with the server's 5/hour per-email limit
   const [code, setCode] = useState("");
   const [info, setInfo] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [sendCount, setSendCount] = useState(0);
   const autoSentRef = useRef(false);
+  const busyRef = useRef(false);
+  const sendsLeft = MAX_SENDS - sendCount;
 
   const sendCode = async () => {
+    if (busyRef.current) return;
+    if (sendsLeft <= 0) { setError("Resend limit reached. Please try again in an hour."); return; }
+    busyRef.current = true;
+    setSendCount((n) => n + 1);
     setSending(true);
     setError("");
     setInfo("");
@@ -1627,6 +1717,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
         setError(e.message);
       }
     } finally {
+      busyRef.current = false;
       setSending(false);
     }
   };
@@ -1646,10 +1737,12 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
 
   const handleVerify = async (e) => {
     e.preventDefault();
+    if (busyRef.current) return;
     if (code.length !== CODE_LENGTH) {
       setError(`Enter the ${CODE_LENGTH}-digit code.`);
       return;
     }
+    busyRef.current = true;
     setVerifying(true);
     setError("");
     try {
@@ -1658,13 +1751,14 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     } catch (err) {
       setError(err.message);
     } finally {
+      busyRef.current = false;
       setVerifying(false);
     }
   };
 
   return (
     <div className="form-paper" style={theme}>
-      <FormHeader recordWord={recordWord} />
+      <FormHeader recordWord={recordWord} step={1} />
       <form className="verify-form" onSubmit={handleVerify} noValidate>
         <div className="review-body">
           <div className="section-heading">Verify your email</div>
@@ -1680,15 +1774,16 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
               onChange={(e) => { setError(""); setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH)); }} />
           </label>
           {info && <p className="verify-note" role="status">{info}</p>}
-          <button type="button" className="verify-resend" onClick={sendCode} disabled={sending || verifying || cooldown > 0}>
-            {sending ? "Sending…" : cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+          <button type="button" className="verify-resend" onClick={sendCode}
+            disabled={sending || verifying || cooldown > 0 || sendsLeft <= 0}>
+            {sending ? "Sending…" : cooldown > 0 ? `Resend code in ${cooldown}s` : `Resend code (${sendsLeft} left)`}
           </button>
         </div>
         <div className="form-actions">
           <div className="form-status" role="status" aria-live="polite">{error}</div>
           <button type="button" className="btn-cancel" onClick={onBack} disabled={verifying}>Back to Edit</button>
-          <button type="submit" className="btn-submit" disabled={verifying || code.length !== CODE_LENGTH}>
-            {verifying ? "Verifying…" : "Verify & Continue"}
+          <button type="submit" className="btn-submit" disabled={verifying || code.length !== CODE_LENGTH} aria-busy={verifying}>
+            {verifying ? <><Spinner />Verifying…</> : "Verify & Continue"}
           </button>
         </div>
       </form>
@@ -1719,7 +1814,7 @@ function ReviewSection({ title, rows }) {
 function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, status, errorMessage, remember, onRememberChange, onBack, onConfirm }) {
   return (
     <div className="form-paper" style={theme}>
-      <FormHeader recordWord={recordWord} />
+      <FormHeader recordWord={recordWord} step={2} />
       <div className="review-body">
         <div className="review-intro">
           Please review the details below carefully. Once you confirm, this request will be
@@ -1963,6 +2058,7 @@ function RequestForm({ kind, onClose }) {
   const [verification, setVerification] = useState({ email: "", token: "" });
   const [consent, setConsent] = useState(false);
   const [remember, setRemember] = useState(false);
+  const submittingRef = useRef(false);
 
   // Each step is shorter than the form: start it from the top of the modal.
   useEffect(() => {
@@ -1981,7 +2077,8 @@ function RequestForm({ kind, onClose }) {
   // Validates only. Goes to the email-verification step (or straight to
   // review if this exact email was already verified). Nothing is submitted here.
   const handleSubmit = () => {
-    const errs = validateRequester(requester);
+    // Format/date checks first, so "Required" below wins on empty fields.
+    const errs = { ...validateRequester(requester), ...validateSubjectDates(kind, subject) };
     cfg.blocks.forEach((b) => b.required.forEach((k) => { if (!subject[k].trim()) errs[k] = "Required"; }));
     if (copies === "Others" && !(parseInt(copiesOther, 10) > 0)) errs.num_copies = "Enter a number of copies";
     if (!consent) errs.consent = "You must give your consent to submit this request.";
@@ -2004,10 +2101,12 @@ function RequestForm({ kind, onClose }) {
 
   // The only place that actually saves the request on the server.
   const handleConfirmSubmit = async () => {
+    if (submittingRef.current) return;
     if (!verification.token || verification.email !== emailKey) {
       setStep("verify");
       return;
     }
+    submittingRef.current = true;
     setStatus("loading");
     setErrorMessage("");
     try {
@@ -2050,13 +2149,15 @@ function RequestForm({ kind, onClose }) {
       setStatus("error");
       setErrorMessage(e.message);
       pushToast({ title: "Submission failed", message: e.message, success: false });
+    } finally {
+      submittingRef.current = false;
     }
   };
 
   if (status === "success") {
     return (
       <div className="form-paper" style={theme}>
-        <FormHeader recordWord={cfg.word} />
+        <FormHeader recordWord={cfg.word} step={3} />
         <SuccessScreen result={result} type={kind} email={requester.requester_email.trim()} savedOnDevice={remember} onClose={onClose} />
       </div>
     );
@@ -2097,7 +2198,7 @@ function RequestForm({ kind, onClose }) {
 
   return (
     <div className="form-paper" style={theme}>
-      <FormHeader recordWord={cfg.word} />
+      <FormHeader recordWord={cfg.word} step={0} />
       <FormSubheader />
       <div className="form-body">
         <div className="form-left">
@@ -2239,7 +2340,9 @@ function TrackForm({ onClose }) {
         <div className="form-actions">
           <div className="form-status" />
           <button type="button" className="btn-cancel" onClick={onClose}>Close</button>
-          <button type="submit" className="btn-submit" disabled={loading}>{loading ? "Checking…" : "Track"}</button>
+          <button type="submit" className="btn-submit" disabled={loading} aria-busy={loading}>
+            {loading ? <><Spinner />Checking…</> : "Track"}
+          </button>
         </div>
       </form>
     </div>
