@@ -1516,7 +1516,6 @@ function AuthClause() {
 function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
   const fileRef = useRef(null);
   const [preview, setPreview] = useState(null);
-  const [error, setError] = useState("");
 
   const reset = () => {
     onChange(null);
@@ -1528,9 +1527,8 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
     const f = e.target.files[0] || null;
     if (!f) return;
     const err = getSignatureError(f);
-    if (err) { setError(err); reset(); return; }
-    if (!(await sniffSignature(f))) { setError("This file isn't a real PNG, JPG, WEBP or PDF."); reset(); return; }
-    setError("");
+    if (err) { pushToast({ title: "Invalid file", message: err, success: false }); reset(); return; }
+    if (!(await sniffSignature(f))) { pushToast({ title: "Invalid file", message: "This file isn't a real PNG, JPG, WEBP or PDF.", success: false }); reset(); return; }
     onChange(f);
     if (f.type.startsWith("image/")) {
       const reader = new FileReader();
@@ -1559,10 +1557,9 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
           <span className={`sig-file-name${file ? " has-file" : ""}`}>{file ? file.name : "No file chosen"}</span>
         )}
         {file && (
-          <button type="button" className="sig-clear-btn" onClick={() => { setError(""); reset(); }} title="Remove" aria-label="Remove uploaded signature file">×</button>
+          <button type="button" className="sig-clear-btn" onClick={reset} title="Remove" aria-label="Remove uploaded signature file">×</button>
         )}
       </div>
-      {error && <div className="field-error" role="alert">{error}</div>}
       <div className="sig-note">PNG, JPG, WEBP or PDF · max 2 MB</div>
       <label className="req-field">
         Signature Over Printed Name
@@ -1703,11 +1700,11 @@ function FormSubheader() {
 }
 
 // Shows the real error from the server instead of dev-only hints.
-function FormActions({ status, errorMessage, onCancel, onSubmit, cancelLabel = "Cancel", submitLabel = "Submit Request" }) {
+function FormActions({ status, onCancel, onSubmit, cancelLabel = "Cancel", submitLabel = "Submit Request" }) {
   const loading = status === "loading";
   return (
     <div className="form-actions">
-      <div className="form-status" role="status" aria-live="polite">{status === "error" && (errorMessage || "Submission failed. Please try again.")}</div>
+      <div className="form-status" aria-hidden="true" />
       <button className="btn-cancel" onClick={onCancel} disabled={loading}>{cancelLabel}</button>
       <button className="btn-submit" onClick={onSubmit} disabled={loading} aria-busy={loading}>
         {loading ? <><Spinner />Saving…</> : submitLabel}
@@ -1725,7 +1722,6 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
   const MAX_SENDS = 5; // keep in sync with the server's 5/hour per-email limit
   const [code, setCode] = useState("");
   const [info, setInfo] = useState("");
-  const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -1736,10 +1732,9 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
 
   const sendCode = async () => {
     if (busyRef.current) return;
-    if (sendsLeft <= 0) { setError("Resend limit reached. Please try again in an hour."); return; }
+    if (sendsLeft <= 0) { pushToast({ title: "Resend limit reached", message: "Please try again in an hour.", success: false }); return; }
     busyRef.current = true;
     setSending(true);
-    setError("");
     setInfo("");
     try {
       const res = await api.sendVerificationCode(email);
@@ -1754,7 +1749,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
         setCooldown(e.retryAfter);
         setInfo("A code was sent recently. Enter it below, or wait to request a new one.");
       } else {
-        setError(e.message);
+        pushToast({ title: "Couldn't send code", message: e.message, success: false });
       }
     } finally {
       busyRef.current = false;
@@ -1779,17 +1774,16 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     e.preventDefault();
     if (busyRef.current) return;
     if (code.length !== CODE_LENGTH) {
-      setError(`Enter the ${CODE_LENGTH}-digit code.`);
+      pushToast({ title: "Incomplete code", message: `Enter the ${CODE_LENGTH}-digit code.`, success: false });
       return;
     }
     busyRef.current = true;
     setVerifying(true);
-    setError("");
     try {
       const res = await api.confirmVerificationCode(email, code);
       onVerified(res.verification_token);
     } catch (err) {
-      setError(err.message);
+      pushToast({ title: "Verification failed", message: err.message, success: false });
     } finally {
       busyRef.current = false;
       setVerifying(false);
@@ -1820,7 +1814,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
             <input type="text" className="otp-input" inputMode="numeric" autoComplete="one-time-code"
               maxLength={CODE_LENGTH} placeholder={"0".repeat(CODE_LENGTH)} aria-label="Verification code"
               value={code} autoFocus
-              onChange={(e) => { setError(""); setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH)); }} />
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))} />
           </label>
           {info && <p className="verify-note" role="status">{info}</p>}
           <button type="button" className="verify-resend" onClick={sendCode}
@@ -1829,7 +1823,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
           </button>
         </div>
         <div className="form-actions">
-          <div className="form-status" role="status" aria-live="polite">{error}</div>
+          <div className="form-status" aria-hidden="true" />
           <button type="button" className="btn-cancel" onClick={onBack} disabled={verifying}>Back to Edit</button>
           <button type="submit" className="btn-submit" disabled={verifying || code.length !== CODE_LENGTH} aria-busy={verifying}>
             {verifying ? <><Spinner />Verifying…</> : "Verify & Continue"}
