@@ -2,10 +2,12 @@ import { useState, useEffect, useRef, useId } from "react";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
 
 /* ─── CSS ─────────────────────────────────────────────────── */
+/* NOTE: the old `*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}`
+   rule was removed. It was unlayered and would override Tailwind's p-*/m-* utilities.
+   Tailwind's Preflight (from `@import "tailwindcss"`) already provides that reset. */
 const styles = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body,#root{
   background:#f0f4fa;
   min-height:100vh;
@@ -738,6 +740,10 @@ function CardIcon({id}) {
    Rendered as a second <style> after `styles`, so it wins over the
    hardcoded blue rules without touching them. */
 const extraStyles = `
+/* Tailwind's Preflight resets button cursors to default; restore the pointer
+   for the new Tailwind-styled history button and drawer. */
+button:not(:disabled){cursor:pointer;}
+
 /* Theme-aware controls (were hardcoded #185fa5) */
 .form-paper .radio-label:hover .radio-box,
 .form-paper .check-label:hover .check-box{border-color:var(--modal-primary);}
@@ -1359,6 +1365,50 @@ async function copyToClipboard(text) {
   } catch {
     return false;
   }
+}
+
+/* ─── SUBMISSION HISTORY (localStorage) ──────────────────────── */
+// Every successful submission is logged here (control number, type, timestamp).
+// No email or personal data is stored.
+const HISTORY_KEY = "lcr_submission_history";
+const HISTORY_EVENT = "lcr-history-change";
+const HISTORY_MAX = 20;
+
+function loadHistory() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(HISTORY_KEY));
+    return Array.isArray(arr) ? arr.filter((e) => e && e.control_no) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeHistory(list) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+  } catch { /* storage unavailable: ignore */ }
+  window.dispatchEvent(new Event(HISTORY_EVENT)); // keeps the UI in sync
+}
+
+function addToHistory(entry) {
+  const rest = loadHistory().filter((e) => e.control_no !== entry.control_no);
+  writeHistory([entry, ...rest].slice(0, HISTORY_MAX)); // newest first, capped
+}
+const removeFromHistory = (no) => writeHistory(loadHistory().filter((e) => e.control_no !== no));
+const clearHistory = () => writeHistory([]);
+
+function useSubmissionHistory() {
+  const [items, setItems] = useState(loadHistory);
+  useEffect(() => {
+    const sync = () => setItems(loadHistory());
+    window.addEventListener(HISTORY_EVENT, sync);
+    window.addEventListener("storage", sync); // other tabs
+    return () => {
+      window.removeEventListener(HISTORY_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  return items;
 }
 
 /* ─── VALIDATION ─────────────────────────────────────────────── */
@@ -2188,6 +2238,16 @@ function RequestForm({ kind, onClose }) {
         saveRecentRequest(res.control_no, requester.requester_email.trim());
       }
 
+      // Submission history: always kept (control number only, no email).
+      // Runs only after a successful submit; the CTL-<id> fallback is skipped.
+      if (res.control_no) {
+        addToHistory({
+          control_no: res.control_no,
+          type: kind, // "birth" | "marriage" | "death"
+          submitted_at: new Date().toISOString(),
+        });
+      }
+
       setResult(res);
       setStatus("success");
       pushToast({
@@ -2447,9 +2507,153 @@ function Modal({ type, onClose }) {
   );
 }
 
+/* ─── HISTORY BUTTON + DRAWER (Tailwind) ─────────────────────── */
+const HISTORY_TYPES = {
+  birth:    { label: "Birth",    cls: "bg-[#e6f1fb] text-[#185fa5]" },
+  marriage: { label: "Marriage", cls: "bg-[#fce7f3] text-[#be185d]" },
+  death:    { label: "Death",    cls: "bg-[#fef3c7] text-[#b45309]" },
+};
+
+const historyKeyframes = `@keyframes lcr-drawer-in{from{transform:translateX(100%)}to{transform:none}}
+@keyframes lcr-fade-in{from{opacity:0}to{opacity:1}}`;
+
+const fmtWhen = (iso) => {
+  const d = new Date(iso);
+  return isNaN(d) ? "—" : d.toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
+};
+
+function HistoryButton({ count, onClick }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={`Recent requests (${count})`}
+      className="fixed right-[max(1rem,env(safe-area-inset-right))] top-[max(1rem,env(safe-area-inset-top))] z-40 inline-flex items-center gap-2 rounded-full border border-[#dde6f2] bg-white px-3.5 py-2 text-[0.78rem] font-medium text-[#185fa5] shadow-sm transition hover:border-[#185fa5] hover:bg-[#eef3fb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#185fa5]">
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"
+        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+      </svg>
+      <span className="hidden sm:inline">Recent requests</span>
+      {count > 0 && (
+        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#185fa5] px-1 text-[0.65rem] font-semibold text-white">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function HistoryDrawer({ items, onClose }) {
+  const [copiedNo, setCopiedNo] = useState(null);
+  const timerRef = useRef(null);
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    const opener = document.activeElement;
+    closeRef.current?.focus();
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+      clearTimeout(timerRef.current);
+      opener?.focus?.();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCopy = async (no) => {
+    const ok = await copyToClipboard(no);
+    if (ok) {
+      setCopiedNo(no);
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopiedNo(null), 2000);
+    }
+    pushToast({
+      title: ok ? "Control number copied" : "Couldn't copy automatically",
+      message: ok ? `${no} is on your clipboard.` : "Select the number and copy it manually.",
+      success: ok,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[150]" role="dialog" aria-modal="true" aria-labelledby="history-title">
+      <style>{historyKeyframes}</style>
+      <div onClick={onClose}
+        className="absolute inset-0 bg-[#0a1937]/45 animate-[lcr-fade-in_.2s_ease] motion-reduce:animate-none" />
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-white shadow-2xl animate-[lcr-drawer-in_.25s_ease-out] motion-reduce:animate-none">
+        <header className="flex items-start justify-between gap-3 border-b border-[#e2ecf8] px-5 pb-4 pt-5">
+          <div>
+            <h2 id="history-title" className="font-['DM_Serif_Display'] text-xl text-[#0f1f3d]">Recent requests</h2>
+            <p className="mt-0.5 text-[0.72rem] text-[#6b87a8]">Saved on this device only</p>
+          </div>
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close recent requests"
+            className="-mr-1 grid h-9 w-9 place-items-center rounded-lg text-2xl leading-none text-[#6b87a8] transition hover:bg-[#eef3fb] hover:text-[#0f1f3d]">
+            ×
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {items.length === 0 ? (
+            <div className="mt-16 text-center text-sm text-[#6b87a8]">
+              <p className="font-medium text-[#0f1f3d]">No requests yet</p>
+              <p className="mt-1">Control numbers appear here after you submit a request.</p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {items.map((it) => {
+                const t = HISTORY_TYPES[it.type] || { label: it.type || "Request", cls: "bg-slate-100 text-slate-600" };
+                const copied = copiedNo === it.control_no;
+                return (
+                  <li key={it.control_no} className="rounded-xl border border-[#dde6f2] bg-[#f9fbff] p-3.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${t.cls}`}>
+                        {t.label}
+                      </span>
+                      <button type="button" onClick={() => removeFromHistory(it.control_no)}
+                        aria-label={`Remove ${it.control_no} from history`}
+                        className="text-[0.7rem] text-[#8aabbf] underline-offset-2 transition hover:text-[#e24b4a] hover:underline">
+                        Remove
+                      </button>
+                    </div>
+                    <p className="mt-2 break-all font-mono text-[0.95rem] font-semibold tracking-wide text-[#0f1f3d] select-all">
+                      {it.control_no}
+                    </p>
+                    <p className="mt-0.5 text-[0.7rem] text-[#6b87a8]">Submitted {fmtWhen(it.submitted_at)}</p>
+                    <button type="button" onClick={() => handleCopy(it.control_no)} aria-live="polite"
+                      className={`mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border px-3 text-[0.8rem] font-semibold transition ${
+                        copied
+                          ? "border-[#185fa5] bg-white text-[#185fa5]"
+                          : "border-[#185fa5] bg-[#185fa5] text-white hover:bg-[#0c447c]"
+                      }`}>
+                      {copied ? "Copied ✓" : "Copy Control Number"}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <footer className="border-t border-[#e2ecf8] bg-[#f4f8fd] px-5 py-3">
+          <p className="text-[0.68rem] leading-relaxed text-[#6b87a8]">
+            To track a request, you'll also need the email address used on it.
+          </p>
+          {items.length > 0 && (
+            <button type="button"
+              onClick={() => { if (window.confirm("Clear all saved requests from this device?")) clearHistory(); }}
+              className="mt-2 text-[0.75rem] font-medium text-[#e24b4a] underline-offset-2 hover:underline">
+              Clear history
+            </button>
+          )}
+        </footer>
+      </aside>
+    </div>
+  );
+}
+
 /* ─── ROOT APP ───────────────────────────────────────────────── */
 export default function App() {
   const [active, setActive] = useState(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const history = useSubmissionHistory();
   const route = useHashRoute();
   const legalPage = LEGAL_ROUTES.includes(route) ? route : null;
   return (
@@ -2460,6 +2664,8 @@ export default function App() {
       <style>{responsiveStyles}</style>
       <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
+      <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
+      {historyOpen && <HistoryDrawer items={history} onClose={() => setHistoryOpen(false)} />}
       <main className="landing">
         <div className="logo-row">
           <img src="/lcr.jpg" alt="Office of the City Civil Registrar logo" className="logo-img logo-img--lcr"
