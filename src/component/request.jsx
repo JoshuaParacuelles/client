@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
 
 /* ─── CSS ─────────────────────────────────────────────────── */
@@ -1440,19 +1440,21 @@ function buildPurposes(selected, other) {
 /* ─── SHARED COMPONENTS ──────────────────────────────────────── */
 function Spinner() { return <span className="spinner" aria-hidden="true" />; }
 
-function Checkbox({ label, checked, onChange }) {
+function Checkbox({ label, checked, onChange, name }) {
+  const uid = useId();
   return (
-    <label className="check-label">
-      <input type="checkbox" checked={checked} onChange={onChange} />
+    <label className="check-label" htmlFor={uid}>
+      <input id={uid} name={name || uid} type="checkbox" checked={checked} onChange={onChange} />
       <span className="check-box" aria-hidden="true">{checked ? "✓" : ""}</span>
       {label}
     </label>
   );
 }
 function Radio({ label, name, checked, onChange }) {
+  const uid = useId();
   return (
-    <label className="radio-label">
-      <input type="radio" name={name} checked={checked} onChange={onChange} />
+    <label className="radio-label" htmlFor={uid}>
+      <input id={uid} type="radio" name={name} value={label} checked={checked} onChange={onChange} />
       <span className="radio-box" />
       {label}
     </label>
@@ -1466,7 +1468,7 @@ function PurposeSection({ selected, onChange }) {
       <div className="purpose-grid" role="group" aria-label="Purpose of request">
         {PURPOSES.map((p, i) =>
           p ? (
-            <Checkbox key={i} label={p} checked={selected.includes(p)}
+            <Checkbox key={i} name="purpose" label={p} checked={selected.includes(p)}
               onChange={() => onChange(selected.includes(p) ? selected.filter((x) => x !== p) : [...selected, p])} />
           ) : <div key={i} />
         )}
@@ -1476,6 +1478,7 @@ function PurposeSection({ selected, onChange }) {
 }
 
 function CopiesRow({ copies, setCopies, name, othersValue, setOthersValue, error }) {
+  const othersRadioId = useId();
   return (
     <div className="copies-row">
       <div className="copies-row-label">Number of Copies — Please check appropriate box</div>
@@ -1484,10 +1487,10 @@ function CopiesRow({ copies, setCopies, name, othersValue, setOthersValue, error
           <Radio key={c} label={c} name={name} checked={copies === c} onChange={() => setCopies(c)} />
         ))}
         <label className="radio-label">
-          <input type="radio" name={name} checked={copies === "Others"} onChange={() => setCopies("Others")} />
+          <input id={othersRadioId} type="radio" name={name} value="Others" checked={copies === "Others"} onChange={() => setCopies("Others")} />
           <span className="radio-box" />
           Others:
-          <input type="text" inputMode="numeric" aria-label="Number of copies (other)" className="copies-others-input" value={othersValue}
+          <input id={`${name}-others-count`} name={`${name}-others-count`} type="text" inputMode="numeric" aria-label="Number of copies (other)" className="copies-others-input" value={othersValue}
             onChange={(e) => setOthersValue(e.target.value.replace(/\D/g, ""))} disabled={copies !== "Others"} />
         </label>
       </div>
@@ -1549,7 +1552,7 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
           Choose File
-          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={handleChange} />
+          <input ref={fileRef} id="signature_file" name="signature_file" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={handleChange} />
         </label>
         {preview ? (
           <img src={preview} alt="Preview of the uploaded signature file" className="sig-preview" />
@@ -1563,7 +1566,7 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
       <div className="sig-note">PNG, JPG, WEBP or PDF · max 2 MB</div>
       <label className="req-field">
         Signature Over Printed Name
-        <input type="text" value={printedName} onChange={(e) => onPrintedNameChange(e.target.value)}
+        <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName} onChange={(e) => onPrintedNameChange(e.target.value)}
           placeholder="Type the name that appears under your signature" />
       </label>
     </>
@@ -1576,7 +1579,7 @@ function RequesterFields({ data, onChange, errors, sigFile, onSigChange, printed
     <div>
       <label className="req-field">
         {label}
-        <input type="text" className={errors[key] ? "invalid" : ""} value={data[key]}
+        <input id={key} name={key} type="text" className={errors[key] ? "invalid" : ""} value={data[key]}
           aria-invalid={!!errors[key]} aria-required={label.endsWith("*")}
           onChange={(e) => onChange(key, e.target.value)} {...extra} />
       </label>
@@ -1587,14 +1590,14 @@ function RequesterFields({ data, onChange, errors, sigFile, onSigChange, printed
     <div className="req-left">
       <div className="req-title">Requesting Party</div>
       <SignatureUpload file={sigFile} onChange={onSigChange} printedName={printedName} onPrintedNameChange={onPrintedNameChange} />
-      {text("requester_name", "Full Name *", { placeholder: "Juan Dela Cruz" })}
+      {text("requester_name", "Full Name *", { placeholder: "Juan Dela Cruz", autoComplete: "name" })}
       {text("requester_relationship", "Relationship to document owner *", { placeholder: "Self / Parent / Spouse" })}
-      {text("requester_address", "Address *")}
+      {text("requester_address", "Address *", { autoComplete: "street-address" })}
       {text("requester_telephone", "Telephone No.", {
-        type: "tel", inputMode: "tel",
+        type: "tel", inputMode: "tel", autoComplete: "tel",
         onChange: (e) => onChange("requester_telephone", sanitizePhoneInput(e.target.value)),
       })}
-      {text("requester_email", "Email Address *", { type: "email", placeholder: "juandelacruz@gmail.com" })}
+      {text("requester_email", "Email Address *", { type: "email", placeholder: "juandelacruz@gmail.com", autoComplete: "email" })}
     </div>
   );
 }
@@ -1605,45 +1608,37 @@ function IssuancePanel({ forms, selected, onToggle }) {
       <div className="issuance-title">Issuance</div>
       {forms.map((f) => (
         <div key={f} className="issuance-item">
-          <Checkbox label={f} checked={selected.includes(f)} onChange={() => onToggle(f)} />
+          <Checkbox name="issuance" label={f} checked={selected.includes(f)} onChange={() => onToggle(f)} />
         </div>
       ))}
       <div className="issuance-sep" />
       <div className="issuance-item">
-        <Checkbox label="Machine Copy" checked={selected.includes("Machine Copy")} onChange={() => onToggle("Machine Copy")} />
+        <Checkbox name="issuance" label="Machine Copy" checked={selected.includes("Machine Copy")} onChange={() => onToggle("Machine Copy")} />
       </div>
     </div>
   );
 }
 
 function OccrPanel({ data, onChange }) {
+  const field = (key, label, extra = {}) => (
+    <>
+      <label htmlFor={`occr_${key}`}>{label}</label>
+      <input id={`occr_${key}`} name={`occr_${key}`} type="text" aria-label={`${label} (office use only)`}
+        value={data[key]} onChange={(e) => onChange(key, e.target.value)} {...extra} />
+    </>
+  );
   return (
     <div className="form-right">
       <div className="right-panel-title">For OCCR Personnel Only</div>
-      <div className="right-field">
-        <label>Registry No.</label>
-        <input type="text" aria-label="Registry number (office use only)" value={data.registry_no} onChange={(e) => onChange("registry_no", e.target.value)} />
-      </div>
-      <div className="right-field">
-        <label>Date of Registration</label>
-        <input type="date" aria-label="Date of registration (office use only)" value={data.date_of_registration} onChange={(e) => onChange("date_of_registration", e.target.value)} />
-      </div>
+      <div className="right-field">{field("registry_no", "Registry No.")}</div>
+      <div className="right-field">{field("date_of_registration", "Date of Registration", { type: "date" })}</div>
       <div className="right-field">
         <div className="book-page-row">
-          <div>
-            <label>Book</label>
-            <input type="text" aria-label="Book (office use only)" value={data.book} onChange={(e) => onChange("book", e.target.value)} />
-          </div>
-          <div>
-            <label>Page</label>
-            <input type="text" aria-label="Page (office use only)" value={data.page} onChange={(e) => onChange("page", e.target.value)} />
-          </div>
+          <div>{field("book", "Book")}</div>
+          <div>{field("page", "Page")}</div>
         </div>
       </div>
-      <div className="right-field">
-        <label>Search by</label>
-        <input type="text" aria-label="Search by (office use only)" value={data.search_by} onChange={(e) => onChange("search_by", e.target.value)} />
-      </div>
+      <div className="right-field">{field("search_by", "Search by")}</div>
     </div>
   );
 }
@@ -1688,12 +1683,12 @@ function FormSubheader() {
     <div className="form-subheader">
       <div className="sh-field">
         <span className="sh-label">Control No.</span>
-        <input className="sh-value" type="text" readOnly aria-label="Control number (assigned after submission)" placeholder="Auto-generated" style={{ width: 110 }} />
+        <input id="control_no" name="control_no" className="sh-value" type="text" readOnly aria-label="Control number (assigned after submission)" placeholder="Auto-generated" style={{ width: 110 }} />
       </div>
       <div className="sh-divider" />
       <div className="sh-field">
         <span className="sh-label">Date</span>
-        <input className="sh-value" type="text" defaultValue={today} readOnly aria-label="Date of request" style={{ width: 90 }} />
+        <input id="request_date" name="request_date" className="sh-value" type="text" defaultValue={today} readOnly aria-label="Date of request" style={{ width: 90 }} />
       </div>
     </div>
   );
@@ -1811,7 +1806,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
           </p>
           <label className="req-field">
             Verification Code
-            <input type="text" className="otp-input" inputMode="numeric" autoComplete="one-time-code"
+            <input id="verification_code" name="verification_code" type="text" className="otp-input" inputMode="numeric" autoComplete="one-time-code"
               maxLength={CODE_LENGTH} placeholder={"0".repeat(CODE_LENGTH)} aria-label="Verification code"
               value={code} autoFocus
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))} />
@@ -1870,7 +1865,7 @@ function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, statu
         ]} />
         <div className="section-heading">Optional</div>
         <div className="review-consent">
-          <Checkbox label="Save my control number and email on this device so I can track this request later. I can remove it anytime from the tracking screen."
+          <Checkbox name="remember_device" label="Save my control number and email on this device so I can track this request later. I can remove it anytime from the tracking screen."
             checked={remember} onChange={() => onRememberChange(!remember)} />
         </div>
       </div>
@@ -2038,7 +2033,7 @@ const FORM_CONFIGS = {
 function SubjectField({ k, cls, placeholder, sub, heading, values, setValue, errors }) {
   return (
     <div className={cls}>
-      <input type="text" className={errors[k] ? "invalid" : ""} value={values[k]}
+      <input id={k} name={k} type="text" className={errors[k] ? "invalid" : ""} value={values[k]}
         onChange={(e) => setValue(k, e.target.value)} placeholder={placeholder}
         aria-label={`${heading} ${sub}`} aria-invalid={!!errors[k]} />
       <span className="sub-label">{sub}</span>
@@ -2262,7 +2257,7 @@ function RequestForm({ kind, onClose }) {
           {purposes.includes("OTHERS (SPECIFY)") && (
             <div className="specify-row">
               <span>Specify:</span>
-              <input type="text" aria-label="Specify other purpose" value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
+              <input id="purpose_other" name="purpose_other" type="text" aria-label="Specify other purpose" value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
             </div>
           )}
           <AuthClause />
@@ -2351,12 +2346,12 @@ function TrackForm({ onClose }) {
 
           <label className="req-field">
             Control Number
-            <input type="text" value={controlNo} onChange={(e) => setControlNo(e.target.value)}
+            <input id="track_control_no" name="control_no" type="text" value={controlNo} onChange={(e) => setControlNo(e.target.value)}
               placeholder="BR-20260929-00042" autoCapitalize="characters" />
           </label>
           <label className="req-field">
             Email Address
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juandelacruz@gmail.com" />
+            <input id="track_email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juandelacruz@gmail.com" />
           </label>
           <p className="track-note">
             We use these only to look up your request. See our{" "}
