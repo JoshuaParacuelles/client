@@ -852,6 +852,251 @@ const extraStyles = `
 }
 `;
 
+/* ─── RESPONSIVE CSS (all screen sizes, orientations and input types) ───
+   Rendered LAST so it refines the rules above. Breakpoints:
+   ≥1400 large desktop · ≥1024 desktop · 761–1023 tablet ·
+   ≤640 phone (floating centered card) · ≤400 small phone · ≤340 tiny phone ·
+   landscape phones (short height) · touch devices · reduced motion. */
+const responsiveStyles = `
+/* ── Base: never let anything cause sideways scrolling ── */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+html,body{max-width:100%;overflow-x:hidden;}
+img,svg{max-width:100%;}
+.form-paper,.form-left,.form-right,.req-section,.req-left,.req-right,
+.review-body,.track-body,.purpose-section{min-width:0;}
+.form-paper input,.form-paper button{max-width:100%;}
+.form-paper a{word-break:break-word;}
+
+/* ── Landing: fluid + always fills the screen ── */
+.landing{
+  min-height:100vh;min-height:100dvh;
+  padding:clamp(28px,6vh,72px) clamp(14px,4vw,40px);
+  padding-left:max(clamp(14px,4vw,40px),env(safe-area-inset-left,0px));
+  padding-right:max(clamp(14px,4vw,40px),env(safe-area-inset-right,0px));
+}
+.landing .select-prompt{font-size:clamp(0.62rem,1.6vw,0.74rem);}
+.track-link{min-height:40px;}
+
+/* ── Overlay: respects notches / safe areas and uses dynamic viewport ── */
+.overlay{
+  height:100vh;height:100dvh;
+  padding-top:max(16px,env(safe-area-inset-top,0px));
+  padding-left:max(12px,env(safe-area-inset-left,0px));
+  padding-right:max(12px,env(safe-area-inset-right,0px));
+  padding-bottom:max(32px,env(safe-area-inset-bottom,0px));
+  overscroll-behavior:contain;
+}
+.overlay > .form-paper{max-width:var(--modal-max,720px);}
+
+/* ── Large desktop: wider card, roomier type ── */
+@media(min-width:1024px){
+  .overlay{padding-top:max(32px,5vh);}
+  .overlay{--modal-max:780px;}
+  .form-left{padding:24px 28px;}
+  .form-right{padding:20px;}
+  .form-body{grid-template-columns:minmax(0,1fr) 190px;}
+}
+@media(min-width:1400px){
+  .overlay{--modal-max:860px;}
+  .form-body{grid-template-columns:minmax(0,1fr) 210px;}
+  .type-card{width:236px;padding:32px 26px 28px;}
+  .card-title{font-size:1rem;}
+  .card-arrow{font-size:0.76rem;}
+  .office-name{font-size:2.4rem;}
+}
+@media(min-width:1800px){
+  .overlay{--modal-max:920px;}
+}
+
+/* ── Tablet (761–1023): comfortable two-column form ── */
+@media(min-width:761px) and (max-width:1023px){
+  .overlay{--modal-max:700px;}
+  .form-body{grid-template-columns:minmax(0,1fr) 160px;}
+  .form-left{padding:20px;}
+  .form-right{padding:14px;}
+  .purpose-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .form-header-inner,.form-subheader,.review-body,.track-body{padding-left:22px;padding-right:22px;}
+}
+
+/* ── Narrow tablets / large phones (≤760): one column form ── */
+@media(max-width:760px){
+  .form-body{display:flex;flex-direction:column;}
+  .purpose-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .req-section{grid-template-columns:minmax(0,1fr) 1px 120px;}
+}
+
+/* ── Phone (≤640): full-screen sheet base (refined into a centered card at the bottom of this block) ── */
+@media(max-width:640px){
+  .overlay{padding:0;height:100vh;height:100dvh;}
+  .overlay > .form-paper{max-width:100%;margin:0;}
+  .form-paper{
+    min-height:100%;min-height:100dvh;
+    padding-left:env(safe-area-inset-left,0px);
+    padding-right:env(safe-area-inset-right,0px);
+  }
+  .form-header{padding-top:env(safe-area-inset-top,0px);}
+  .form-header-inner{flex-wrap:wrap;}
+  .header-title{overflow-wrap:anywhere;}
+  .form-subheader{flex-direction:column;align-items:stretch;gap:8px;}
+  .form-subheader .sh-field{width:100%;}
+  .form-subheader .sh-value{width:100% !important;flex:1;min-width:0;}
+  .copies-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;}
+  .copies-options .radio-label:last-child{grid-column:1/-1;}
+  .copies-others-input{width:80px;min-height:32px;font-size:16px;}
+  .sig-upload-wrap{flex-wrap:wrap;}
+  .sig-upload-label{min-height:40px;padding:8px 12px;}
+  .sig-clear-btn{min-width:32px;min-height:32px;font-size:20px;}
+  .auth-text{font-size:0.72rem;}
+  .form-actions{
+    padding-left:max(18px,env(safe-area-inset-left,0px));
+    padding-right:max(18px,env(safe-area-inset-right,0px));
+    box-shadow:0 -6px 16px rgba(15,31,61,0.06);
+  }
+  .track-steps{margin:16px 0 6px;}
+  .track-step{font-size:0.62rem;gap:4px;overflow-wrap:anywhere;padding:0 2px;}
+  .track-status{font-size:1.1rem;}
+  .track-meta{line-height:1.5;}
+  .form-paper .req-field input.otp-input[type="text"]{font-size:1.4rem;letter-spacing:0.3em;padding-left:0.3em;}
+  .recent-box{flex-direction:column;align-items:stretch;}
+  .recent-actions{justify-content:space-between;}
+  .form-paper .recent-use{min-height:40px;flex:1;}
+  .toast-wrap{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));}
+}
+
+/* ── Home cards (≤700): three in a row, never overflow ── */
+@media(max-width:700px){
+  .cards-row{max-width:min(100%,440px);}
+  .card-title{overflow-wrap:anywhere;hyphens:auto;}
+}
+
+/* ── Small phone (≤400) ── */
+@media(max-width:400px){
+  .logo-img{height:44px;max-width:68px;}
+  .logo-row{gap:10px;}
+  .form-header-inner{padding:14px 14px 12px;}
+  .form-left,.form-right,.review-body,.track-body{padding-left:14px;padding-right:14px;}
+  .form-subheader{padding-left:14px;padding-right:14px;}
+  .form-actions{padding-left:14px;padding-right:14px;gap:8px;}
+  .purpose-section{padding:10px;}
+  .req-left,.req-right{padding:10px;}
+  .date-row{flex-wrap:wrap;}
+  .date-col{flex:1 1 40%;}
+  .date-col:nth-child(1){flex:1 1 100%;}
+  .success-overlay{padding:32px 14px;}
+  .success-title{font-size:1.25rem;}
+  .ctl-card{padding:14px;}
+  .cards-row{gap:4px;}
+  .card-title{font-size:0.66rem;}
+  .toast{padding:12px;}
+}
+
+/* ── Tiny phone (≤340) ── */
+@media(max-width:340px){
+  .purpose-grid{grid-template-columns:1fr;}
+  .copies-options{grid-template-columns:1fr;}
+  .btn-cancel,.btn-submit{flex:1 1 100%;}
+  .track-step{font-size:0.56rem;}
+  .track-dot{width:20px;height:20px;font-size:10px;}
+  .track-step::before{top:9px;}
+  .office-name{font-size:1.4rem;}
+}
+
+/* ── Landscape phones / very short screens ── */
+@media(max-height:520px) and (orientation:landscape){
+  .landing{justify-content:flex-start;padding-top:18px;padding-bottom:24px;}
+  .logo-row{margin-bottom:10px;}
+  .logo-img{height:40px;}
+  .office-name{font-size:1.4rem;}
+  .select-prompt{margin-bottom:10px;}
+  .track-link{margin-top:12px;}
+  .overlay{padding-top:0;padding-bottom:0;}
+  .form-header-inner{padding-top:10px;padding-bottom:8px;}
+  .success-overlay{padding:24px 18px;}
+  .success-icon-wrap{width:48px;height:48px;margin-bottom:12px;}
+  .form-actions{position:sticky;bottom:0;z-index:5;padding-top:8px;padding-bottom:8px;}
+  .toast-wrap{top:8px;}
+}
+/* Landscape phones are wide but short: keep the 2-column form if there is room */
+@media(min-width:641px) and (max-height:520px) and (orientation:landscape){
+  .overlay{--modal-max:100%;}
+  .form-paper{border-radius:0;}
+}
+
+/* ── Touch devices: 44px-ish tap targets ── */
+@media(pointer:coarse){
+  .check-label,.radio-label{min-height:32px;}
+  .check-box,.radio-box{width:20px;height:20px;}
+  .radio-label input[type="radio"]:checked+.radio-box::after{inset:4px;}
+  .btn-cancel,.btn-submit,.btn-new{min-height:44px;}
+  .toast-close{min-width:32px;min-height:32px;font-size:22px;}
+  .verify-resend{min-height:40px;}
+  .type-card{min-height:44px;}
+}
+
+/* ── Keyboard users ── */
+.form-paper button:focus-visible,
+.form-paper a:focus-visible,
+.track-link:focus-visible,
+.sig-upload-label:focus-within{outline:2px solid var(--modal-primary,#185fa5);outline-offset:2px;}
+
+/* ── Printing: show only the page, not the modal chrome ── */
+@media print{
+  .overlay{position:static;height:auto;background:none;padding:0;overflow:visible;}
+  .form-paper{box-shadow:none;border:none;max-width:100%;}
+  .form-actions,.toast-wrap{display:none !important;}
+}
+
+/* ── Reduced motion ── */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}
+  .success-check path{stroke-dashoffset:0;}
+}
+
+/* ── CENTER THE MODAL CARD VERTICALLY (Track, Verify, Success, forms) ──
+   margin:auto on a flex child centers it when there is spare room,
+   and still lets long forms scroll normally from the top.
+   This block is intentionally LAST so it overrides everything above. */
+.overlay{
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+}
+.overlay > .form-paper{
+  margin:auto;
+  align-self:center;
+}
+
+/* Phone: floating centered card instead of a full-height sheet */
+@media(max-width:640px){
+  .overlay{
+    padding-top:max(16px,env(safe-area-inset-top,0px));
+    padding-bottom:max(16px,env(safe-area-inset-bottom,0px));
+    padding-left:max(14px,env(safe-area-inset-left,0px));
+    padding-right:max(14px,env(safe-area-inset-right,0px));
+  }
+  .overlay > .form-paper{
+    margin:auto;
+    min-height:0;                 /* stop forcing 100dvh height */
+    max-width:100%;
+    border-radius:16px;
+    border:1px solid #c8d9f0;
+    box-shadow:0 20px 60px rgba(24,95,165,0.14);
+    overflow:hidden;              /* fallback for browsers without overflow:clip */
+    overflow:clip;                /* clips rounded corners but keeps sticky buttons working */
+    padding-left:0;
+    padding-right:0;
+  }
+  .overlay > .form-paper .form-header{padding-top:0;}
+  .verify-form .review-body,
+  .track-body{flex:0 0 auto;}
+}
+
+/* Landscape phones: keep it compact but still centered */
+@media(max-height:520px) and (orientation:landscape){
+  .overlay{padding-top:8px;padding-bottom:8px;}
+}
+`;
+
 /* ─── API ────────────────────────────────────────────────────── */
 const NETWORK_ERROR = "We couldn't reach the server. Please check your internet connection and try again.";
 
@@ -1954,6 +2199,7 @@ export default function App() {
       <style>{styles}</style>
       <style>{extraStyles}</style>
       <style>{LEGAL_CSS}</style>
+      <style>{responsiveStyles}</style>
       <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <main className="landing">
