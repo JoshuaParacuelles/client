@@ -494,23 +494,30 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 }
 .marriage-date-input:focus{border-bottom-color:#185fa5;}
 
-/* ── TOAST ── */
-.toast-wrap{position:fixed;top:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
+/* ── TOAST ──
+   Wide notification cards (like the reference): the stack is a fixed-width
+   column in the top-right corner and every toast fills it. */
+.toast-wrap{
+  position:fixed;top:20px;right:20px;z-index:999;
+  display:flex;flex-direction:column;align-items:stretch;gap:10px;
+  width:min(460px,calc(100vw - 40px));
+  pointer-events:none;
+}
 .toast{
   background:#fff;border:1px solid #c8d9f0;border-radius:12px;
   box-shadow:0 8px 24px rgba(24,95,165,0.12);
-  padding:14px 16px;min-width:280px;max-width:360px;
-  display:flex;align-items:flex-start;gap:12px;pointer-events:all;
+  padding:16px 18px;width:100%;min-width:0;max-width:none;
+  display:flex;align-items:flex-start;gap:14px;pointer-events:all;
   animation:slideInRight 0.3s cubic-bezier(0.22,1,0.36,1);position:relative;overflow:hidden;
 }
 @keyframes slideInRight{from{opacity:0;transform:translateX(50px);}to{opacity:1;transform:translateX(0);}}
 .toast.hiding{animation:slideOutRight 0.25s ease forwards;}
 @keyframes slideOutRight{to{opacity:0;transform:translateX(50px);}}
-.toast-icon{width:20px;height:20px;flex-shrink:0;margin-top:1px;}
-.toast-body{flex:1;}
-.toast-title{font-size:0.82rem;font-weight:600;color:#0f1f3d;margin-bottom:2px;}
-.toast-msg{font-size:0.74rem;color:#5577a0;line-height:1.5;}
-.toast-close{background:none;border:none;cursor:pointer;color:#8aabbf;font-size:18px;line-height:1;padding:0;flex-shrink:0;transition:color 0.15s;}
+.toast-icon{width:22px;height:22px;flex-shrink:0;margin-top:1px;}
+.toast-body{flex:1;min-width:0;}
+.toast-title{font-size:0.9rem;font-weight:600;color:#0f1f3d;margin-bottom:3px;line-height:1.35;}
+.toast-msg{font-size:0.8rem;color:#5577a0;line-height:1.5;overflow-wrap:anywhere;}
+.toast-close{background:none;border:none;cursor:pointer;color:#8aabbf;font-size:20px;line-height:1;padding:0;flex-shrink:0;transition:color 0.15s;}
 .toast-close:hover{color:#0f1f3d;}
 .toast-progress{height:3px;background:#e2ecf8;position:absolute;bottom:0;left:0;right:0;overflow:hidden;}
 .toast-progress-bar{height:100%;animation:shrink linear forwards;}
@@ -618,7 +625,7 @@ input.invalid{border-bottom-color:#e24b4a!important;}
   /* Modal: success + toasts (toasts move to the top so they never cover the buttons) */
   .success-overlay{flex:1;padding:40px 24px;}
   .success-ref{flex-wrap:wrap;justify-content:center;}
-  .toast-wrap{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;right:12px;left:12px;}
+  .toast-wrap{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;right:12px;left:12px;width:auto;}
   .toast{min-width:unset;width:100%;max-width:none;}
 }
 
@@ -981,7 +988,7 @@ img,svg{max-width:100%;}
   .recent-box{flex-direction:column;align-items:stretch;}
   .recent-actions{justify-content:space-between;}
   .form-paper .recent-use{min-height:40px;flex:1;}
-  .toast-wrap{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));}
+  .toast-wrap{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));width:auto;}
 }
 
 /* ── Home cards (≤700): three in a row, never overflow ── */
@@ -1008,7 +1015,7 @@ img,svg{max-width:100%;}
   .ctl-card{padding:14px;}
   .cards-row{gap:4px;}
   .card-title{font-size:0.66rem;}
-  .toast{padding:12px;}
+  .toast{padding:14px;gap:12px;}
 }
 
 /* ── Tiny phone (≤340) ── */
@@ -1210,6 +1217,28 @@ img,svg{max-width:100%;}
   border:1.5px solid #c8d9f0;border-radius:8px;background:#fff;padding:7px 9px;
 }
 .form-paper .form-right input:focus{border-color:var(--modal-primary);outline:none;}
+
+/* ══════════════════════════════════════════════════════════════
+   WIDE TOAST NOTIFICATIONS (final override — wins over everything above)
+   Desktop/tablet: 460px-wide stack in the top-right corner.
+   Phone: full width minus 12px margins. Long titles wrap inside the
+   card instead of squeezing into a narrow box.
+   ══════════════════════════════════════════════════════════════ */
+.toast-wrap{
+  width:min(460px,calc(100vw - 40px));
+  align-items:stretch;
+}
+.toast{
+  width:100%;min-width:0;max-width:none;
+  padding:16px 18px;gap:14px;
+}
+.toast-body{flex:1;min-width:0;}
+.toast-title{font-size:0.9rem;line-height:1.35;}
+.toast-msg{font-size:0.8rem;overflow-wrap:anywhere;}
+@media(max-width:640px){
+  .toast-wrap{width:auto;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));}
+  .toast{padding:14px 16px;}
+}
 `;
 
 /* ─── API ────────────────────────────────────────────────────── */
@@ -1681,10 +1710,8 @@ function FormActions({ status, errorMessage, onCancel, onSubmit, cancelLabel = "
 /* ─── EMAIL VERIFICATION STEP ────────────────────────────────── */
 // Sends a one-time code to the requester's email and exchanges it for a
 // verification token. The request cannot be submitted without that token.
-/* ─── EMAIL VERIFICATION STEP ────────────────────────────────── */
-// Replace the existing VerifyScreen function in App.jsx with this one.
-// Change vs. before: a failed send (network/CORS/server error) no longer
-// uses up one of the "resend" attempts. Only successful sends are counted.
+// A failed send (network/CORS/server error) does not use up one of the
+// "resend" attempts. Only successful sends are counted.
 function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
   const MAX_SENDS = 5; // keep in sync with the server's 5/hour per-email limit
   const [code, setCode] = useState("");
@@ -1803,6 +1830,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     </div>
   );
 }
+
 /* ─── REVIEW / SUCCESS ───────────────────────────────────────── */
 function ReviewRow({ label, value }) {
   const hasValue = value !== null && value !== undefined && String(value).trim() !== "";
