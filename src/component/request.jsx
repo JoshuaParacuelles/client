@@ -2511,13 +2511,6 @@ const HISTORY_TYPES = {
   death:    { label: "Death",    cls: "bg-[#fef3c7] text-[#b45309]" },
 };
 
-const historyKeyframes = `
-@keyframes lcr-drawer-in{from{transform:translateX(100%)}to{transform:none}}
-@keyframes lcr-fade-in{from{opacity:0}to{opacity:1}}
-@media (max-width:639px){
-  @keyframes lcr-drawer-in{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
-}`;
-
 const fmtWhen = (iso) => {
   const d = new Date(iso);
   return isNaN(d) ? "—" : d.toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
@@ -2550,41 +2543,65 @@ function HistoryButton({ count, onClick }) {
   );
 }
 
-/* Drawer with Supercell-style slide animation */
+/* Drawer: backdrop fades in, panel slides in from the right.
+   Closing plays the same transition in reverse before unmounting. */
+const DRAWER_ANIM_MS = 300; // keep in sync with duration-300 below
+
 function HistoryDrawer({ items, onClose }) {
   const [copiedNo, setCopiedNo] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
-  const timerRef = useRef(null);
-  const closeRef = useRef(null);
+  const copyTimerRef = useRef(null);
+  const closeTimerRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const closingRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  const handleCloseRef = useRef(() => {});
+
+  // Always call the latest onClose, even though the timer was set earlier.
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Plays the exit transition, then unmounts. Ignores repeated calls.
+  const handleClose = () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setIsOpen(false);
+    closeTimerRef.current = setTimeout(() => onCloseRef.current(), DRAWER_ANIM_MS);
+  };
+  handleCloseRef.current = handleClose;
 
   useEffect(() => {
-    // Trigger slide-in animation on mount
-    const timer = setTimeout(() => setIsOpen(true), 10);
+    // Render the closed state first, then flip to open on a later frame
+    // (double rAF) so the browser has painted it and the transition plays.
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setIsOpen(true));
+    });
+
     const opener = document.activeElement;
-    closeRef.current?.focus({ preventScroll: true });
-    const onKey = (e) => { if (e.key === "Escape") handleClose(); };
+    closeBtnRef.current?.focus({ preventScroll: true });
+    const onKey = (e) => { if (e.key === "Escape") handleCloseRef.current(); };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
+
     return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
-      clearTimeout(timerRef.current);
-      clearTimeout(timer);
+      clearTimeout(copyTimerRef.current);
+      clearTimeout(closeTimerRef.current);
       opener?.focus?.();
     };
   }, []);
-
-  const handleClose = () => {
-    setIsOpen(false);
-    setTimeout(onClose, 300); // match duration-300
-  };
 
   const handleCopy = async (no) => {
     const ok = await copyToClipboard(no);
     if (ok) {
       setCopiedNo(no);
-      clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setCopiedNo(null), 2000);
+      clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopiedNo(null), 2000);
     }
     pushToast({
       title: ok ? "Control number copied" : "Couldn't copy automatically",
@@ -2594,20 +2611,18 @@ function HistoryDrawer({ items, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
-      <style>{historyKeyframes}</style>
-
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[150] flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
+      {/* Backdrop: fades in/out */}
       <div
         onClick={handleClose}
-        className={`absolute inset-0 bg-[#0a1937]/45 transition-opacity duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-[#0a1937]/45 transition-opacity duration-300 ease-in-out ${isOpen ? "opacity-100" : "opacity-0"}`}
       />
 
-      {/* Panel with Smooth Slide Animation */}
+      {/* Panel: slides in from / out to the right edge */}
       <aside
         className={`relative z-10 flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl
                     sm:max-w-sm sm:rounded-l-2xl lg:max-w-md
-                    transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                    transform transition-transform duration-300 ease-in-out will-change-transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
         <header
@@ -2622,7 +2637,7 @@ function HistoryDrawer({ items, onClose }) {
             <p className="mt-0.5 text-[0.72rem] text-[#6b87a8]">Saved on this device only</p>
           </div>
           <button
-            ref={closeRef}
+            ref={closeBtnRef}
             type="button"
             onClick={handleClose}
             aria-label="Close recent requests"
