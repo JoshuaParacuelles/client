@@ -12,13 +12,28 @@ const BACKUP_KEY = "lcr_submission_history_bk"; // second copy in localStorage
 const LEGACY_KEYS = [];                          // old key names: keep forever
 const IDB_NAME = "lcr_history_mirror";           // third copy (IndexedDB)
 
+/* ── Control number prefixes (must match the backend) ── */
+export const CONTROL_PREFIXES = { birth: "BR", marriage: "MR", death: "DR" };
+const TYPE_BY_PREFIX = Object.fromEntries(
+  Object.entries(CONTROL_PREFIXES).map(([type, prefix]) => [prefix, type])
+);
+// "MR-20261004-00007" -> "marriage" (null if the prefix is unknown)
+export const typeFromControlNo = (no) =>
+  TYPE_BY_PREFIX[String(no || "").split("-")[0].toUpperCase()] || null;
+
 const idOf = (e) => e?.control_no || e?.controlNumber || e?.control_number || null;
 
+// The prefix is the source of truth for the record type, so old entries
+// with a missing or wrong `type` are corrected whenever they are read.
 const normalize = (list) =>
   Array.isArray(list)
     ? list
         .filter((e) => e && typeof e === "object" && idOf(e))
-        .map((e) => (e.control_no ? e : { ...e, control_no: idOf(e) }))
+        .map((e) => {
+          const base = e.control_no ? e : { ...e, control_no: idOf(e) };
+          const type = typeFromControlNo(base.control_no) || base.type;
+          return type === base.type ? base : { ...base, type };
+        })
     : [];
 
 // Union by control number, newest first. Nothing is ever dropped.

@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
-import { addToHistory, getHistory, HISTORY_EVENT, initHistoryProtection } from "./historyStore";
+import {
+  addToHistory, getHistory, HISTORY_EVENT, initHistoryProtection,
+  CONTROL_PREFIXES, typeFromControlNo,
+} from "./historyStore";
 
 
 
@@ -697,8 +700,9 @@ const MODAL_THEMES = {
 };
 
 /* ─── HOME-SCREEN ICON COLORS ───────────────────────────────────
-    Only the three icons on the landing page use these. The forms
-    keep using FORM_THEME above, so their colors are not affected.
+    Used by the three landing-page icons AND by the type badges on the
+    success screen and the Recent requests sidebar, so a record type
+    looks the same everywhere. The forms keep using FORM_THEME above.
        bg / bgHover     = icon tile fill
        base / hover     = icon outline + glyph color */
 const CARD_ICON_COLORS = {
@@ -710,8 +714,9 @@ const CARD_ICON_COLORS = {
 /* ─── HOME SCREEN ICONS ────────────────────────────────        */
 // Flat single-color line icons (inherit the accent via currentColor)
 // replacing the multi-color emoji so the home screen reads as one
-// cohesive system.
-function CardIcon({id}) {
+// cohesive system. `style` lets callers force the color/size where a
+// global CSS rule (e.g. `.form-paper *{color:#000}`) would override it.
+function CardIcon({ id, style }) {
   const paths = {
     birth: (
       <>
@@ -733,7 +738,31 @@ function CardIcon({id}) {
       </>
     ),
   };
-  return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[id]}</svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true" style={style}>{paths[id]}</svg>;
+}
+
+/* ─── RECORD TYPE METADATA (shared by success screen + history) ──
+    Tailwind class strings are written out in full so the compiler can see them. */
+const RECORD_META = {
+  birth:    { label: "Birth",    prefix: CONTROL_PREFIXES.birth,    badge: "bg-[#e6f1fb] text-[#185fa5]" },
+  marriage: { label: "Marriage", prefix: CONTROL_PREFIXES.marriage, badge: "bg-[#fce7f3] text-[#be185d]" },
+  death:    { label: "Death",    prefix: CONTROL_PREFIXES.death,    badge: "bg-[#fef3c7] text-[#b45309]" },
+};
+
+// Colored icon tile for a record type. Inline styles on purpose: inside the
+// modal, `.form-paper *{color:#000}` would otherwise turn the icon black.
+function TypeTile({ kind, size = 36 }) {
+  const c = CARD_ICON_COLORS[kind];
+  if (!c) return null;
+  return (
+    <span aria-hidden="true" className="inline-grid shrink-0 place-items-center rounded-[10px]"
+      style={{ width: size, height: size, background: c.bg, border: `1.5px solid ${c.base}` }}>
+      <CardIcon id={kind} style={{
+        width: size * 0.5, height: size * 0.5, color: c.base,
+        stroke: "currentColor", fill: "none", strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round",
+      }} />
+    </span>
+  );
 }
 
 /* ─── EXTRA CSS (theme fixes + tracking screen + control-number UI + email verification) ───
@@ -1953,6 +1982,10 @@ function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, statu
 
 function SuccessScreen({ result, type, email, savedOnDevice, onClose }) {
   const controlNo = result.control_no || `CTL-${result.record_id}`;
+  // The control number prefix is the source of truth for the record type;
+  // fall back to the form type when the number has no BR/MR/DR prefix.
+  const kind = typeFromControlNo(result.control_no) || type;
+  const meta = RECORD_META[kind];
   const [copied, setCopied] = useState(false);
   const timerRef = useRef(null);
 
@@ -1984,9 +2017,18 @@ function SuccessScreen({ result, type, email, savedOnDevice, onClose }) {
         <svg className="success-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
       </div>
       <div className="success-title">Request Submitted!</div>
-      <div className="success-sub">Your <strong>{type}</strong> record request has been saved.</div>
+      <div className="success-sub">Your <strong>{meta ? meta.label.toLowerCase() : type}</strong> record request has been saved.</div>
 
       <div className="ctl-card">
+        {meta && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 }}>
+            <TypeTile kind={kind} />
+            <span className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${meta.badge}`}
+              style={{ color: CARD_ICON_COLORS[kind].base }}>
+              {meta.label} · {meta.prefix}
+            </span>
+          </div>
+        )}
         <div className="ctl-label">Your Control Number</div>
         <div className="ctl-number">{controlNo}</div>
         {email && <div className="ctl-email">Tracking email: {email}</div>}
@@ -2248,9 +2290,18 @@ function RequestForm({ kind, onClose }) {
       // historyStore is append-only: it never removes, caps or overwrites entries.
       // The CTL-<id> fallback is skipped because it can't be tracked.
       if (res.control_no) {
+        // The BR/MR/DR prefix decides the type that is stored, so the sidebar
+        // badge always matches the number. A mismatch is logged, never "fixed"
+        // client-side: the control number is the server's lookup key for /api/track.
+        const implied = typeFromControlNo(res.control_no);
+        if (!implied) {
+          console.warn(`Control number ${res.control_no} has no recognised BR/MR/DR prefix.`);
+        } else if (implied !== kind) {
+          console.warn(`Control number ${res.control_no} has a ${implied} prefix but this was a ${kind} request.`);
+        }
         addToHistory({
           control_no: res.control_no,
-          type: kind, // "birth" | "marriage" | "death"
+          type: implied || kind, // "birth" | "marriage" | "death"
           submitted_at: new Date().toISOString(),
         });
       }
@@ -2523,12 +2574,6 @@ function Modal({ type, onClose }) {
 }
 
 /* ─── HISTORY BUTTON + DRAWER (Tailwind, fully responsive) ───── */
-const HISTORY_TYPES = {
-  birth:    { label: "Birth",    cls: "bg-[#e6f1fb] text-[#185fa5]" },
-  marriage: { label: "Marriage", cls: "bg-[#fce7f3] text-[#be185d]" },
-  death:    { label: "Death",    cls: "bg-[#fef3c7] text-[#b45309]" },
-};
-
 const fmtWhen = (iso) => {
   const d = new Date(iso);
   return isNaN(d) ? "—" : d.toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
@@ -2563,7 +2608,9 @@ function HistoryButton({ count, onClick }) {
 
 /* Drawer: backdrop fades in, panel slides in from the right.
    Closing plays the same transition in reverse before unmounting.
-   Control numbers are permanent: there is intentionally no Remove / Clear. */
+   Control numbers are permanent: there is intentionally no Remove / Clear.
+   Each item shows a colored icon tile + a Birth/Marriage/Death badge with its
+   BR/MR/DR prefix, derived from the control number itself. */
 const DRAWER_ANIM_MS = 300; // keep in sync with duration-300 below
 function HistoryDrawer({ items, onClose }) {
   const [copiedNo, setCopiedNo] = useState(null);
@@ -2582,13 +2629,13 @@ function HistoryDrawer({ items, onClose }) {
     if (closingRef.current) return;
     closingRef.current = true;
     setIsOpen(false); // Mo-trigger sa exit animation
-    closeTimerRef.current = setTimeout(() => onCloseRef.current(), 300);
+    closeTimerRef.current = setTimeout(() => onCloseRef.current(), DRAWER_ANIM_MS);
   };
 
   useEffect(() => {
     // I-set dayon sa true gamit ang requestAnimationFrame human ma-mount ang component
     const raf = requestAnimationFrame(() => setIsOpen(true));
-    
+
     const opener = document.activeElement;
     closeBtnRef.current?.focus({ preventScroll: true });
     const onKey = (e) => { if (e.key === "Escape") handleClose(); };
@@ -2670,20 +2717,24 @@ function HistoryDrawer({ items, onClose }) {
           ) : (
             <ul className="space-y-3">
               {items.map((it) => {
-                const t = HISTORY_TYPES[it.type] || { label: it.type || "Request", cls: "bg-slate-100 text-slate-600" };
+                // Prefix first, stored type second, generic fallback last.
+                const kind = typeFromControlNo(it.control_no) || it.type;
+                const meta = RECORD_META[kind] || { label: "Request", prefix: "", badge: "bg-slate-100 text-slate-600" };
                 const copied = copiedNo === it.control_no;
                 return (
                   <li key={it.control_no} className="rounded-xl border border-[#dde6f2] bg-[#f9fbff] p-3.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${t.cls}`}>
-                        {t.label}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <TypeTile kind={kind} />
+                      <div className="min-w-0 flex-1">
+                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${meta.badge}`}>
+                          {meta.label}{meta.prefix && ` · ${meta.prefix}`}
+                        </span>
+                        <p className="mt-1 break-all font-mono text-[0.88rem] font-semibold tracking-wide text-[#0f1f3d] select-all sm:text-[0.95rem]">
+                          {it.control_no}
+                        </p>
+                      </div>
                     </div>
-
-                    <p className="mt-1 break-all font-mono text-[0.88rem] font-semibold tracking-wide text-[#0f1f3d] select-all sm:text-[0.95rem]">
-                      {it.control_no}
-                    </p>
-                    <p className="mt-0.5 text-[0.7rem] text-[#6b87a8]">Submitted {fmtWhen(it.submitted_at)}</p>
+                    <p className="mt-1.5 text-[0.7rem] text-[#6b87a8]">Submitted {fmtWhen(it.submitted_at)}</p>
 
                     <button
                       type="button"
