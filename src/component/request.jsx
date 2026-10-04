@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
-import { addToHistory, getHistory, HISTORY_EVENT } from "./historyStore";
+import { addToHistory, getHistory, HISTORY_EVENT, initHistoryProtection } from "./historyStore";
+
 
 
 
@@ -1412,8 +1413,8 @@ function useSubmissionHistory() {
   useEffect(() => {
     const sync = () => setItems(getHistory());
     window.addEventListener(HISTORY_EVENT, sync);
-    window.addEventListener("storage", sync); // other tabs
-    sync(); // pick up anything restored during startup
+    window.addEventListener("storage", sync);
+    initHistoryProtection().then(sync); // restore + i-refresh ang listahan
     return () => {
       window.removeEventListener(HISTORY_EVENT, sync);
       window.removeEventListener("storage", sync);
