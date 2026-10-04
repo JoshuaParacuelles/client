@@ -494,8 +494,8 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 .marriage-date-input:focus{border-bottom-color:#185fa5;}
 
 /* ── TOAST ──
-   Wide notification cards (like the reference): the stack is a fixed-width
-   column in the top-right corner and every toast fills it. */
+    Wide notification cards (like the reference): the stack is a fixed-width
+    column in the top-right corner and every toast fills it. */
 .toast-wrap{
   position:fixed;top:20px;right:20px;z-index:999;
   display:flex;flex-direction:column;align-items:stretch;gap:10px;
@@ -536,8 +536,8 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 }
 
 /* Home: request cards stay side-by-side in one row on mobile too —
-   the border/background "box" is dropped so three fit without
-   wrapping, and icon/text sizing shrinks to stay legible. */
+    the border/background "box" is dropped so three fit without
+    wrapping, and icon/text sizing shrinks to stay legible. */
 @media(max-width:700px){
   .cards-row{flex-wrap:nowrap;width:100%;max-width:420px;gap:8px;justify-content:space-between;}
   .type-card{
@@ -639,12 +639,12 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 }
 
 /* ── MODAL TEXT: ALL BLACK ──────────────────────────────────
-   Exceptions: header banner text stays white (sits on a solid
-   colored background), error/status text stays red (needs to
-   visually stand out as an error), and the Submit Request button
-   stays white (sits on a solid blue background). Everything else
-   in the modal is forced to black regardless of its previous
-   color. */
+    Exceptions: header banner text stays white (sits on a solid
+    colored background), error/status text stays red (needs to
+    visually stand out as an error), and the Submit Request button
+    stays white (sits on a solid blue background). Everything else
+    in the modal is forced to black regardless of its previous
+    color. */
 .form-paper, .form-paper *{color:#000;}
 .form-header, .form-header *{color:#fff;}
 .field-error, .form-status{color:#e24b4a;}
@@ -658,9 +658,9 @@ const PURPOSES = [
   "EMPLOYMENT","LEGAL","LATE REGISTRATION",
 ];
 const FORM_TYPES = {
-  birth:    ["Form 1A","Form 1B","Form 1C"],
-  death:    ["Form 2A","Form 2B","Form 2C"],
-  marriage: ["Form 3A","Form 3B","Form 3C"],
+    birth:    ["Form 1A","Form 1B","Form 1C"],
+    death:    ["Form 2A","Form 2B","Form 2C"],
+    marriage: ["Form 3A","Form 3B","Form 3C"],
 };
 const RECORD_TYPES = [
   { id:"birth",    label:"Birth Request"    },
@@ -677,8 +677,8 @@ if (!RAW_API_URL) {
 const BASE_URL = `${(RAW_API_URL || "").replace(/\/$/, "")}/api`;
 
 /* ─── MODAL COLOR THEME ─────────────────────────────────────────
-   One color for all three forms (Birth, Death, Marriage) and the
-   Track screen. To change the color, edit only this object. */
+    One color for all three forms (Birth, Death, Marriage) and the
+    Track screen. To change the color, edit only this object. */
 const FORM_THEME = {
   "--modal-primary":      "#185fa5",
   "--modal-primary-dark": "#0c447c",
@@ -688,23 +688,23 @@ const FORM_THEME = {
 };
 
 const MODAL_THEMES = {
-  birth:    FORM_THEME,
-  death:    FORM_THEME,
-  marriage: FORM_THEME,
+    birth:    FORM_THEME,
+    death:    FORM_THEME,
+    marriage: FORM_THEME,
 };
 
 /* ─── HOME-SCREEN ICON COLORS ───────────────────────────────────
-   Only the three icons on the landing page use these. The forms
-   keep using FORM_THEME above, so their colors are not affected.
-     bg / bgHover     = icon tile fill
-     base / hover     = icon outline + glyph color */
+    Only the three icons on the landing page use these. The forms
+    keep using FORM_THEME above, so their colors are not affected.
+       bg / bgHover     = icon tile fill
+       base / hover     = icon outline + glyph color */
 const CARD_ICON_COLORS = {
-  birth:    { bg: "#ffffff", bgHover: "#ffffff", base: "#185fa5", hover: "#0c447c" }, // white
+    birth:    { bg: "#ffffff", bgHover: "#ffffff", base: "#185fa5", hover: "#0c447c" }, // white
   marriage: { bg: "#fce7f3", bgHover: "#fbcfe8", base: "#be185d", hover: "#9d174d" }, // pink
-  death:    { bg: "#fef3c7", bgHover: "#fde68a", base: "#b45309", hover: "#92400e" }, // yellow
+    death:    { bg: "#fef3c7", bgHover: "#fde68a", base: "#b45309", hover: "#92400e" }, // yellow
 };
 
-/* ─── HOME SCREEN ICONS ──────────────────────────────────────── */
+/* ─── HOME SCREEN ICONS ────────────────────────────────        */
 // Flat single-color line icons (inherit the accent via currentColor)
 // replacing the multi-color emoji so the home screen reads as one
 // cohesive system.
@@ -734,11 +734,11 @@ function CardIcon({id}) {
 }
 
 /* ─── EXTRA CSS (theme fixes + tracking screen + control-number UI + email verification) ───
-   Rendered as a second <style> after `styles`, so it wins over the
-   hardcoded blue rules without touching them. */
+    Rendered as a second <style> after `styles`, so it wins over the
+    hardcoded blue rules without touching them. */
 const extraStyles = `
 /* Tailwind's Preflight resets button cursors to default; restore the pointer
-   for the new Tailwind-styled history button and drawer. */
+    for the new Tailwind-styled history button and drawer. */
 button:not(:disabled){cursor:pointer;}
 
 /* Theme-aware controls (were hardcoded #185fa5) */
@@ -884,10 +884,10 @@ button:disabled{cursor:progress;}
 `;
 
 /* ─── RESPONSIVE CSS (all screen sizes, orientations and input types) ───
-   Rendered LAST so it refines the rules above. Breakpoints:
-   ≥1400 large desktop · ≥1024 desktop · 761–1023 tablet ·
-   ≤640 phone (floating centered card) · ≤400 small phone · ≤340 tiny phone ·
-   landscape phones (short height) · touch devices · reduced motion. */
+    Rendered LAST so it refines the rules above. Breakpoints:
+    ≥1400 large desktop · ≥1024 desktop · 761–1023 tablet ·
+    ≤640 phone (floating centered card) · ≤400 small phone · ≤340 tiny phone ·
+    landscape phones (short height) · touch devices · reduced motion. */
 const responsiveStyles = `
 /* ── Base: never let anything cause sideways scrolling ── */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
@@ -1084,9 +1084,9 @@ img,svg{max-width:100%;}
 }
 
 /* ── CENTER THE MODAL CARD VERTICALLY (Track, Verify, Success, forms) ──
-   margin:auto on a flex child centers it when there is spare room,
-   and still lets long forms scroll normally from the top.
-   This block is intentionally LAST so it overrides everything above. */
+    margin:auto on a flex child centers it when there is spare room,
+    and still lets long forms scroll normally from the top.
+    This block is intentionally LAST so it overrides everything above. */
 .overlay{
   display:flex;
   align-items:flex-start;
@@ -1107,13 +1107,13 @@ img,svg{max-width:100%;}
   }
   .overlay > .form-paper{
     margin:auto;
-    min-height:0;                 /* stop forcing 100dvh height */
+    min-height:0;                /* stop forcing 100dvh height */
     max-width:100%;
     border-radius:16px;
     border:1px solid #c8d9f0;
     box-shadow:0 20px 60px rgba(24,95,165,0.14);
-    overflow:hidden;              /* fallback for browsers without overflow:clip */
-    overflow:clip;                /* clips rounded corners but keeps sticky buttons working */
+    overflow:hidden;             /* fallback for browsers without overflow:clip */
+    overflow:clip;               /* clips rounded corners but keeps sticky buttons working */
     padding-left:0;
     padding-right:0;
   }
@@ -1128,11 +1128,11 @@ img,svg{max-width:100%;}
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ORGANIZED + ALIGNED FILL-UP FORM (Birth / Marriage / Death)
-   Every field is a labeled box: label on top (left-aligned),
-   input below, error under it. Same height, radius and spacing
-   everywhere so rows line up. Kept LAST so it wins.
-   ══════════════════════════════════════════════════════════════ */
+    ORGANIZED + ALIGNED FILL-UP FORM (Birth / Marriage / Death)
+    Every field is a labeled box: label on top (left-aligned),
+    input below, error under it. Same height, radius and spacing
+    everywhere so rows line up. Kept LAST so it wins.
+    ══════════════════════════════════════════════════════════════ */
 
 /* Section headings: consistent rhythm */
 .form-left .section-heading{margin-top:22px;margin-bottom:10px;}
@@ -1188,7 +1188,7 @@ img,svg{max-width:100%;}
 .form-left .specify-row input:not(.copies-others-input){flex:1;}
 
 /* Requester + issuance: stack cleanly on tablets and phones
-   (the old 3-column layout squeezed the inputs next to a 120px panel) */
+    (the old 3-column layout squeezed the inputs next to a 120px panel) */
 @media(max-width:760px){
   .form-left .req-section{grid-template-columns:minmax(0,1fr);}
   .form-left .req-divider{height:1px;width:auto;}
@@ -1210,8 +1210,8 @@ img,svg{max-width:100%;}
 }
 @media(max-width:340px){
   .form-left .date-row{grid-template-columns:minmax(0,1fr);}
-  .form-left .copies-options{grid-template-columns:minmax(0,1fr);}
-  .form-left .purpose-grid{grid-template-columns:minmax(0,1fr);}
+  .form-left .copies-options{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .form-left .purpose-grid{grid-template-columns:repeat(1,minmax(0,1fr));}
 }
 
 /* OCCR panel: labels and inputs aligned like the main form */
@@ -1222,13 +1222,13 @@ img,svg{max-width:100%;}
 .form-paper .form-right input:focus{border-color:var(--modal-primary);outline:none;}
 
 /* "Others" copies option: the radio's own <label> + a separate text input,
-   so each input has exactly one associated label. */
+    so each input has exactly one associated label. */
 .radio-label .radio-others-label{display:flex;align-items:center;gap:6px;cursor:pointer;}
 
 /* ══════════════════════════════════════════════════════════════
-   TOAST (final override): always pinned to the TOP-RIGHT corner.
-   Hugs its text: 220px min, 300px max, never wider than the screen.
-   ══════════════════════════════════════════════════════════════ */
+    TOAST (final override): always pinned to the TOP-RIGHT corner.
+    Hugs its text: 220px min, 300px max, never wider than the screen.
+    ══════════════════════════════════════════════════════════════ */
 .toast-wrap{
   position:fixed;
   top:calc(12px + env(safe-area-inset-top,0px));
@@ -2055,9 +2055,9 @@ function Toast({ id, title, message, duration = 5000, success = true }) {
 }
 
 /* ─── FORM CONFIG (replaces the three duplicated forms) ────────
-   Each record type only declares what differs: the "subject" blocks
-   (name / date / free text), where the place goes, and labels.
-   Field keys are the exact column names the backend expects. */
+    Each record type only declares what differs: the "subject" blocks
+    (name / date / free text), where the place goes, and labels.
+    Field keys are the exact column names the backend expects. */
 const PLACE = "San Carlos City, Negros Occidental";
 
 const FORM_CONFIGS = {
@@ -2523,7 +2523,7 @@ const fmtWhen = (iso) => {
   return isNaN(d) ? "—" : d.toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
 };
 
-/* Floating button: icon-only on phones, icon + label from 640px up.
+/* Floating button: icon-only (sama sa imong gihangyo/gipakit-an sa image)
    Always at least 44x44 so it is easy to tap. */
 function HistoryButton({ count, onClick }) {
   return (
@@ -2531,19 +2531,18 @@ function HistoryButton({ count, onClick }) {
       type="button"
       onClick={onClick}
       aria-label={`Recent requests (${count})`}
-      className="fixed z-40 inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#dde6f2] bg-white px-3 text-[0.78rem] font-medium text-[#185fa5] shadow-sm transition
+      className="fixed z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#dde6f2] bg-white text-[#185fa5] shadow-sm transition
                  right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))]
-                 sm:right-[max(1rem,env(safe-area-inset-right))] sm:top-[max(1rem,env(safe-area-inset-top))] sm:px-4
+                 sm:right-[max(1rem,env(safe-area-inset-right))] sm:top-[max(1rem,env(safe-area-inset-top))]
                  hover:border-[#185fa5] hover:bg-[#eef3fb]
                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5] focus-visible:ring-offset-2"
     >
-      <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 shrink-0" fill="none" stroke="currentColor"
+      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor"
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
       </svg>
-      <span className="hidden sm:inline whitespace-nowrap">Recent requests</span>
       {count > 0 && (
-        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#185fa5] px-1 text-[0.65rem] font-semibold leading-none text-white">
+        <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#185fa5] px-1 text-[0.65rem] font-semibold leading-none text-white">
           {count}
         </span>
       )}
@@ -2551,26 +2550,34 @@ function HistoryButton({ count, onClick }) {
   );
 }
 
-/* Drawer: bottom-anchored full-width sheet on phones,
-   right-side panel on tablets and desktops. */
+/* Drawer with Supercell-style slide animation */
 function HistoryDrawer({ items, onClose }) {
   const [copiedNo, setCopiedNo] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
   const timerRef = useRef(null);
   const closeRef = useRef(null);
 
   useEffect(() => {
+    // Trigger slide-in animation on mount
+    const timer = setTimeout(() => setIsOpen(true), 10);
     const opener = document.activeElement;
     closeRef.current?.focus({ preventScroll: true });
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e) => { if (e.key === "Escape") handleClose(); };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
       clearTimeout(timerRef.current);
+      clearTimeout(timer);
       opener?.focus?.();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setTimeout(onClose, 300); // match duration-300
+  };
 
   const handleCopy = async (no) => {
     const ok = await copyToClipboard(no);
@@ -2587,20 +2594,20 @@ function HistoryDrawer({ items, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-150" role="dialog" aria-modal="true" aria-labelledby="history-title">
+    <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
       <style>{historyKeyframes}</style>
 
       {/* Backdrop */}
       <div
-        onClick={onClose}
-        className="absolute inset-0 bg-[#0a1937]/45 animate-[lcr-fade-in_.2s_ease] motion-reduce:animate-none"
+        onClick={handleClose}
+        className={`absolute inset-0 bg-[#0a1937]/45 transition-opacity duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {/* Panel */}
+      {/* Panel with Smooth Slide Animation */}
       <aside
-        className="absolute right-0 top-0 flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl
-                   sm:max-w-sm sm:rounded-l-2xl lg:max-w-md
-                   animate-[lcr-drawer-in_.25s_ease-out] motion-reduce:animate-none"
+        className={`relative z-10 flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl
+                    sm:max-w-sm sm:rounded-l-2xl lg:max-w-md
+                    transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Header */}
         <header
@@ -2617,7 +2624,7 @@ function HistoryDrawer({ items, onClose }) {
           <button
             ref={closeRef}
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close recent requests"
             className="-mr-1 grid h-11 w-11 shrink-0 place-items-center rounded-lg text-2xl leading-none text-[#6b87a8] transition
                        hover:bg-[#eef3fb] hover:text-[#0f1f3d]
