@@ -5,9 +5,6 @@ import {
   CONTROL_PREFIXES, typeFromControlNo,
 } from "./historyStore";
 
-
-
-
 const styles = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
@@ -18,7 +15,6 @@ body,#root{
   color:#0f1f3d;
 }
 
-/* ── LANDING ── */
 .landing{
   display:flex;
   flex-direction:column;
@@ -27,13 +23,12 @@ body,#root{
   padding:56px 20px;
   background:#f6f8fc;
 }
-/* ── LOGO ROW ── */
 .logo-row{
   display:flex;align-items:center;justify-content:center;gap:16px;
   margin-bottom:22px;
 }
 .logo-img{height:64px;width:auto;max-width:96px;object-fit:contain;display:block;}
-.logo-img--lcr{mix-blend-mode:multiply;} /* hides the white box around the .jpg on the light page */
+.logo-img--lcr{mix-blend-mode:multiply;}
 .logo-divider{width:1px;height:36px;background:#dde6f2;flex-shrink:0;}
 .office-name{
   font-family:'DM Serif Display',serif;
@@ -47,7 +42,6 @@ body,#root{
   text-wrap:balance;
 }
 .office-loc{display:block;font-size:0.6em;line-height:1.35;letter-spacing:0.02em;margin-top:6px;}
-/* ── SELECT PROMPT ── */
 .select-prompt{
   font-size:0.68rem;text-transform:uppercase;
   letter-spacing:0.15em;color:#6b87a8;
@@ -56,7 +50,6 @@ body,#root{
   text-align:center;
 }
 
-/* ── MOBILE NAVBAR ── */
 .mobile-navbar{ display:none; }
 @media(max-width:640px){
   .mobile-navbar{
@@ -83,7 +76,6 @@ body,#root{
   .mobile-navbar-item.active{color:#185fa5;background:#eef3fb;}
 }
 
-/* ── TYPE CARDS ── */
 .cards-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
 .type-card{
   width:204px;padding:28px 22px 24px;
@@ -97,7 +89,6 @@ body,#root{
 }
 .type-card:focus-visible{outline:2px solid #185fa5;outline-offset:2px;}
 .type-card:active{background:#f6f8fc;border-color:#185fa5;}
-/* ── CARD ICON: background + border + icon color come from per-card CSS variables ── */
 .card-icon{
   width:38px;height:38px;border-radius:10px;
   background:var(--card-icon-bg, #fff);
@@ -116,7 +107,6 @@ body,#root{
   .type-card:hover .card-arrow{color:#185fa5;transform:translateX(3px);}
 }
 
-/* ── OVERLAY ── */
 .overlay{
   position:fixed;inset:0;
   background:rgba(10,25,55,0.45);
@@ -129,7 +119,6 @@ body,#root{
 }
 @keyframes fadeOverlay{from{background:rgba(0,0,0,0);}to{background:rgba(10,25,55,0.45);}}
 
-/* ── FORM PAPER ── */
 .form-paper{
   width:100%;max-width:720px;
   border-radius:16px;
@@ -141,7 +130,6 @@ body,#root{
 }
 @keyframes slideUpModal{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
 
-/* ── FORM HEADER ── */
 .form-header{
   background:var(--modal-primary, #185fa5);
   padding:0;
@@ -188,7 +176,6 @@ body,#root{
   background:linear-gradient(90deg,#b5d4f4,#fff0,#378add55);
 }
 
-/* ── FORM SUBHEADER (Control row) ── */
 .form-subheader{
   padding:12px 28px;
   background:#f4f8fd;
@@ -206,7 +193,6 @@ body,#root{
 .sh-value:focus{border-bottom-color:#378add;}
 .sh-divider{width:1px;height:22px;background:#e2ecf8;flex-shrink:0;}
 
-/* ── FORM BODY GRID ── */
 .form-body{
   display:grid;
   grid-template-columns:1fr 170px;
@@ -215,7 +201,6 @@ body,#root{
 .form-left{padding:20px 24px;border-right:1px solid #e2ecf8;}
 .form-right{padding:16px;background:#f4f8fd;}
 
-/* ── SECTION HEADINGS ── */
 .section-heading{
   font-size:0.6rem;text-transform:uppercase;letter-spacing:0.14em;
   font-weight:600;color:var(--modal-primary, #185fa5);
@@ -227,12 +212,10 @@ body,#root{
   content:'';flex:1;height:1px;background:#e2ecf8;
 }
 
-/* ── COPIES ROW ── */
 .copies-row{margin-bottom:14px;}
 .copies-row-label{font-size:0.65rem;color:#5577a0;margin-bottom:7px;font-style:italic;}
 .copies-options{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
 
-/* ── RADIO & CHECKBOX ── */
 .radio-label{display:flex;align-items:center;gap:6px;font-size:0.75rem;color:#0f1f3d;cursor:pointer;}
 .radio-label input[type="radio"]{display:none;}
 .radio-box{
@@ -258,7 +241,6 @@ body,#root{
 .check-label:hover .check-box{border-color:#378add;}
 .check-label input[type="checkbox"]:checked+.check-box{background:#185fa5;border-color:#185fa5;}
 
-/* ── NAME / DATE ROWS ── */
 .name-block-fields{}
 .name-row,.date-row{display:flex;gap:10px;margin-bottom:10px;}
 .name-col,.date-col{flex:1;min-width:0;display:flex;flex-direction:column;}
@@ -279,7 +261,6 @@ body,#root{
 }
 .place-sub{font-size:0.58rem;text-align:center;color:#8aabbf;letter-spacing:0.06em;margin-bottom:12px;}
 
-/* ── PURPOSE SECTION ── */
 .purpose-section{
   border:1px solid #e2ecf8;border-radius:10px;
   padding:12px 14px;margin:14px 0;
@@ -300,7 +281,6 @@ body,#root{
 }
 .specify-row input:focus{border-bottom-color:#185fa5;}
 
-/* ── AUTH BOX ── */
 .auth-box{
   border:1px solid #e2ecf8;border-radius:8px;
   padding:10px 12px;margin:12px 0;
@@ -310,7 +290,6 @@ body,#root{
 .auth-text{font-size:0.64rem;line-height:1.7;color:#5577a0;}
 .auth-text u{color:#0f1f3d;}
 
-/* ── REVIEW SCREEN (confirmation step before final submit) ── */
 .review-body{padding:20px 24px;}
 .review-intro{font-size:0.8rem;color:#5577a0;margin-bottom:18px;line-height:1.6;}
 .review-rows{display:flex;flex-direction:column;gap:0;margin-bottom:4px;}
@@ -323,14 +302,12 @@ body,#root{
 .review-value{font-size:0.82rem;color:#0f1f3d;text-align:right;word-break:break-word;}
 .review-value.empty{color:#b7c6da;font-style:italic;}
 
-/* ── REQUESTER SECTION ── */
 .req-section{border:1px solid #e2ecf8;border-radius:10px;margin-top:12px;overflow:hidden;display:grid;grid-template-columns:1fr 1px 108px;}
 .req-left{padding:12px 14px;}
 .req-divider{background:#e2ecf8;}
 .req-right{padding:12px;}
 .req-title{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--modal-primary, #185fa5);margin-bottom:8px;}
 
-/* ── SIGNATURE UPLOAD AREA ── */
 .sig-upload-wrap{
   border:1.5px dashed #b5d4f4;
   border-radius:8px;
@@ -390,7 +367,6 @@ body,#root{
 
 .sig-note{font-size:0.57rem;text-align:center;color:#8aabbf;font-style:italic;margin-bottom:8px;}
 
-/* ── REST OF REQUESTER ── */
 .req-field{margin-top:8px;font-size:0.65rem;color:#5577a0;}
 .req-field input{
   display:block;border:none;border-bottom:1.5px solid #d4e4f5;
@@ -402,7 +378,6 @@ body,#root{
 input.invalid{border-bottom-color:#e24b4a!important;}
 .field-error{font-size:0.6rem;color:#e24b4a;margin-top:2px;}
 
-/* ── ISSUANCE PANEL ── */
 .issuance-title{
   font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;
   color:var(--modal-primary, #185fa5);text-align:center;margin-bottom:8px;font-weight:600;
@@ -410,7 +385,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 .issuance-item{margin-bottom:6px;}
 .issuance-sep{height:1px;background:#e2ecf8;margin:8px 0;}
 
-/* ── OCCR PANEL ── */
 .right-panel-title{
   font-size:0.58rem;font-weight:600;text-transform:uppercase;
   letter-spacing:0.1em;color:var(--modal-primary, #185fa5);text-align:center;
@@ -429,7 +403,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 .book-page-row{display:flex;gap:8px;}
 .book-page-row>div{flex:1;}
 
-/* ── FORM ACTIONS ── */
 .form-actions{
   display:flex;justify-content:flex-end;gap:10px;
   padding:14px 24px;background:#f4f8fd;
@@ -454,7 +427,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 .btn-submit:active{transform:scale(0.98);}
 .btn-submit:disabled{opacity:0.5;cursor:not-allowed;}
 
-/* ── SUCCESS ── */
 .success-overlay{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 40px;text-align:center;}
 .success-icon-wrap{
   width:66px;height:66px;border-radius:50%;
@@ -482,7 +454,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 }
 .btn-new:hover{background:#0c447c;transform:translateY(-1px);}
 
-/* ── COPIES OTHERS ── */
 .copies-others-input{
   border:none;border-bottom:1.5px solid #d4e4f5;
   background:transparent;outline:none;font-size:0.78rem;
@@ -499,9 +470,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 }
 .marriage-date-input:focus{border-bottom-color:#185fa5;}
 
-/* ── TOAST ──
-    Wide notification cards (like the reference): the stack is a fixed-width
-    column in the top-right corner and every toast fills it. */
 .toast-wrap{
   position:fixed;top:20px;right:20px;z-index:999;
   display:flex;flex-direction:column;align-items:stretch;gap:10px;
@@ -528,9 +496,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 .toast-progress-bar{height:100%;animation:shrink linear forwards;}
 @keyframes shrink{from{width:100%;}to{width:0%;}}
 
-/* ── RESPONSIVE ── */
-
-/* Tablet and below: form body becomes one column; OCCR panel becomes a grid */
 @media(max-width:760px){
   .form-body{display:flex;flex-direction:column;}
   .form-left{border-right:none;}
@@ -541,9 +506,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
   .form-right .right-panel-title{grid-column:1/-1;}
 }
 
-/* Home: request cards stay side-by-side in one row on mobile too —
-    the border/background "box" is dropped so three fit without
-    wrapping, and icon/text sizing shrinks to stay legible. */
 @media(max-width:700px){
   .cards-row{flex-wrap:nowrap;width:100%;max-width:420px;gap:8px;justify-content:space-between;}
   .type-card{
@@ -561,14 +523,12 @@ input.invalid{border-bottom-color:#e24b4a!important;}
 }
 
 @media(max-width:640px){
-  /* Home: hero */
   .landing{padding-top:36px;padding-left:16px;padding-right:16px;}
   .logo-row{gap:14px;margin-bottom:18px;}
   .logo-img{height:52px;max-width:80px;}
   .office-name{line-height:1.2;letter-spacing:0;}
   .select-prompt{margin-bottom:14px;}
 
-  /* Modal: full-screen sheet with a pinned action bar */
   .overlay{padding:0;overscroll-behavior:contain;}
   .form-paper{
     border-radius:0;max-width:100%;box-shadow:none;border:none;
@@ -587,27 +547,23 @@ input.invalid{border-bottom-color:#e24b4a!important;}
   .review-row{flex-direction:column;gap:2px;padding:7px 0;}
   .review-value{text-align:left;}
 
-  /* Modal: fields */
   .purpose-grid{grid-template-columns:1fr 1fr;}
   .name-row{flex-direction:column;gap:8px;}
   .date-row{gap:8px;}
   .date-col:nth-child(1){flex:1.6;}
   .date-col:nth-child(2){flex:0.8;}
   .copies-options{gap:10px 16px;}
-  /* 16px stops iOS from zooming the page when an input is focused */
   .form-paper input[type="text"]:not([readonly]),
   .form-paper input[type="email"],
   .form-paper input[type="date"]{font-size:16px;}
   .req-field input,.right-field input,.name-col input,.date-col input,
   .marriage-date-input,.specify-row input{padding-top:6px;padding-bottom:6px;}
 
-  /* Modal: larger tap targets for checkboxes and radios */
   .check-label,.radio-label{gap:8px;padding:3px 0;font-size:0.8rem;}
   .check-box,.radio-box{width:18px;height:18px;}
   .check-box{font-size:11px;}
   .radio-label input[type="radio"]:checked+.radio-box::after{inset:3.5px;}
 
-  /* Modal: requester + issuance */
   .req-section{grid-template-columns:1fr;}
   .req-divider{height:1px;width:auto;}
   .req-left{padding:12px 14px;}
@@ -616,7 +572,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
   .issuance-item{margin-bottom:0;}
   .issuance-sep{display:none;}
 
-  /* Modal: actions stay reachable while scrolling */
   .form-actions{
     position:sticky;bottom:0;z-index:5;flex-wrap:wrap;gap:10px;
     padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));
@@ -627,7 +582,6 @@ input.invalid{border-bottom-color:#e24b4a!important;}
   .btn-cancel{flex:1;}
   .btn-submit{flex:2;}
 
-  /* Modal: success + toasts (toasts move to the top so they never cover the buttons) */
   .success-overlay{flex:1;padding:40px 24px;}
   .success-ref{flex-wrap:wrap;justify-content:center;}
   .toast-wrap{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;right:12px;left:12px;width:auto;}
@@ -644,36 +598,28 @@ input.invalid{border-bottom-color:#e24b4a!important;}
   .header-badge{display:none;}
 }
 
-/* ── MODAL TEXT: ALL BLACK ──────────────────────────────────
-    Exceptions: header banner text stays white (sits on a solid
-    colored background), error/status text stays red (needs to
-    visually stand out as an error), and the Submit Request button
-    stays white (sits on a solid blue background). Everything else
-    in the modal is forced to black regardless of its previous
-    color. */
 .form-paper, .form-paper *{color:#000;}
 .form-header, .form-header *{color:#fff;}
 .field-error, .form-status{color:#e24b4a;}
 .btn-submit, .btn-submit *{color:#fff;}
 `;
 
-/* ─── CONSTANTS ─────────────────────────────────────────────── */
 const PURPOSES = [
   "SCHOOL","BAPTISM","LEGITIMATION/R.A. 9255","OTHERS (SPECIFY)",
   "CLAIMS/LOANS","R.A. 9048","CLEAR COPY",null,
   "EMPLOYMENT","LEGAL","LATE REGISTRATION",
 ];
 const FORM_TYPES = {
-    birth:    ["Form 1A","Form 1B","Form 1C"],
-    death:    ["Form 2A","Form 2B","Form 2C"],
-    marriage: ["Form 3A","Form 3B","Form 3C"],
+  birth:    ["Form 1A","Form 1B","Form 1C"],
+  death:    ["Form 2A","Form 2B","Form 2C"],
+  marriage: ["Form 3A","Form 3B","Form 3C"],
 };
 const RECORD_TYPES = [
   { id:"birth",    label:"Birth Request"    },
   { id:"marriage", label:"Marriage Request" },
   { id:"death",    label:"Death Request"    },
 ];
-const CODE_LENGTH = 6; // must match CODE_LENGTH in backend/email_verification.py
+const CODE_LENGTH = 6;
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 if (!RAW_API_URL) {
   console.error(
@@ -682,9 +628,6 @@ if (!RAW_API_URL) {
 }
 const BASE_URL = `${(RAW_API_URL || "").replace(/\/$/, "")}/api`;
 
-/* ─── MODAL COLOR THEME ─────────────────────────────────────────
-    One color for all three forms (Birth, Death, Marriage) and the
-    Track screen. To change the color, edit only this object. */
 const FORM_THEME = {
   "--modal-primary":      "#185fa5",
   "--modal-primary-dark": "#0c447c",
@@ -694,28 +637,17 @@ const FORM_THEME = {
 };
 
 const MODAL_THEMES = {
-    birth:    FORM_THEME,
-    death:    FORM_THEME,
-    marriage: FORM_THEME,
+  birth:    FORM_THEME,
+  death:    FORM_THEME,
+  marriage: FORM_THEME,
 };
 
-/* ─── HOME-SCREEN ICON COLORS ───────────────────────────────────
-    Used by the three landing-page icons AND by the type badges on the
-    success screen and the Recent requests sidebar, so a record type
-    looks the same everywhere. The forms keep using FORM_THEME above.
-       bg / bgHover     = icon tile fill
-       base / hover     = icon outline + glyph color */
 const CARD_ICON_COLORS = {
-    birth:    { bg: "#ffffff", bgHover: "#ffffff", base: "#185fa5", hover: "#0c447c" }, // white
-  marriage: { bg: "#fce7f3", bgHover: "#fbcfe8", base: "#be185d", hover: "#9d174d" }, // pink
-    death:    { bg: "#fef3c7", bgHover: "#fde68a", base: "#b45309", hover: "#92400e" }, // yellow
+  birth:    { bg: "#ffffff", bgHover: "#ffffff", base: "#185fa5", hover: "#0c447c" },
+  marriage: { bg: "#fce7f3", bgHover: "#fbcfe8", base: "#be185d", hover: "#9d174d" },
+  death:    { bg: "#fef3c7", bgHover: "#fde68a", base: "#b45309", hover: "#92400e" },
 };
 
-/* ─── HOME SCREEN ICONS ────────────────────────────────        */
-// Flat single-color line icons (inherit the accent via currentColor)
-// replacing the multi-color emoji so the home screen reads as one
-// cohesive system. `style` lets callers force the color/size where a
-// global CSS rule (e.g. `.form-paper *{color:#000}`) would override it.
 function CardIcon({ id, style }) {
   const paths = {
     birth: (
@@ -741,16 +673,12 @@ function CardIcon({ id, style }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true" style={style}>{paths[id]}</svg>;
 }
 
-/* ─── RECORD TYPE METADATA (shared by success screen + history) ──
-    Tailwind class strings are written out in full so the compiler can see them. */
 const RECORD_META = {
   birth:    { label: "Birth",    prefix: CONTROL_PREFIXES.birth,    badge: "bg-[#e6f1fb] text-[#185fa5]" },
   marriage: { label: "Marriage", prefix: CONTROL_PREFIXES.marriage, badge: "bg-[#fce7f3] text-[#be185d]" },
   death:    { label: "Death",    prefix: CONTROL_PREFIXES.death,    badge: "bg-[#fef3c7] text-[#b45309]" },
 };
 
-// Colored icon tile for a record type. Inline styles on purpose: inside the
-// modal, `.form-paper *{color:#000}` would otherwise turn the icon black.
 function TypeTile({ kind, size = 36 }) {
   const c = CARD_ICON_COLORS[kind];
   if (!c) return null;
@@ -765,15 +693,9 @@ function TypeTile({ kind, size = 36 }) {
   );
 }
 
-/* ─── EXTRA CSS (theme fixes + tracking screen + control-number UI + email verification) ───
-    Rendered as a second <style> after `styles`, so it wins over the
-    hardcoded blue rules without touching them. */
 const extraStyles = `
-/* Tailwind's Preflight resets button cursors to default; restore the pointer
-    for the new Tailwind-styled history button and drawer. */
 button:not(:disabled){cursor:pointer;}
 
-/* Theme-aware controls (were hardcoded #185fa5) */
 .form-paper .radio-label:hover .radio-box,
 .form-paper .check-label:hover .check-box{border-color:var(--modal-primary);}
 .form-paper .radio-label input[type="radio"]:checked+.radio-box{border-color:var(--modal-primary);}
@@ -791,10 +713,8 @@ button:not(:disabled){cursor:pointer;}
 .form-paper .success-ref,.form-paper .place-box{background:var(--modal-tint-bg);border-color:var(--modal-tint-border);}
 .form-paper .form-status,.form-paper .field-error{color:#e24b4a;}
 
-/* Same card width on every step (form, verify, review, success, track) */
 .overlay > .form-paper{width:100%;max-width:720px;flex:0 0 auto;margin:0 auto;}
 
-/* Track my request */
 .track-link{
   margin-top:28px;background:none;border:none;font-family:inherit;
   font-size:0.82rem;font-weight:500;color:#185fa5;cursor:pointer;
@@ -820,7 +740,6 @@ button:not(:disabled){cursor:pointer;}
 .track-step.current .track-dot{box-shadow:0 0 0 4px var(--modal-tint-bg);}
 .track-rejected{background:#fdecec;border:1px solid #f3b5b4;border-radius:8px;padding:10px 12px;font-size:0.8rem;margin-top:12px;}
 
-/* Success: control number card (fills the card width, like the review screen) */
 .success-overlay{padding:48px 24px;}
 .ctl-card{
   margin-top:18px;width:100%;max-width:100%;
@@ -848,7 +767,6 @@ button:not(:disabled){cursor:pointer;}
   background:#fff8e6;border:1px solid #f0d9a0;border-radius:8px;padding:10px 12px;
 }
 
-/* Tracker: recent request suggestion */
 .recent-box{
   margin-top:14px;padding:10px 12px;border:1px solid var(--modal-tint-border);
   background:var(--modal-tint-bg);border-radius:10px;
@@ -867,7 +785,6 @@ button:not(:disabled){cursor:pointer;}
   text-decoration:underline;padding:7px 4px;opacity:0.7;
 }
 
-/* Email verification step */
 .verify-form{display:flex;flex-direction:column;flex:1;}
 .verify-form .review-body{flex:1;}
 .verify-email{word-break:break-all;font-weight:600;}
@@ -915,13 +832,7 @@ button:disabled{cursor:progress;}
 }
 `;
 
-/* ─── RESPONSIVE CSS (all screen sizes, orientations and input types) ───
-    Rendered LAST so it refines the rules above. Breakpoints:
-    ≥1400 large desktop · ≥1024 desktop · 761–1023 tablet ·
-    ≤640 phone (floating centered card) · ≤400 small phone · ≤340 tiny phone ·
-    landscape phones (short height) · touch devices · reduced motion. */
 const responsiveStyles = `
-/* ── Base: never let anything cause sideways scrolling ── */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 html,body{max-width:100%;overflow-x:hidden;}
 img,svg{max-width:100%;}
@@ -930,7 +841,6 @@ img,svg{max-width:100%;}
 .form-paper input,.form-paper button{max-width:100%;}
 .form-paper a{word-break:break-word;}
 
-/* ── Landing: fluid + always fills the screen ── */
 .landing{
   min-height:100vh;min-height:100dvh;
   padding:clamp(28px,6vh,72px) clamp(14px,4vw,40px);
@@ -940,7 +850,6 @@ img,svg{max-width:100%;}
 .landing .select-prompt{font-size:clamp(0.62rem,1.6vw,0.74rem);}
 .track-link{min-height:40px;}
 
-/* ── Overlay: respects notches / safe areas and uses dynamic viewport ── */
 .overlay{
   height:100vh;height:100dvh;
   padding-top:max(16px,env(safe-area-inset-top,0px));
@@ -951,7 +860,6 @@ img,svg{max-width:100%;}
 }
 .overlay > .form-paper{max-width:var(--modal-max,720px);}
 
-/* ── Large desktop: wider card, roomier type ── */
 @media(min-width:1024px){
   .overlay{padding-top:max(32px,5vh);}
   .overlay{--modal-max:780px;}
@@ -971,7 +879,6 @@ img,svg{max-width:100%;}
   .overlay{--modal-max:920px;}
 }
 
-/* ── Tablet (761–1023): comfortable two-column form ── */
 @media(min-width:761px) and (max-width:1023px){
   .overlay{--modal-max:700px;}
   .form-body{grid-template-columns:minmax(0,1fr) 160px;}
@@ -981,14 +888,12 @@ img,svg{max-width:100%;}
   .form-header-inner,.form-subheader,.review-body,.track-body{padding-left:22px;padding-right:22px;}
 }
 
-/* ── Narrow tablets / large phones (≤760): one column form ── */
 @media(max-width:760px){
   .form-body{display:flex;flex-direction:column;}
   .purpose-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .req-section{grid-template-columns:minmax(0,1fr) 1px 120px;}
 }
 
-/* ── Phone (≤640): full-screen sheet base (refined into a centered card at the bottom of this block) ── */
 @media(max-width:640px){
   .overlay{padding:0;height:100vh;height:100dvh;}
   .overlay > .form-paper{max-width:100%;margin:0;}
@@ -1026,13 +931,11 @@ img,svg{max-width:100%;}
   .toast-wrap{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));width:auto;}
 }
 
-/* ── Home cards (≤700): three in a row, never overflow ── */
 @media(max-width:700px){
   .cards-row{max-width:min(100%,440px);}
   .card-title{overflow-wrap:anywhere;hyphens:auto;}
 }
 
-/* ── Small phone (≤400) ── */
 @media(max-width:400px){
   .logo-img{height:44px;max-width:68px;}
   .logo-row{gap:10px;}
@@ -1053,7 +956,6 @@ img,svg{max-width:100%;}
   .toast{padding:14px;gap:12px;}
 }
 
-/* ── Tiny phone (≤340) ── */
 @media(max-width:340px){
   .purpose-grid{grid-template-columns:1fr;}
   .copies-options{grid-template-columns:1fr;}
@@ -1064,7 +966,6 @@ img,svg{max-width:100%;}
   .office-name{font-size:1.4rem;}
 }
 
-/* ── Landscape phones / very short screens ── */
 @media(max-height:520px) and (orientation:landscape){
   .landing{justify-content:flex-start;padding-top:18px;padding-bottom:24px;}
   .logo-row{margin-bottom:10px;}
@@ -1079,13 +980,11 @@ img,svg{max-width:100%;}
   .form-actions{position:sticky;bottom:0;z-index:5;padding-top:8px;padding-bottom:8px;}
   .toast-wrap{top:8px;}
 }
-/* Landscape phones are wide but short: keep the 2-column form if there is room */
 @media(min-width:641px) and (max-height:520px) and (orientation:landscape){
   .overlay{--modal-max:100%;}
   .form-paper{border-radius:0;}
 }
 
-/* ── Touch devices: 44px-ish tap targets ── */
 @media(pointer:coarse){
   .check-label,.radio-label{min-height:32px;}
   .check-box,.radio-box{width:20px;height:20px;}
@@ -1096,29 +995,22 @@ img,svg{max-width:100%;}
   .type-card{min-height:44px;}
 }
 
-/* ── Keyboard users ── */
 .form-paper button:focus-visible,
 .form-paper a:focus-visible,
 .track-link:focus-visible,
 .sig-upload-label:focus-within{outline:2px solid var(--modal-primary,#185fa5);outline-offset:2px;}
 
-/* ── Printing: show only the page, not the modal chrome ── */
 @media print{
   .overlay{position:static;height:auto;background:none;padding:0;overflow:visible;}
   .form-paper{box-shadow:none;border:none;max-width:100%;}
   .form-actions,.toast-wrap{display:none !important;}
 }
 
-/* ── Reduced motion ── */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}
   .success-check path{stroke-dashoffset:0;}
 }
 
-/* ── CENTER THE MODAL CARD VERTICALLY (Track, Verify, Success, forms) ──
-    margin:auto on a flex child centers it when there is spare room,
-    and still lets long forms scroll normally from the top.
-    This block is intentionally LAST so it overrides everything above. */
 .overlay{
   display:flex;
   align-items:flex-start;
@@ -1129,7 +1021,6 @@ img,svg{max-width:100%;}
   align-self:center;
 }
 
-/* Phone: floating centered card instead of a full-height sheet */
 @media(max-width:640px){
   .overlay{
     padding-top:max(16px,env(safe-area-inset-top,0px));
@@ -1139,13 +1030,13 @@ img,svg{max-width:100%;}
   }
   .overlay > .form-paper{
     margin:auto;
-    min-height:0;                /* stop forcing 100dvh height */
+    min-height:0;
     max-width:100%;
     border-radius:16px;
     border:1px solid #c8d9f0;
     box-shadow:0 20px 60px rgba(24,95,165,0.14);
-    overflow:hidden;             /* fallback for browsers without overflow:clip */
-    overflow:clip;               /* clips rounded corners but keeps sticky buttons working */
+    overflow:hidden;
+    overflow:clip;
     padding-left:0;
     padding-right:0;
   }
@@ -1154,36 +1045,24 @@ img,svg{max-width:100%;}
   .track-body{flex:0 0 auto;}
 }
 
-/* Landscape phones: keep it compact but still centered */
 @media(max-height:520px) and (orientation:landscape){
   .overlay{padding-top:8px;padding-bottom:8px;}
 }
 
-/* ══════════════════════════════════════════════════════════════
-    ORGANIZED + ALIGNED FILL-UP FORM (Birth / Marriage / Death)
-    Every field is a labeled box: label on top (left-aligned),
-    input below, error under it. Same height, radius and spacing
-    everywhere so rows line up. Kept LAST so it wins.
-    ══════════════════════════════════════════════════════════════ */
-
-/* Section headings: consistent rhythm */
 .form-left .section-heading{margin-top:22px;margin-bottom:10px;}
 .form-left .section-heading:first-child{margin-top:0;}
 
-/* Name / date / text rows: a real grid so columns line up */
 .form-left .name-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:4px;}
 .form-left .name-row:has(> .name-col:only-child){grid-template-columns:minmax(0,1fr);}
 .form-left .date-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,0.8fr) minmax(0,1fr);gap:12px;margin-bottom:4px;}
 .form-left .name-col,.form-left .date-col{display:flex;flex-direction:column;min-width:0;}
 
-/* Label ABOVE the input, left-aligned (was centered under it) */
 .form-left .sub-label{
   order:-1;text-align:left;font-style:normal;
   font-size:0.66rem;font-weight:600;letter-spacing:0.02em;
   margin:0 0 5px;color:#000;
 }
 
-/* One consistent input style across the whole form */
 .form-paper .form-left input:not(.copies-others-input){
   width:100%;margin-top:0;
   border:1.5px solid #c8d9f0;border-radius:8px;
@@ -1200,27 +1079,21 @@ img,svg{max-width:100%;}
 .form-paper .form-left input::placeholder{color:#8aabbf;}
 .form-left .field-error{margin-top:4px;font-size:0.66rem;}
 
-/* Requester fields: label on top, equal spacing */
 .form-left .req-field{display:block;margin-top:12px;font-size:0.7rem;font-weight:600;color:#000;}
 .form-left .req-field input{margin-top:5px;}
 .form-left .req-left > div:not(.req-title){min-width:0;}
 .form-left .req-title{margin-bottom:10px;}
 
-/* Copies: neat row of options */
 .form-left .copies-options{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:10px 22px;}
 .form-left .copies-others-input{width:56px;border-bottom:1.5px solid #c8d9f0;}
 
-/* Checkboxes: box stays aligned with the FIRST line of long labels */
 .form-left .check-label{align-items:flex-start;}
 .form-left .check-box{margin-top:1px;}
 .form-left .purpose-grid{align-items:start;gap:9px 14px;}
 
-/* "Specify" row lines up with the form inputs */
 .form-left .specify-row{align-items:center;}
 .form-left .specify-row input:not(.copies-others-input){flex:1;}
 
-/* Requester + issuance: stack cleanly on tablets and phones
-    (the old 3-column layout squeezed the inputs next to a 120px panel) */
 @media(max-width:760px){
   .form-left .req-section{grid-template-columns:minmax(0,1fr);}
   .form-left .req-divider{height:1px;width:auto;}
@@ -1232,7 +1105,6 @@ img,svg{max-width:100%;}
   .form-left .issuance-sep{display:none;}
 }
 
-/* Phone: one clear column */
 @media(max-width:640px){
   .form-left .name-row{grid-template-columns:minmax(0,1fr);gap:10px;}
   .form-left .date-row{gap:10px;}
@@ -1246,21 +1118,14 @@ img,svg{max-width:100%;}
   .form-left .purpose-grid{grid-template-columns:repeat(1,minmax(0,1fr));}
 }
 
-/* OCCR panel: labels and inputs aligned like the main form */
 .form-right .right-field label{font-weight:600;color:#000;}
 .form-paper .form-right input{
   border:1.5px solid #c8d9f0;border-radius:8px;background:#fff;padding:7px 9px;
 }
 .form-paper .form-right input:focus{border-color:var(--modal-primary);outline:none;}
 
-/* "Others" copies option: the radio's own <label> + a separate text input,
-    so each input has exactly one associated label. */
 .radio-label .radio-others-label{display:flex;align-items:center;gap:6px;cursor:pointer;}
 
-/* ══════════════════════════════════════════════════════════════
-    TOAST (final override): always pinned to the TOP-RIGHT corner.
-    Hugs its text: 220px min, 300px max, never wider than the screen.
-    ══════════════════════════════════════════════════════════════ */
 .toast-wrap{
   position:fixed;
   top:calc(12px + env(safe-area-inset-top,0px));
@@ -1288,13 +1153,6 @@ img,svg{max-width:100%;}
   .toast-wrap{top:20px;right:20px;}
 }
 
-/* ══════════════════════════════════════════════════════════════
-    MODALS: CENTERED ON EVERY SCREEN (desktop = mobile behavior)
-    Equal padding on all sides + margin:auto on the card centers it
-    both ways. If the card is taller than the screen, margin:auto
-    collapses and the overlay scrolls normally from the top.
-    Kept LAST so it wins over the older desktop/landscape rules.
-    ══════════════════════════════════════════════════════════════ */
 .overlay{
   box-sizing:border-box;
   display:flex;
@@ -1314,8 +1172,6 @@ img,svg{max-width:100%;}
   align-self:center;
 }
 
-/* Short landscape screens (phones, small laptop windows): still a
-    centered card, with tighter spacing so it has room. */
 @media(max-height:520px) and (orientation:landscape){
   .overlay{
     padding-top:max(8px,env(safe-area-inset-top,0px));
@@ -1328,7 +1184,6 @@ img,svg{max-width:100%;}
 }
 `;
 
-/* ─── API ────────────────────────────────────────────────────── */
 const NETWORK_ERROR = "We couldn't reach the server. Please check your internet connection and try again.";
 
 async function send(path, init) {
@@ -1344,7 +1199,6 @@ async function send(path, init) {
   }
   const data = await res.json();
   if (!res.ok) {
-    // `code` and `retryAfter` let callers react to specific server errors.
     const err = new Error(data?.error || `Request failed (HTTP ${res.status}).`);
     err.code = data?.code;
     err.retryAfter = data?.retry_after;
@@ -1356,8 +1210,6 @@ async function send(path, init) {
 const postJson = (path, body) =>
   send(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
-// multipart/form-data so the signature file travels with the fields.
-// No Content-Type header on purpose: the browser sets the boundary.
 function buildFormData(payload, file) {
   const fd = new FormData();
   Object.entries(payload).forEach(([k, v]) => fd.append(k, v === null || v === undefined ? "" : v));
@@ -1375,17 +1227,15 @@ const api = {
   confirmVerificationCode: (email, code) => postJson("/verify/confirm", { email, code }),
 };
 
-/* ─── RECENT REQUEST (localStorage) + CLIPBOARD ──────────────── */
 const RECENT_KEY = "lcr_recent_request";
 
-// Every storage call is wrapped: private mode / blocked storage must never break the form.
 function saveRecentRequest(control_no, requester_email) {
   try {
     localStorage.setItem(
       RECENT_KEY,
       JSON.stringify({ control_no, requester_email, saved_at: new Date().toISOString() })
     );
-  } catch { /* storage unavailable: ignore */ }
+  } catch {}
 }
 
 function loadRecentRequest() {
@@ -1400,23 +1250,21 @@ function loadRecentRequest() {
 }
 
 function clearRecentRequest() {
-  try { localStorage.removeItem(RECENT_KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(RECENT_KEY); } catch {}
 }
 
-// 'juandelacruz@gmail.com' -> 'ju***@gmail.com'
 function maskEmail(email) {
   const [user = "", domain = ""] = (email || "").split("@");
   return `${user.slice(0, 2)}***@${domain}`;
 }
 
-// navigator.clipboard needs HTTPS; fall back to execCommand for older browsers.
 async function copyToClipboard(text) {
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch { /* fall through to legacy path */ }
+  } catch {}
   try {
     const ta = document.createElement("textarea");
     ta.value = text;
@@ -1435,15 +1283,13 @@ async function copyToClipboard(text) {
   }
 }
 
-/* ─── SUBMISSION HISTORY (see historyStore.js) ───────────────── */
-// Append-only: control numbers are never removed, capped, or cleared.
 function useSubmissionHistory() {
   const [items, setItems] = useState(getHistory);
   useEffect(() => {
     const sync = () => setItems(getHistory());
     window.addEventListener(HISTORY_EVENT, sync);
     window.addEventListener("storage", sync);
-    initHistoryProtection().then(sync); // restore + i-refresh ang listahan
+    initHistoryProtection().then(sync);
     return () => {
       window.removeEventListener(HISTORY_EVENT, sync);
       window.removeEventListener("storage", sync);
@@ -1452,7 +1298,6 @@ function useSubmissionHistory() {
   return items;
 }
 
-/* ─── VALIDATION ─────────────────────────────────────────────── */
 const PH_MOBILE_LOCAL_REGEX = /^09\d{9}$/;
 const PH_MOBILE_INTL_REGEX = /^\+639\d{9}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1466,7 +1311,6 @@ function getSignatureError(file) {
   return null;
 }
 
-// Checks the file's real content (magic bytes), not just the type the browser reports.
 async function sniffSignature(file) {
   const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());
   const is = (...sig) => sig.every((v, i) => b[i] === v);
@@ -1502,12 +1346,11 @@ function validateRequester(req) {
   return errs;
 }
 
-// Date validation (mirrors the server)
 const MONTHS = ["january","february","march","april","may","june","july","august","september","october","november","december"];
 const parseMonth = (v) => {
   const s = v.trim().toLowerCase().replace(/\.$/, "");
   if (/^\d{1,2}$/.test(s)) { const n = +s; return n >= 1 && n <= 12 ? n : 0; }
-  return s.length >= 3 ? MONTHS.findIndex((m) => m.startsWith(s)) + 1 : 0; // 0 = invalid
+  return s.length >= 3 ? MONTHS.findIndex((m) => m.startsWith(s)) + 1 : 0;
 };
 
 function validateSubjectDates(kind, s) {
@@ -1527,15 +1370,12 @@ function validateSubjectDates(kind, s) {
   return errs;
 }
 
-// Only checked purposes are sent, and the "Others" text is attached only
-// when "OTHERS (SPECIFY)" is still ticked and something was typed.
 function buildPurposes(selected, other) {
   return selected
     .map((p) => (p === "OTHERS (SPECIFY)" && other.trim() ? `OTHERS (${other.trim()})` : p))
     .join(", ");
 }
 
-/* ─── SHARED COMPONENTS ──────────────────────────────────────── */
 function Spinner() { return <span className="spinner" aria-hidden="true" />; }
 
 function Checkbox({ label, checked, onChange, name }) {
@@ -1585,8 +1425,6 @@ function CopiesRow({ copies, setCopies, name, othersValue, setOthersValue, error
         {["One", "Two", "Three"].map((c) => (
           <Radio key={c} label={c} name={name} checked={copies === c} onChange={() => setCopies(c)} />
         ))}
-        {/* The radio and the count box are separate controls: each gets its own
-            label association (the text box is labelled via aria-label + id/name). */}
         <div className="radio-label">
           <label className="radio-others-label" htmlFor={othersRadioId}>
             <input id={othersRadioId} type="radio" name={name} value="Others"
@@ -1619,8 +1457,6 @@ function AuthClause() {
   );
 }
 
-/* ─── SIGNATURE FILE UPLOAD ──────────────────────────────────── */
-// Rejects wrong types / files over 2 MB immediately, matching the backend.
 function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
   const fileRef = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -1678,7 +1514,6 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
   );
 }
 
-/* ─── REQUESTER FIELDS ───────────────────────────────────────── */
 function RequesterFields({ data, onChange, errors, sigFile, onSigChange, printedName, onPrintedNameChange }) {
   const text = (key, label, extra = {}) => (
     <div>
@@ -1748,7 +1583,6 @@ function OccrPanel({ data, onChange }) {
   );
 }
 
-/* ─── WIZARD PROGRESS (header) ───────────────────────────────── */
 const WIZARD_STEPS = ["Fill Form", "Verify Email", "Review & Submit"];
 
 function WizardSteps({ current }) {
@@ -1799,7 +1633,6 @@ function FormSubheader() {
   );
 }
 
-// Shows the real error from the server instead of dev-only hints.
 function FormActions({ status, onCancel, onSubmit, cancelLabel = "Cancel", submitLabel = "Submit Request" }) {
   const loading = status === "loading";
   return (
@@ -1813,13 +1646,8 @@ function FormActions({ status, onCancel, onSubmit, cancelLabel = "Cancel", submi
   );
 }
 
-/* ─── EMAIL VERIFICATION STEP ────────────────────────────────── */
-// Sends a one-time code to the requester's email and exchanges it for a
-// verification token. The request cannot be submitted without that token.
-// A failed send (network/CORS/server error) does not use up one of the
-// "resend" attempts. Only successful sends are counted.
 function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
-  const MAX_SENDS = 5; // keep in sync with the server's 5/hour per-email limit
+  const MAX_SENDS = 5;
   const [code, setCode] = useState("");
   const [info, setInfo] = useState("");
   const [sending, setSending] = useState(false);
@@ -1838,14 +1666,13 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     setInfo("");
     try {
       const res = await api.sendVerificationCode(email);
-      setSendCount((n) => n + 1); // count only real, successful sends
+      setSendCount((n) => n + 1);
       setCooldown(res.resend_in ?? 60);
       setCode("");
       const minutes = Math.round((res.expires_in ?? 600) / 60);
       setInfo(`We sent a ${CODE_LENGTH}-digit code to ${email}. It expires in ${minutes} minutes. Check your spam folder if you don't see it.`);
     } catch (e) {
       if (e.retryAfter) {
-        // A code was sent moments ago and is still valid.
         setCooldown(e.retryAfter);
         setInfo("A code was sent recently. Enter it below, or wait to request a new one.");
       } else {
@@ -1857,12 +1684,11 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     }
   };
 
-  // Send once on arrival. The ref stops React StrictMode (dev) from sending twice.
   useEffect(() => {
     if (autoSentRef.current) return;
     autoSentRef.current = true;
     sendCode();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return undefined;
@@ -1890,7 +1716,6 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     }
   };
 
-  // Button label: shows "Send code" if nothing has been sent yet (e.g. first send failed).
   const resendLabel = sending
     ? "Sending…"
     : cooldown > 0
@@ -1934,7 +1759,6 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
   );
 }
 
-/* ─── REVIEW / SUCCESS ───────────────────────────────────────── */
 function ReviewRow({ label, value }) {
   const hasValue = value !== null && value !== undefined && String(value).trim() !== "";
   return (
@@ -1982,8 +1806,6 @@ function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, statu
 
 function SuccessScreen({ result, type, email, savedOnDevice, onClose }) {
   const controlNo = result.control_no || `CTL-${result.record_id}`;
-  // The control number prefix is the source of truth for the record type;
-  // fall back to the form type when the number has no BR/MR/DR prefix.
   const kind = typeFromControlNo(result.control_no) || type;
   const meta = RECORD_META[kind];
   const [copied, setCopied] = useState(false);
@@ -2061,9 +1883,8 @@ function SuccessScreen({ result, type, email, savedOnDevice, onClose }) {
   );
 }
 
-/* ─── TOAST SYSTEM ───────────────────────────────────────────── */
 let _toastSetters = [];
-let _toastSeq = 0; // monotonic id: Date.now() could collide on rapid toasts
+let _toastSeq = 0;
 function useToasts() {
   const [toasts, setToasts] = useState([]);
   useEffect(() => {
@@ -2074,8 +1895,6 @@ function useToasts() {
 }
 function pushToast(toast) {
   const id = ++_toastSeq;
-  // Every click shows a toast. If the same message is already on screen, it is
-  // replaced by a fresh one (animation + timer restart) instead of stacking copies.
   _toastSetters.forEach((set) => set((prev) => [
     ...prev.filter((t) => !(t.title === toast.title && t.message === toast.message)),
     { ...toast, id },
@@ -2091,7 +1910,7 @@ function ToastContainer() {
 function Toast({ id, title, message, duration = 5000, success = true }) {
   const [hiding, setHiding] = useState(false);
   const dismiss = () => { setHiding(true); setTimeout(() => removeToast(id), 300); };
-  useEffect(() => { const t = setTimeout(dismiss, duration); return () => clearTimeout(t); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const t = setTimeout(dismiss, duration); return () => clearTimeout(t); }, []);
   const c = success ? "#185fa5" : "#e24b4a";
   return (
     <div className={`toast${hiding ? " hiding" : ""}`}>
@@ -2111,10 +1930,6 @@ function Toast({ id, title, message, duration = 5000, success = true }) {
   );
 }
 
-/* ─── FORM CONFIG (replaces the three duplicated forms) ────────
-    Each record type only declares what differs: the "subject" blocks
-    (name / date / free text), where the place goes, and labels.
-    Field keys are the exact column names the backend expects. */
 const PLACE = "San Carlos City, Negros Occidental";
 
 const FORM_CONFIGS = {
@@ -2148,8 +1963,6 @@ const FORM_CONFIGS = {
   },
 };
 
-// The visible caption under each input is a <label> bound to that input,
-// so every subject field has an id, a name AND an associated label.
 function SubjectField({ k, cls, placeholder, sub, heading, values, setValue, errors }) {
   return (
     <div className={cls}>
@@ -2194,8 +2007,6 @@ function SubjectBlock({ block, values, setValue, errors }) {
   return (<><div className="section-heading">{block.heading}</div>{body}</>);
 }
 
-/* ─── GENERIC REQUEST FORM ───────────────────────────────────── */
-// Steps: "form" -> "verify" (email code) -> "review" -> submitted.
 function RequestForm({ kind, onClose }) {
   const cfg = FORM_CONFIGS[kind];
   const theme = MODAL_THEMES[kind];
@@ -2223,7 +2034,6 @@ function RequestForm({ kind, onClose }) {
   const [remember, setRemember] = useState(false);
   const submittingRef = useRef(false);
 
-  // Each step is shorter than the form: start it from the top of the modal.
   useEffect(() => {
     document.querySelector(".overlay")?.scrollTo({ top: 0 });
   }, [step]);
@@ -2237,10 +2047,7 @@ function RequestForm({ kind, onClose }) {
   const purposeText = buildPurposes(purposes, purposeOther);
   const emailKey = requester.requester_email.trim().toLowerCase();
 
-  // Validates only. Goes to the email-verification step (or straight to
-  // review if this exact email was already verified). Nothing is submitted here.
   const handleSubmit = () => {
-    // Format/date checks first, so "Required" below wins on empty fields.
     const errs = { ...validateRequester(requester), ...validateSubjectDates(kind, subject) };
     cfg.blocks.forEach((b) => b.required.forEach((k) => { if (!subject[k].trim()) errs[k] = "Required"; }));
     if (copies === "Others" && !(parseInt(copiesOther, 10) > 0)) errs.num_copies = "Enter a number of copies";
@@ -2262,7 +2069,6 @@ function RequestForm({ kind, onClose }) {
     pushToast({ title: "Email verified", message: "Your email address has been confirmed.", success: true });
   };
 
-  // The only place that actually saves the request on the server.
   const handleConfirmSubmit = async () => {
     if (submittingRef.current) return;
     if (!verification.token || verification.email !== emailKey) {
@@ -2286,13 +2092,7 @@ function RequestForm({ kind, onClose }) {
         verification_token: verification.token,
       }, sigFile);
 
-      // Submission history: saved FIRST and always kept (control number only, no email).
-      // historyStore is append-only: it never removes, caps or overwrites entries.
-      // The CTL-<id> fallback is skipped because it can't be tracked.
       if (res.control_no) {
-        // The BR/MR/DR prefix decides the type that is stored, so the sidebar
-        // badge always matches the number. A mismatch is logged, never "fixed"
-        // client-side: the control number is the server's lookup key for /api/track.
         const implied = typeFromControlNo(res.control_no);
         if (!implied) {
           console.warn(`Control number ${res.control_no} has no recognised BR/MR/DR prefix.`);
@@ -2301,13 +2101,12 @@ function RequestForm({ kind, onClose }) {
         }
         addToHistory({
           control_no: res.control_no,
-          type: implied || kind, // "birth" | "marriage" | "death"
+          type: implied || kind,
           submitted_at: new Date().toISOString(),
+          email_hint: maskEmail(requester.requester_email.trim()),
         });
       }
 
-      // Backup for the tracker's "Use my recent request" button.
-      // Only real control numbers are saved (the CTL-<id> fallback can't be tracked).
       if (res.control_no && remember) {
         saveRecentRequest(res.control_no, requester.requester_email.trim());
       }
@@ -2322,7 +2121,6 @@ function RequestForm({ kind, onClose }) {
       });
     } catch (e) {
       if (e.code === "EMAIL_NOT_VERIFIED") {
-        // The verification expired or was already used: ask for a fresh code.
         setVerification({ email: "", token: "" });
         setStatus(null);
         setStep("verify");
@@ -2417,9 +2215,8 @@ function RequestForm({ kind, onClose }) {
   );
 }
 
-/* ─── TRACK MY REQUEST ───────────────────────────────────────── */
 function TrackForm({ onClose }) {
-  const theme = MODAL_THEMES.marriage; // same single form color as the request forms
+  const theme = MODAL_THEMES.marriage;
   const [controlNo, setControlNo] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -2433,8 +2230,6 @@ function TrackForm({ onClose }) {
     setResult(null);
   };
 
-  // NOTE: this only forgets the saved email shortcut (lcr_recent_request).
-  // It never touches the submission history / control numbers.
   const forgetRecent = () => {
     clearRecentRequest();
     setRecent(null);
@@ -2460,7 +2255,6 @@ function TrackForm({ onClose }) {
 
   const fmt = (d) => (d ? new Date(d).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "—");
 
-  // Hide the suggestion once the fields already hold that request.
   const showRecent =
     recent && !(controlNo === recent.control_no && email === recent.requester_email);
 
@@ -2536,10 +2330,7 @@ function TrackForm({ onClose }) {
   );
 }
 
-/* ─── MODAL WRAPPER ──────────────────────────────────────────── */
 function Modal({ type, onClose }) {
-  // Keep the latest onClose in a ref so the effect subscribes once,
-  // even though App passes a fresh inline arrow on every render.
   const closeRef = useRef(onClose);
   const overlayRef = useRef(null);
   useEffect(() => {
@@ -2573,14 +2364,11 @@ function Modal({ type, onClose }) {
   );
 }
 
-/* ─── HISTORY BUTTON + DRAWER (Tailwind, fully responsive) ───── */
 const fmtWhen = (iso) => {
   const d = new Date(iso);
   return isNaN(d) ? "—" : d.toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
 };
 
-/* Floating button: icon-only (sama sa imong gihangyo/gipakit-an sa image)
-   Always at least 44x44 so it is easy to tap. */
 function HistoryButton({ count, onClick }) {
   return (
     <button
@@ -2606,15 +2394,10 @@ function HistoryButton({ count, onClick }) {
   );
 }
 
-/* Drawer: backdrop fades in, panel slides in from the right.
-   Closing plays the same transition in reverse before unmounting.
-   Control numbers are permanent: there is intentionally no Remove / Clear.
-   Each item shows a colored icon tile + a Birth/Marriage/Death badge with its
-   BR/MR/DR prefix, derived from the control number itself. */
-const DRAWER_ANIM_MS = 300; // keep in sync with duration-300 below
+const DRAWER_ANIM_MS = 300;
 function HistoryDrawer({ items, onClose }) {
   const [copiedNo, setCopiedNo] = useState(null);
-  const [isOpen, setIsOpen] = useState(false); // Nagsugod sa false para ma-capture ang initial render
+  const [isOpen, setIsOpen] = useState(false);
   const copyTimerRef = useRef(null);
   const closeTimerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -2628,12 +2411,11 @@ function HistoryDrawer({ items, onClose }) {
   const handleClose = () => {
     if (closingRef.current) return;
     closingRef.current = true;
-    setIsOpen(false); // Mo-trigger sa exit animation
+    setIsOpen(false);
     closeTimerRef.current = setTimeout(() => onCloseRef.current(), DRAWER_ANIM_MS);
   };
 
   useEffect(() => {
-    // I-set dayon sa true gamit ang requestAnimationFrame human ma-mount ang component
     const raf = requestAnimationFrame(() => setIsOpen(true));
 
     const opener = document.activeElement;
@@ -2668,22 +2450,19 @@ function HistoryDrawer({ items, onClose }) {
 
   return (
     <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
-      {/* Backdrop: mo-fade in/out base sa isOpen state */}
       <div
         onClick={handleClose}
-        style={{ opacity: isOpen ? 1 : 0, transition: 'opacity 300ms ease-in-out' }}
+        style={{ opacity: isOpen ? 1 : 0, transition: "opacity 300ms ease-in-out" }}
         className="absolute inset-0 bg-[#0a1937]/45"
       />
 
-      {/* Side Panel: mo-slide gikan sa tuo padulong sa 0% kon isOpen na */}
       <aside
         style={{
-          transform: isOpen ? 'translateX(0%)' : 'translateX(100%)',
-          transition: 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)'
+          transform: isOpen ? "translateX(0%)" : "translateX(100%)",
+          transition: "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
         }}
         className="relative z-10 flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl sm:max-w-sm sm:rounded-l-2xl lg:max-w-md"
       >
-        {/* Header */}
         <header
           className="flex shrink-0 items-start justify-between gap-3 border-b border-[#e2ecf8] px-4 pb-3 sm:px-5 sm:pb-4
                      pt-[max(1rem,env(safe-area-inset-top))] sm:pt-[max(1.25rem,env(safe-area-inset-top))]"
@@ -2707,7 +2486,6 @@ function HistoryDrawer({ items, onClose }) {
           </button>
         </header>
 
-        {/* List */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {items.length === 0 ? (
             <div className="mt-12 text-center text-sm text-[#6b87a8] sm:mt-16">
@@ -2717,7 +2495,6 @@ function HistoryDrawer({ items, onClose }) {
           ) : (
             <ul className="space-y-3">
               {items.map((it) => {
-                // Prefix first, stored type second, generic fallback last.
                 const kind = typeFromControlNo(it.control_no) || it.type;
                 const meta = RECORD_META[kind] || { label: "Request", prefix: "", badge: "bg-slate-100 text-slate-600" };
                 const copied = copiedNo === it.control_no;
@@ -2734,7 +2511,13 @@ function HistoryDrawer({ items, onClose }) {
                         </p>
                       </div>
                     </div>
+
                     <p className="mt-1.5 text-[0.7rem] text-[#6b87a8]">Submitted {fmtWhen(it.submitted_at)}</p>
+                    {it.email_hint && (
+                      <p className="mt-0.5 break-all text-[0.7rem] text-[#6b87a8]">
+                        Email used: <span className="font-medium text-[#0f1f3d]">{it.email_hint}</span>
+                      </p>
+                    )}
 
                     <button
                       type="button"
@@ -2756,10 +2539,9 @@ function HistoryDrawer({ items, onClose }) {
           )}
         </div>
 
-        {/* Footer */}
         <footer className="shrink-0 border-t border-[#e2ecf8] bg-[#f4f8fd] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
           <p className="text-[0.68rem] leading-relaxed text-[#6b87a8]">
-            To track a request, you'll also need the email address used on it.
+            To track a request, you'll need the control number and the full email address used on it.
           </p>
         </footer>
       </aside>
@@ -2767,7 +2549,6 @@ function HistoryDrawer({ items, onClose }) {
   );
 }
 
-/* ─── ROOT APP ───────────────────────────────────────────────── */
 export default function App() {
   const [active, setActive] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);

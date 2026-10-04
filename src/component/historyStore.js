@@ -1,30 +1,18 @@
-// ─────────────────────────────────────────────────────────────
-// SUBMISSION HISTORY STORE: append-only.
-// RULES (do not break them in future updates):
-//  • NEVER rename HISTORY_KEY. If you must, add the old name to LEGACY_KEYS.
-//  • NEVER call localStorage.clear()/removeItem() on these keys.
-//  • NEVER cap or trim the list.
-//  • All writes go through addToHistory(), which only ever ADDS.
-// ─────────────────────────────────────────────────────────────
 export const HISTORY_KEY = "lcr_submission_history";
 export const HISTORY_EVENT = "lcr-history-change";
-const BACKUP_KEY = "lcr_submission_history_bk"; // second copy in localStorage
-const LEGACY_KEYS = [];                          // old key names: keep forever
-const IDB_NAME = "lcr_history_mirror";           // third copy (IndexedDB)
+const BACKUP_KEY = "lcr_submission_history_bk";
+const LEGACY_KEYS = [];
+const IDB_NAME = "lcr_history_mirror";
 
-/* ── Control number prefixes (must match the backend) ── */
 export const CONTROL_PREFIXES = { birth: "BR", marriage: "MR", death: "DR" };
 const TYPE_BY_PREFIX = Object.fromEntries(
   Object.entries(CONTROL_PREFIXES).map(([type, prefix]) => [prefix, type])
 );
-// "MR-20261004-00007" -> "marriage" (null if the prefix is unknown)
 export const typeFromControlNo = (no) =>
   TYPE_BY_PREFIX[String(no || "").split("-")[0].toUpperCase()] || null;
 
 const idOf = (e) => e?.control_no || e?.controlNumber || e?.control_number || null;
 
-// The prefix is the source of truth for the record type, so old entries
-// with a missing or wrong `type` are corrected whenever they are read.
 const normalize = (list) =>
   Array.isArray(list)
     ? list
@@ -36,7 +24,6 @@ const normalize = (list) =>
         })
     : [];
 
-// Union by control number, newest first. Nothing is ever dropped.
 const merge = (...lists) => {
   const map = new Map();
   for (const list of lists) {
@@ -56,11 +43,10 @@ const readKey = (k) => {
   try {
     return normalize(JSON.parse(raw));
   } catch {
-    // Corrupt JSON: keep the raw text so it can be recovered by hand.
     try {
       const c = `${k}_corrupt`;
       if (!localStorage.getItem(c)) localStorage.setItem(c, raw);
-    } catch { /* ignore */ }
+    } catch {}
     return [];
   }
 };
@@ -70,12 +56,11 @@ const readLocal = () =>
 
 const writeLocal = (list) => {
   const json = JSON.stringify(list);
-  try { localStorage.setItem(HISTORY_KEY, json); } catch { /* storage unavailable */ }
-  try { localStorage.setItem(BACKUP_KEY, json); } catch { /* storage unavailable */ }
-  try { window.dispatchEvent(new Event(HISTORY_EVENT)); } catch { /* ignore */ }
+  try { localStorage.setItem(HISTORY_KEY, json); } catch {}
+  try { localStorage.setItem(BACKUP_KEY, json); } catch {}
+  try { window.dispatchEvent(new Event(HISTORY_EVENT)); } catch {}
 };
 
-/* ── IndexedDB mirror ── */
 const openDb = () =>
   new Promise((res, rej) => {
     if (typeof indexedDB === "undefined") return rej(new Error("IndexedDB unavailable"));
@@ -104,11 +89,9 @@ const idbSet = async (list) => {
       tx.objectStore("kv").put(list, "history");
       tx.oncomplete = tx.onerror = tx.onabort = () => { db.close(); res(); };
     });
-  } catch { /* ignore */ }
+  } catch {}
 };
 
-// Merges localStorage + IndexedDB and writes the union back to BOTH,
-// so a copy wiped from one place is restored from the other.
 let queue = Promise.resolve();
 const reconcile = () => {
   queue = queue
@@ -123,10 +106,8 @@ const reconcile = () => {
   return queue;
 };
 
-/* ── Public API ── */
 export const getHistory = () => readLocal();
 
-// Append-only. Re-adding the same control number just updates that entry.
 export const addToHistory = (entry) => {
   if (!idOf(entry)) return readLocal();
   const merged = merge(readLocal(), [entry]);
@@ -135,9 +116,7 @@ export const addToHistory = (entry) => {
   return merged;
 };
 
-// Call once at startup: restores anything missing and asks the browser
-// not to evict site storage under pressure.
 export const initHistoryProtection = async () => {
-  try { await navigator.storage?.persist?.(); } catch { /* ignore */ }
+  try { await navigator.storage?.persist?.(); } catch {}
   return reconcile();
 };
