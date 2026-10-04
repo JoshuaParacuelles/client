@@ -2564,10 +2564,9 @@ function HistoryButton({ count, onClick }) {
    Closing plays the same transition in reverse before unmounting.
    Control numbers are permanent: there is intentionally no Remove / Clear. */
 const DRAWER_ANIM_MS = 300; // keep in sync with duration-300 below
-
 function HistoryDrawer({ items, onClose }) {
   const [copiedNo, setCopiedNo] = useState(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // Nagsugod sa false para ma-capture ang initial render
   const copyTimerRef = useRef(null);
   const closeTimerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -2581,12 +2580,12 @@ function HistoryDrawer({ items, onClose }) {
   const handleClose = () => {
     if (closingRef.current) return;
     closingRef.current = true;
-    setIsOpen(false);
+    setIsOpen(false); // Mo-trigger sa exit animation
     closeTimerRef.current = setTimeout(() => onCloseRef.current(), 300);
   };
 
   useEffect(() => {
-    // Gamit og requestAnimationFrame aron masiguro nga mo-trigger ang transition gikan sa right
+    // I-set dayon sa true gamit ang requestAnimationFrame human ma-mount ang component
     const raf = requestAnimationFrame(() => setIsOpen(true));
     
     const opener = document.activeElement;
@@ -2621,14 +2620,14 @@ function HistoryDrawer({ items, onClose }) {
 
   return (
     <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
-      {/* Backdrop nga mo-fade in/out */}
+      {/* Backdrop: mo-fade in/out base sa isOpen state */}
       <div
         onClick={handleClose}
         style={{ opacity: isOpen ? 1 : 0, transition: 'opacity 300ms ease-in-out' }}
         className="absolute inset-0 bg-[#0a1937]/45"
       />
 
-      {/* Side Panel nga mo-slide gikan sa tuo gamit ang direktang inline style para dili ma-override */}
+      {/* Side Panel: mo-slide gikan sa tuo padulong sa 0% kon isOpen na */}
       <aside
         style={{
           transform: isOpen ? 'translateX(0%)' : 'translateX(100%)',
