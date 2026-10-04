@@ -2103,7 +2103,7 @@ function RequestForm({ kind, onClose }) {
           control_no: res.control_no,
           type: implied || kind,
           submitted_at: new Date().toISOString(),
-          email_hint: maskEmail(requester.requester_email.trim()),
+          email: requester.requester_email.trim(),
         });
       }
 
@@ -2513,9 +2513,9 @@ function HistoryDrawer({ items, onClose }) {
                     </div>
 
                     <p className="mt-1.5 text-[0.7rem] text-[#6b87a8]">Submitted {fmtWhen(it.submitted_at)}</p>
-                    {it.email_hint && (
+                    {it.email && (
                       <p className="mt-0.5 break-all text-[0.7rem] text-[#6b87a8]">
-                        Email used: <span className="font-medium text-[#0f1f3d]">{it.email_hint}</span>
+                        Email used: <span className="font-medium text-[#0f1f3d]">{it.email}</span>
                       </p>
                     )}
 
