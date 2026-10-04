@@ -2424,6 +2424,8 @@ function HistoryDrawer({ items, onClose, onTrack }) {
   const [copiedNo, setCopiedNo] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [linkInputs, setLinkInputs] = useState({});
+  const [linkingNo, setLinkingNo] = useState(null);
   const copyTimerRef = useRef(null);
   const closeTimerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -2450,11 +2452,44 @@ function HistoryDrawer({ items, onClose, onTrack }) {
 
   // Re-check every saved request that has an email, then update its saved entry.
   // Entries checked in the last minute are skipped to avoid hammering the server.
+  // Emails already saved on this device (other history entries + the "recent request").
+  // Used to auto-link old entries that were saved before the email field existed.
+  const candidateEmails = () => {
+    const map = new Map();
+    itemsRef.current.forEach((it) => {
+      if (it.email) map.set(it.email.trim().toLowerCase(), it.email.trim());
+    });
+    const r = loadRecentRequest();
+    if (r?.requester_email) map.set(r.requester_email.trim().toLowerCase(), r.requester_email.trim());
+    return [...map.values()];
+  };
+
+  const checkOne = async (it, candidates) => {
+    const emails = it.email ? [it.email] : candidates;
+    for (const email of emails) {
+      try {
+        const res = await api.trackRequest(it.control_no, email);
+        // Success: saves the email (if it was missing) plus status, dates, etc.
+        updateHistory(it.control_no, historyPatchFromTrack(res, email, it.control_no));
+        return true;
+      } catch (e) {
+        if (e.message === NETWORK_ERROR || it.email) return false;
+      }
+    }
+    if (!it.email) updateHistory(it.control_no, { link_checked_at: new Date().toISOString() });
+    return false;
+  };
+
   const refreshAll = async (force = false) => {
     if (refreshingRef.current) return;
     const now = Date.now();
+    const candidates = candidateEmails();
     const targets = itemsRef.current.filter((it) => {
-      if (!it.email) return false;
+      if (!it.email) {
+        if (!candidates.length) return false;
+        const tried = it.link_checked_at ? Date.parse(it.link_checked_at) : 0;
+        return force || !(tried && now - tried < 60 * 60 * 1000);
+      }
       if (force) return true;
       const last = it.last_checked_at ? Date.parse(it.last_checked_at) : 0;
       return !(last && now - last < REFRESH_MIN_AGE_MS);
@@ -2462,12 +2497,7 @@ function HistoryDrawer({ items, onClose, onTrack }) {
     if (!targets.length) return;
     refreshingRef.current = true;
     if (mountedRef.current) setRefreshing(true);
-    await Promise.allSettled(
-      targets.map(async (it) => {
-        const res = await api.trackRequest(it.control_no, it.email);
-        updateHistory(it.control_no, historyPatchFromTrack(res, it.email, it.control_no));
-      })
-    );
+    await Promise.allSettled(targets.map((it) => checkOne(it, candidates)));
     refreshingRef.current = false;
     if (mountedRef.current) setRefreshing(false);
   };
@@ -2509,7 +2539,44 @@ function HistoryDrawer({ items, onClose, onTrack }) {
     });
   };
 
-  const canRefresh = items.some((it) => it.email);
+  // Link an email to an old request (one that has no saved email).
+  // The email is only saved if the server confirms it matches the control number.
+  // The same email is then tried on the other unlinked requests automatically.
+  const handleLink = async (it) => {
+    if (linkingNo) return;
+    const email = (linkInputs[it.control_no] || "").trim();
+    if (!EMAIL_REGEX.test(email)) {
+      pushToast({ title: "Enter a valid email", message: "Use the email address you used on this request.", success: false });
+      return;
+    }
+    setLinkingNo(it.control_no);
+    try {
+      const res = await api.trackRequest(it.control_no, email);
+      updateHistory(it.control_no, historyPatchFromTrack(res, email, it.control_no));
+      let extra = 0;
+      const others = itemsRef.current.filter((o) => !o.email && o.control_no !== it.control_no);
+      const settled = await Promise.allSettled(
+        others.map(async (o) => {
+          const r = await api.trackRequest(o.control_no, email);
+          updateHistory(o.control_no, historyPatchFromTrack(r, email, o.control_no));
+        })
+      );
+      extra = settled.filter((s) => s.status === "fulfilled").length;
+      pushToast({
+        title: "Request updated",
+        message: extra > 0
+          ? `${it.control_no} and ${extra} other request${extra > 1 ? "s" : ""} are now linked and updated.`
+          : `${it.control_no} is now linked and will update automatically.`,
+        success: true,
+      });
+    } catch (e) {
+      pushToast({ title: "Couldn't link request", message: e.message, success: false });
+    } finally {
+      if (mountedRef.current) setLinkingNo(null);
+    }
+  };
+
+  const canRefresh = items.length > 0;
 
   return (
     <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
@@ -2613,16 +2680,33 @@ function HistoryDrawer({ items, onClose, onTrack }) {
                       <p className="mt-0.5 break-all text-[0.7rem] text-[#6b87a8]">
                         Email used: <span className="font-medium text-[#0f1f3d]">{it.email}</span>
                       </p>
+                    ) : !it.link_checked_at ? (
+                      <p className="mt-0.5 text-[0.7rem] text-[#6b87a8]">{refreshing ? "Linking email…" : ""}</p>
                     ) : (
                       <div className="mt-2 rounded-lg border border-[#f0d9a0] bg-[#fff8e6] px-2.5 py-2 text-[0.7rem] leading-snug text-[#5c4a14]">
-                        Email not saved for this request. Track it once with its email to link it and keep its status updated.
-                        <button
-                          type="button"
-                          onClick={() => onTrack?.(it.control_no)}
-                          className="mt-1.5 block font-semibold text-[#185fa5] underline"
-                        >
-                          Track this request
-                        </button>
+                        We couldn't match a saved email to this request automatically. Enter the email used on it to update it.
+                        <div className="mt-1.5 flex gap-1.5">
+                          <input
+                            type="email"
+                            inputMode="email"
+                            autoComplete="email"
+                            aria-label={`Email used for ${it.control_no}`}
+                            placeholder="juandelacruz@gmail.com"
+                            value={linkInputs[it.control_no] || ""}
+                            onChange={(e) => setLinkInputs((p) => ({ ...p, [it.control_no]: e.target.value }))}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleLink(it); }}
+                            className="min-w-0 flex-1 rounded-md border border-[#c8d9f0] bg-white px-2 py-1.5 text-[16px] text-[#0f1f3d] sm:text-[0.74rem]
+                                       focus:border-[#185fa5] focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleLink(it)}
+                            disabled={!!linkingNo}
+                            className="shrink-0 rounded-md bg-[#185fa5] px-2.5 py-1.5 text-[0.72rem] font-semibold text-white hover:bg-[#0c447c] disabled:opacity-60"
+                          >
+                            {linkingNo === it.control_no ? "Checking…" : "Update"}
+                          </button>
+                        </div>
                       </div>
                     )}
 
