@@ -2573,39 +2573,30 @@ function HistoryDrawer({ items, onClose }) {
   const closeBtnRef = useRef(null);
   const closingRef = useRef(false);
   const onCloseRef = useRef(onClose);
-  const handleCloseRef = useRef(() => {});
 
-  // Always call the latest onClose, even though the timer was set earlier.
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  // Plays the exit transition, then unmounts. Ignores repeated calls.
   const handleClose = () => {
     if (closingRef.current) return;
     closingRef.current = true;
     setIsOpen(false);
-    closeTimerRef.current = setTimeout(() => onCloseRef.current(), DRAWER_ANIM_MS);
+    closeTimerRef.current = setTimeout(() => onCloseRef.current(), 300);
   };
-  handleCloseRef.current = handleClose;
 
   useEffect(() => {
-    // Render the closed state first, then flip to open on a later frame
-    // (double rAF) so the browser has painted it and the transition plays.
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => setIsOpen(true));
-    });
-
+    // Gamit og requestAnimationFrame aron masiguro nga mo-trigger ang transition gikan sa right
+    const raf = requestAnimationFrame(() => setIsOpen(true));
+    
     const opener = document.activeElement;
     closeBtnRef.current?.focus({ preventScroll: true });
-    const onKey = (e) => { if (e.key === "Escape") handleCloseRef.current(); };
+    const onKey = (e) => { if (e.key === "Escape") handleClose(); };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
 
     return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
+      cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
       clearTimeout(copyTimerRef.current);
@@ -2630,23 +2621,25 @@ function HistoryDrawer({ items, onClose }) {
 
   return (
     <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
-      {/* Backdrop: fades in/out */}
+      {/* Backdrop nga mo-fade in/out */}
       <div
         onClick={handleClose}
-        className={`absolute inset-0 bg-[#0a1937]/45 transition-opacity duration-300 ease-in-out ${isOpen ? "opacity-100" : "opacity-0"}`}
+        style={{ opacity: isOpen ? 1 : 0, transition: 'opacity 300ms ease-in-out' }}
+        className="absolute inset-0 bg-[#0a1937]/45"
       />
 
-      {/* Panel: slides in from / out to the right edge */}
+      {/* Side Panel nga mo-slide gikan sa tuo gamit ang direktang inline style para dili ma-override */}
       <aside
-        className={`relative z-10 flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl
-                    sm:max-w-sm sm:rounded-l-2xl lg:max-w-md
-                    transform transition-transform duration-300 ease-in-out will-change-transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        style={{
+          transform: isOpen ? 'translateX(0%)' : 'translateX(100%)',
+          transition: 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)'
+        }}
+        className="relative z-10 flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl sm:max-w-sm sm:rounded-l-2xl lg:max-w-md"
       >
         {/* Header */}
         <header
           className="flex shrink-0 items-start justify-between gap-3 border-b border-[#e2ecf8] px-4 pb-3 sm:px-5 sm:pb-4
-                     pt-[max(1rem,env(safe-area-inset-top))] sm:pt-[max(1.25rem,env(safe-area-inset-top))]
-                     [@media(max-height:480px)]:pb-2 [@media(max-height:480px)]:pt-2"
+                     pt-[max(1rem,env(safe-area-inset-top))] sm:pt-[max(1.25rem,env(safe-area-inset-top))]"
         >
           <div className="min-w-0">
             <h2 id="history-title" className="font-['DM_Serif_Display'] text-lg text-[#0f1f3d] sm:text-xl">
@@ -2667,10 +2660,10 @@ function HistoryDrawer({ items, onClose }) {
           </button>
         </header>
 
-        {/* List (scrolls inside the drawer) */}
+        {/* List */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {items.length === 0 ? (
-            <div className="mt-12 text-center text-sm text-[#6b87a8] sm:mt-16 [@media(max-height:480px)]:mt-4">
+            <div className="mt-12 text-center text-sm text-[#6b87a8] sm:mt-16">
               <p className="font-medium text-[#0f1f3d]">No requests yet</p>
               <p className="mt-1">Control numbers appear here after you submit a request.</p>
             </div>
@@ -2713,11 +2706,7 @@ function HistoryDrawer({ items, onClose }) {
         </div>
 
         {/* Footer */}
-        <footer
-          className="shrink-0 border-t border-[#e2ecf8] bg-[#f4f8fd] px-4 pt-3 sm:px-5
-                     pb-[max(0.75rem,env(safe-area-inset-bottom))]
-                     [@media(max-height:480px)]:pt-2"
-        >
+        <footer className="shrink-0 border-t border-[#e2ecf8] bg-[#f4f8fd] px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
           <p className="text-[0.68rem] leading-relaxed text-[#6b87a8]">
             To track a request, you'll also need the email address used on it.
           </p>
