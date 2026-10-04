@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
+import { addToHistory, getHistory, HISTORY_EVENT } from "./historyStore";
+
 
 
 const styles = `
@@ -1364,42 +1366,15 @@ async function copyToClipboard(text) {
   }
 }
 
-/* ─── SUBMISSION HISTORY (localStorage) ──────────────────────── */
-// Every successful submission is logged here (control number, type, timestamp).
-// No email or personal data is stored.
-const HISTORY_KEY = "lcr_submission_history";
-const HISTORY_EVENT = "lcr-history-change";
-const HISTORY_MAX = 20;
-
-function loadHistory() {
-  try {
-    const arr = JSON.parse(localStorage.getItem(HISTORY_KEY));
-    return Array.isArray(arr) ? arr.filter((e) => e && e.control_no) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeHistory(list) {
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
-  } catch { /* storage unavailable: ignore */ }
-  window.dispatchEvent(new Event(HISTORY_EVENT)); // keeps the UI in sync
-}
-
-function addToHistory(entry) {
-  const rest = loadHistory().filter((e) => e.control_no !== entry.control_no);
-  writeHistory([entry, ...rest].slice(0, HISTORY_MAX)); // newest first, capped
-}
-const removeFromHistory = (no) => writeHistory(loadHistory().filter((e) => e.control_no !== no));
-const clearHistory = () => writeHistory([]);
-
+/* ─── SUBMISSION HISTORY (see historyStore.js) ───────────────── */
+// Append-only: control numbers are never removed, capped, or cleared.
 function useSubmissionHistory() {
-  const [items, setItems] = useState(loadHistory);
+  const [items, setItems] = useState(getHistory);
   useEffect(() => {
-    const sync = () => setItems(loadHistory());
+    const sync = () => setItems(getHistory());
     window.addEventListener(HISTORY_EVENT, sync);
     window.addEventListener("storage", sync); // other tabs
+    sync(); // pick up anything restored during startup
     return () => {
       window.removeEventListener(HISTORY_EVENT, sync);
       window.removeEventListener("storage", sync);
@@ -2229,20 +2204,21 @@ function RequestForm({ kind, onClose }) {
         verification_token: verification.token,
       }, sigFile);
 
-      // Backup for the tracker's "Use my recent request" button.
-      // Only real control numbers are saved (the CTL-<id> fallback can't be tracked).
-      if (res.control_no && remember) {
-        saveRecentRequest(res.control_no, requester.requester_email.trim());
-      }
-
-      // Submission history: always kept (control number only, no email).
-      // Runs only after a successful submit; the CTL-<id> fallback is skipped.
+      // Submission history: saved FIRST and always kept (control number only, no email).
+      // historyStore is append-only: it never removes, caps or overwrites entries.
+      // The CTL-<id> fallback is skipped because it can't be tracked.
       if (res.control_no) {
         addToHistory({
           control_no: res.control_no,
           type: kind, // "birth" | "marriage" | "death"
           submitted_at: new Date().toISOString(),
         });
+      }
+
+      // Backup for the tracker's "Use my recent request" button.
+      // Only real control numbers are saved (the CTL-<id> fallback can't be tracked).
+      if (res.control_no && remember) {
+        saveRecentRequest(res.control_no, requester.requester_email.trim());
       }
 
       setResult(res);
@@ -2366,6 +2342,8 @@ function TrackForm({ onClose }) {
     setResult(null);
   };
 
+  // NOTE: this only forgets the saved email shortcut (lcr_recent_request).
+  // It never touches the submission history / control numbers.
   const forgetRecent = () => {
     clearRecentRequest();
     setRecent(null);
@@ -2544,7 +2522,8 @@ function HistoryButton({ count, onClick }) {
 }
 
 /* Drawer: backdrop fades in, panel slides in from the right.
-   Closing plays the same transition in reverse before unmounting. */
+   Closing plays the same transition in reverse before unmounting.
+   Control numbers are permanent: there is intentionally no Remove / Clear. */
 const DRAWER_ANIM_MS = 300; // keep in sync with duration-300 below
 
 function HistoryDrawer({ items, onClose }) {
@@ -2611,7 +2590,7 @@ function HistoryDrawer({ items, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
+    <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
       {/* Backdrop: fades in/out */}
       <div
         onClick={handleClose}
@@ -2667,16 +2646,6 @@ function HistoryDrawer({ items, onClose }) {
                       <span className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${t.cls}`}>
                         {t.label}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => removeFromHistory(it.control_no)}
-                        aria-label={`Remove ${it.control_no} from history`}
-                        className="-mr-2 inline-flex min-h-10 items-center px-2 text-[0.72rem] text-[#8aabbf] underline-offset-2 transition
-                                   hover:text-[#e24b4a] hover:underline
-                                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5] rounded-md"
-                      >
-                        Remove
-                      </button>
                     </div>
 
                     <p className="mt-1 break-all font-mono text-[0.88rem] font-semibold tracking-wide text-[#0f1f3d] select-all sm:text-[0.95rem]">
@@ -2713,16 +2682,6 @@ function HistoryDrawer({ items, onClose }) {
           <p className="text-[0.68rem] leading-relaxed text-[#6b87a8]">
             To track a request, you'll also need the email address used on it.
           </p>
-          {items.length > 0 && (
-            <button
-              type="button"
-              onClick={() => { if (window.confirm("Clear all saved requests from this device?")) clearHistory(); }}
-              className="mt-1 inline-flex min-h-10 items-center text-[0.78rem] font-medium text-[#e24b4a] underline-offset-2
-                         hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5] rounded-md"
-            >
-              Clear history
-            </button>
-          )}
         </footer>
       </aside>
     </div>
