@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
 import {
-  addToHistory, getHistory, HISTORY_EVENT, initHistoryProtection,
+  addToHistory, updateHistory, getHistory, HISTORY_EVENT, initHistoryProtection,
   CONTROL_PREFIXES, typeFromControlNo,
 } from "./historyStore";
 
@@ -1298,6 +1298,23 @@ function useSubmissionHistory() {
   return items;
 }
 
+// Turns a successful /track response into a patch for the saved history entry.
+function historyPatchFromTrack(res, email, fallbackControlNo) {
+  const control_no = res.control_no || fallbackControlNo;
+  return {
+    control_no,
+    type: typeFromControlNo(control_no) || undefined,
+    email: (email || "").trim(),
+    submitted_at: res.submitted_at,
+    status_label: res.status_label,
+    is_rejected: !!res.is_rejected,
+    status_updated_at: res.updated_at,
+    last_checked_at: new Date().toISOString(),
+  };
+}
+
+const REFRESH_MIN_AGE_MS = 60 * 1000;
+
 const PH_MOBILE_LOCAL_REGEX = /^09\d{9}$/;
 const PH_MOBILE_INTL_REGEX = /^\+639\d{9}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -2215,9 +2232,9 @@ function RequestForm({ kind, onClose }) {
   );
 }
 
-function TrackForm({ onClose }) {
+function TrackForm({ onClose, initialControlNo = "" }) {
   const theme = MODAL_THEMES.marriage;
-  const [controlNo, setControlNo] = useState("");
+  const [controlNo, setControlNo] = useState(initialControlNo);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -2245,6 +2262,12 @@ function TrackForm({ onClose }) {
     try {
       const res = await api.trackRequest(controlNo.trim(), email.trim());
       setResult(res);
+      // Update the saved history entry (or add it if it isn't there yet),
+      // so the Recent requests list always matches what the server says.
+      updateHistory(
+        res.control_no || controlNo.trim().toUpperCase(),
+        historyPatchFromTrack(res, email, controlNo.trim().toUpperCase())
+      );
       pushToast({ title: "Request found", message: res.status_label || res.control_no, success: true });
     } catch (err) {
       pushToast({ title: "Couldn't track request", message: err.message, success: false });
@@ -2330,7 +2353,7 @@ function TrackForm({ onClose }) {
   );
 }
 
-function Modal({ type, onClose }) {
+function Modal({ type, onClose, trackPrefill = "" }) {
   const closeRef = useRef(onClose);
   const overlayRef = useRef(null);
   useEffect(() => {
@@ -2359,7 +2382,9 @@ function Modal({ type, onClose }) {
   return (
     <div ref={overlayRef} className="overlay" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabIndex={-1}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      {type === "track" ? <TrackForm onClose={onClose} /> : <RequestForm kind={type} onClose={onClose} />}
+      {type === "track"
+        ? <TrackForm onClose={onClose} initialControlNo={trackPrefill} />
+        : <RequestForm kind={type} onClose={onClose} />}
     </div>
   );
 }
@@ -2395,18 +2420,26 @@ function HistoryButton({ count, onClick }) {
 }
 
 const DRAWER_ANIM_MS = 300;
-function HistoryDrawer({ items, onClose }) {
+function HistoryDrawer({ items, onClose, onTrack }) {
   const [copiedNo, setCopiedNo] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const copyTimerRef = useRef(null);
   const closeTimerRef = useRef(null);
   const closeBtnRef = useRef(null);
   const closingRef = useRef(false);
   const onCloseRef = useRef(onClose);
+  const itemsRef = useRef(items);
+  const mountedRef = useRef(true);
+  const refreshingRef = useRef(false);
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   const handleClose = () => {
     if (closingRef.current) return;
@@ -2415,7 +2448,32 @@ function HistoryDrawer({ items, onClose }) {
     closeTimerRef.current = setTimeout(() => onCloseRef.current(), DRAWER_ANIM_MS);
   };
 
+  // Re-check every saved request that has an email, then update its saved entry.
+  // Entries checked in the last minute are skipped to avoid hammering the server.
+  const refreshAll = async (force = false) => {
+    if (refreshingRef.current) return;
+    const now = Date.now();
+    const targets = itemsRef.current.filter((it) => {
+      if (!it.email) return false;
+      if (force) return true;
+      const last = it.last_checked_at ? Date.parse(it.last_checked_at) : 0;
+      return !(last && now - last < REFRESH_MIN_AGE_MS);
+    });
+    if (!targets.length) return;
+    refreshingRef.current = true;
+    if (mountedRef.current) setRefreshing(true);
+    await Promise.allSettled(
+      targets.map(async (it) => {
+        const res = await api.trackRequest(it.control_no, it.email);
+        updateHistory(it.control_no, historyPatchFromTrack(res, it.email, it.control_no));
+      })
+    );
+    refreshingRef.current = false;
+    if (mountedRef.current) setRefreshing(false);
+  };
+
   useEffect(() => {
+    mountedRef.current = true;
     const raf = requestAnimationFrame(() => setIsOpen(true));
 
     const opener = document.activeElement;
@@ -2424,7 +2482,10 @@ function HistoryDrawer({ items, onClose }) {
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
 
+    refreshAll();
+
     return () => {
+      mountedRef.current = false;
       cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
@@ -2447,6 +2508,8 @@ function HistoryDrawer({ items, onClose }) {
       success: ok,
     });
   };
+
+  const canRefresh = items.some((it) => it.email);
 
   return (
     <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
@@ -2471,19 +2534,39 @@ function HistoryDrawer({ items, onClose }) {
             <h2 id="history-title" className="font-['DM_Serif_Display'] text-lg text-[#0f1f3d] sm:text-xl">
               Recent requests
             </h2>
-            <p className="mt-0.5 text-[0.72rem] text-[#6b87a8]">Saved on this device only</p>
+            <p className="mt-0.5 text-[0.72rem] text-[#6b87a8]">
+              {refreshing ? "Updating status…" : "Saved on this device only"}
+            </p>
           </div>
-          <button
-            ref={closeBtnRef}
-            type="button"
-            onClick={handleClose}
-            aria-label="Close recent requests"
-            className="-mr-1 grid h-11 w-11 shrink-0 place-items-center rounded-lg text-2xl leading-none text-[#6b87a8] transition
-                       hover:bg-[#eef3fb] hover:text-[#0f1f3d]
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5]"
-          >
-            ×
-          </button>
+          <div className="-mr-1 flex shrink-0 items-center gap-1">
+            {canRefresh && (
+              <button
+                type="button"
+                onClick={() => refreshAll(true)}
+                disabled={refreshing}
+                aria-label="Refresh status of saved requests"
+                className="grid h-11 w-11 place-items-center rounded-lg text-[#6b87a8] transition
+                           hover:bg-[#eef3fb] hover:text-[#0f1f3d] disabled:opacity-50
+                           focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5]"
+              >
+                <svg viewBox="0 0 24 24" className={`h-5 w-5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 3v6h-6" />
+                </svg>
+              </button>
+            )}
+            <button
+              ref={closeBtnRef}
+              type="button"
+              onClick={handleClose}
+              aria-label="Close recent requests"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-2xl leading-none text-[#6b87a8] transition
+                         hover:bg-[#eef3fb] hover:text-[#0f1f3d]
+                         focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5]"
+            >
+              ×
+            </button>
+          </div>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
@@ -2512,11 +2595,35 @@ function HistoryDrawer({ items, onClose }) {
                       </div>
                     </div>
 
+                    {it.status_label && (
+                      <p className="mt-2">
+                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.68rem] font-semibold ${
+                          it.is_rejected ? "bg-[#fdecec] text-[#b42318]" : "bg-[#e6f1fb] text-[#185fa5]"
+                        }`}>
+                          {it.status_label}
+                        </span>
+                      </p>
+                    )}
+
                     <p className="mt-1.5 text-[0.7rem] text-[#6b87a8]">Submitted {fmtWhen(it.submitted_at)}</p>
-                    {it.email && (
+                    {it.status_updated_at && (
+                      <p className="mt-0.5 text-[0.7rem] text-[#6b87a8]">Last updated {fmtWhen(it.status_updated_at)}</p>
+                    )}
+                    {it.email ? (
                       <p className="mt-0.5 break-all text-[0.7rem] text-[#6b87a8]">
                         Email used: <span className="font-medium text-[#0f1f3d]">{it.email}</span>
                       </p>
+                    ) : (
+                      <div className="mt-2 rounded-lg border border-[#f0d9a0] bg-[#fff8e6] px-2.5 py-2 text-[0.7rem] leading-snug text-[#5c4a14]">
+                        Email not saved for this request. Track it once with its email to link it and keep its status updated.
+                        <button
+                          type="button"
+                          onClick={() => onTrack?.(it.control_no)}
+                          className="mt-1.5 block font-semibold text-[#185fa5] underline"
+                        >
+                          Track this request
+                        </button>
+                      </div>
                     )}
 
                     <button
@@ -2551,10 +2658,19 @@ function HistoryDrawer({ items, onClose }) {
 
 export default function App() {
   const [active, setActive] = useState(null);
+  const [trackPrefill, setTrackPrefill] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const history = useSubmissionHistory();
   const route = useHashRoute();
   const legalPage = LEGAL_ROUTES.includes(route) ? route : null;
+
+  const openTrack = (controlNo = "") => {
+    setTrackPrefill(controlNo);
+    setHistoryOpen(false);
+    setActive("track");
+  };
+  const closeModal = () => { setActive(null); setTrackPrefill(""); };
+
   return (
     <>
       <style>{styles}</style>
@@ -2564,7 +2680,7 @@ export default function App() {
       <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
-      {historyOpen && <HistoryDrawer items={history} onClose={() => setHistoryOpen(false)} />}
+      {historyOpen && <HistoryDrawer items={history} onClose={() => setHistoryOpen(false)} onTrack={openTrack} />}
       <main className="landing">
         <div className="logo-row">
           <img src="/lcr.jpg" alt="Office of the City Civil Registrar logo" className="logo-img logo-img--lcr"
@@ -2597,8 +2713,8 @@ export default function App() {
             </button>
           ))}
         </div>
-        <button type="button" className="track-link" onClick={() => setActive("track")}>Already submitted? Track my request →</button>
-        {active && <Modal type={active} onClose={() => setActive(null)} />}
+        <button type="button" className="track-link" onClick={() => openTrack("")}>Already submitted? Track my request →</button>
+        {active && <Modal type={active} onClose={closeModal} trackPrefill={trackPrefill} />}
       </main>
       <SiteFooter />
       </>)}

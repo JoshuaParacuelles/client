@@ -24,11 +24,21 @@ const normalize = (list) =>
         })
     : [];
 
+// Newest record wins per field, but empty values never erase real ones.
+const stamp = (e) => String(e.updated_at || e.submitted_at || "");
+const defined = (o) =>
+  Object.fromEntries(
+    Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== "")
+  );
+
 const merge = (...lists) => {
   const map = new Map();
   for (const list of lists) {
     for (const item of normalize(list)) {
-      map.set(item.control_no, { ...map.get(item.control_no), ...item });
+      const prev = map.get(item.control_no);
+      if (!prev) { map.set(item.control_no, item); continue; }
+      const [older, newer] = stamp(item) >= stamp(prev) ? [prev, item] : [item, prev];
+      map.set(item.control_no, { ...older, ...defined(newer) });
     }
   }
   return [...map.values()].sort((a, b) =>
@@ -96,10 +106,12 @@ let queue = Promise.resolve();
 const reconcile = () => {
   queue = queue
     .then(async () => {
-      const merged = merge(readLocal(), await idbGet());
+      const local = readLocal();
+      const merged = merge(local, await idbGet());
       if (!merged.length) return merged;
       await idbSet(merged);
-      if (merged.length !== readLocal().length) writeLocal(merged);
+      // Write back whenever anything changed, not only when the count changed.
+      if (JSON.stringify(merged) !== JSON.stringify(local)) writeLocal(merged);
       return merged;
     })
     .catch(() => []);
@@ -108,12 +120,19 @@ const reconcile = () => {
 
 export const getHistory = () => readLocal();
 
+// Add a new record OR update the existing one with the same control number.
 export const addToHistory = (entry) => {
   if (!idOf(entry)) return readLocal();
-  const merged = merge(readLocal(), [entry]);
+  const merged = merge(readLocal(), [{ ...entry, updated_at: new Date().toISOString() }]);
   writeLocal(merged);
   reconcile();
   return merged;
+};
+
+// Update an existing record by control number (status, email, etc.)
+export const updateHistory = (controlNo, patch) => {
+  if (!controlNo) return readLocal();
+  return addToHistory({ ...patch, control_no: controlNo });
 };
 
 export const initHistoryProtection = async () => {
