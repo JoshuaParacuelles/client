@@ -1257,6 +1257,45 @@ img,svg{max-width:100%;}
 @media(min-width:641px){
   .toast-wrap{top:20px;right:20px;}
 }
+
+/* ══════════════════════════════════════════════════════════════
+    MODALS: CENTERED ON EVERY SCREEN (desktop = mobile behavior)
+    Equal padding on all sides + margin:auto on the card centers it
+    both ways. If the card is taller than the screen, margin:auto
+    collapses and the overlay scrolls normally from the top.
+    Kept LAST so it wins over the older desktop/landscape rules.
+    ══════════════════════════════════════════════════════════════ */
+.overlay{
+  box-sizing:border-box;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding-top:max(16px,env(safe-area-inset-top,0px));
+  padding-bottom:max(16px,env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.overlay > .form-paper{
+  box-sizing:border-box;
+  flex:0 0 auto;
+  width:100%;
+  max-width:var(--modal-max,720px);
+  margin:auto;
+  align-self:center;
+}
+
+/* Short landscape screens (phones, small laptop windows): still a
+    centered card, with tighter spacing so it has room. */
+@media(max-height:520px) and (orientation:landscape){
+  .overlay{
+    padding-top:max(8px,env(safe-area-inset-top,0px));
+    padding-bottom:max(8px,env(safe-area-inset-bottom,0px));
+  }
+}
+@media(min-width:641px) and (max-height:520px) and (orientation:landscape){
+  .overlay{--modal-max:720px;}
+  .overlay > .form-paper{border-radius:16px;}
+}
 `;
 
 /* ─── API ────────────────────────────────────────────────────── */
