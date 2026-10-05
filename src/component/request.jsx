@@ -1191,13 +1191,14 @@ const signaturePadStyles = `
 button.sig-upload-label{font-family:inherit;}
 .sig-preview{object-fit:contain;background:#fff;}
 
-.review-sig{display:flex;justify-content:center;margin:10px 0 4px;}
-.review-sig-inner{display:inline-flex;flex-direction:column;align-items:center;max-width:100%;}
-.review-sig img{display:block;max-width:100%;max-height:120px;object-fit:contain;mix-blend-mode:multiply;}
+.review-sig{display:flex;justify-content:center;margin:10px 0 8px;}
+.review-sig-inner{position:relative;display:inline-block;max-width:100%;line-height:0;}
+.review-sig img{display:block;max-width:100%;max-height:100px;width:auto;height:auto;object-fit:contain;mix-blend-mode:multiply;}
 .review-sig-name{
-  position:relative;z-index:1;margin-top:-16px;
-  font-size:0.8rem;font-weight:600;text-align:center;color:#0f1f3d;
-  overflow-wrap:anywhere;
+  position:absolute;left:50%;bottom:2px;transform:translateX(-50%);
+  white-space:nowrap;line-height:1.2;
+  font-size:0.82rem;font-weight:600;text-align:center;color:#0f1f3d;
+  text-shadow:0 0 3px #fff,0 0 3px #fff;
 }
 
 .sigpad-backdrop{
