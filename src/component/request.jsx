@@ -3071,7 +3071,7 @@ function HistoryDrawer({ items, onClose, onTrack }) {
               Recent requests
             </h2>
             <p className="mt-0.5 text-[0.72rem] text-[#6b87a8]">
-              {refreshing ? "Updating status…" : "Saved on this device only"}
+              {refreshing ? "Updating status…" : "History of Control No."}
             </p>
           </div>
           <div className="-mr-1 flex shrink-0 items-center gap-1">
