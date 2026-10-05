@@ -1191,12 +1191,14 @@ const signaturePadStyles = `
 button.sig-upload-label{font-family:inherit;}
 .sig-preview{object-fit:contain;background:#fff;}
 
-.review-sig{
-  display:flex;justify-content:center;
-  margin:8px 0 4px;padding:10px;
-  background:#fff;border:1px solid #e2ecf8;border-radius:8px;
+.review-sig{display:flex;justify-content:flex-end;margin:6px 0 4px;}
+.review-sig-inner{display:inline-flex;flex-direction:column;align-items:center;max-width:100%;}
+.review-sig img{display:block;max-width:100%;max-height:120px;object-fit:contain;mix-blend-mode:multiply;}
+.review-sig-name{
+  position:relative;z-index:1;margin-top:-6px;
+  font-size:0.8rem;font-weight:600;text-align:center;color:#0f1f3d;
+  overflow-wrap:anywhere;
 }
-.review-sig img{display:block;max-width:100%;max-height:140px;object-fit:contain;}
 
 .sigpad-backdrop{
   position:fixed;inset:0;z-index:1000;
@@ -2269,7 +2271,10 @@ function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, statu
         ]} />
         {sigUrl && (
           <div className="review-sig">
-            <img src={sigUrl} alt="Your signature" />
+            <div className="review-sig-inner">
+              <img src={sigUrl} alt="Your signature" />
+              {printedName && printedName.trim() && <div className="review-sig-name">{printedName.trim()}</div>}
+            </div>
           </div>
         )}
         <div className="section-heading">Optional</div>
