@@ -4,6 +4,7 @@ import {
   addToHistory, updateHistory, getHistory, HISTORY_EVENT, initHistoryProtection,
   CONTROL_PREFIXES, typeFromControlNo,
 } from "./historyStore";
+import { SignaturePadModal, SignatureIcon, SIGNATURE_CSS } from "./SignaturePad";
 
 const styles = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
@@ -15,7 +16,7 @@ body,#root{
   color:#0f1f3d;
 }
 
-.landing{
+.landing{S
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -1319,25 +1320,6 @@ const PH_MOBILE_LOCAL_REGEX = /^09\d{9}$/;
 const PH_MOBILE_INTL_REGEX = /^\+639\d{9}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const SIG_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
-const MAX_SIG_BYTES = 2 * 1024 * 1024;
-
-function getSignatureError(file) {
-  if (!SIG_TYPES.includes(file.type)) return "Use a PNG, JPG or WEBP image, or a PDF.";
-  if (file.size > MAX_SIG_BYTES) return "File is too large. Maximum size is 2 MB.";
-  return null;
-}
-
-async function sniffSignature(file) {
-  const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());
-  const is = (...sig) => sig.every((v, i) => b[i] === v);
-  if (is(0x89, 0x50, 0x4e, 0x47)) return "image/png";
-  if (is(0xff, 0xd8, 0xff)) return "image/jpeg";
-  if (is(0x52, 0x49, 0x46, 0x46) && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "image/webp";
-  if (is(0x25, 0x50, 0x44, 0x46)) return "application/pdf";
-  return null;
-}
-
 function sanitizePhoneInput(raw) {
   let v = (raw || "").replace(/[^\d+]/g, "");
   if (v.includes("+")) v = "+" + v.replace(/\+/g, "");
@@ -1475,58 +1457,47 @@ function AuthClause() {
 }
 
 function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
-  const fileRef = useRef(null);
+  const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState(null);
 
-  const reset = () => {
-    onChange(null);
-    setPreview(null);
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
-  const handleChange = async (e) => {
-    const f = e.target.files[0] || null;
-    if (!f) return;
-    const err = getSignatureError(f);
-    if (err) { pushToast({ title: "Invalid file", message: err, success: false }); reset(); return; }
-    if (!(await sniffSignature(f))) { pushToast({ title: "Invalid file", message: "This file isn't a real PNG, JPG, WEBP or PDF.", success: false }); reset(); return; }
-    onChange(f);
-    if (f.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target.result);
-      reader.readAsDataURL(f);
-    } else {
-      setPreview(null);
-    }
-  };
+  useEffect(() => {
+    if (!file || !file.type.startsWith("image/")) { setPreview(null); return undefined; }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   return (
     <>
-      <div className="sig-upload-wrap">
-        <label className="sig-upload-label" htmlFor="signature_file">
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
-          Choose File
-          <input ref={fileRef} id="signature_file" name="signature_file" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={handleChange} />
-        </label>
-        {preview ? (
-          <img src={preview} alt="Preview of the uploaded signature file" className="sig-preview" />
-        ) : (
-          <span className={`sig-file-name${file ? " has-file" : ""}`}>{file ? file.name : "No file chosen"}</span>
-        )}
-        {file && (
-          <button type="button" className="sig-clear-btn" onClick={reset} title="Remove" aria-label="Remove uploaded signature file">×</button>
-        )}
-      </div>
-      <div className="sig-note">PNG, JPG, WEBP or PDF · max 2 MB</div>
+      <button type="button" className="sig-open-btn" onClick={() => setOpen(true)}>
+        <SignatureIcon />
+        Open Signature Pad
+      </button>
+      <div className="sig-helper">Open a drawing pad to provide your signature.</div>
+
+      {file && (
+        <div className="sig-chosen">
+          {preview && <img src={preview} alt="Preview of your signature" />}
+          <span className="sig-file-name has-file">{file.name}</span>
+          <button type="button" className="sig-clear-btn" onClick={() => onChange(null)}
+            title="Remove" aria-label="Remove signature">×</button>
+        </div>
+      )}
+
       <label className="req-field" htmlFor="signature_printed_name">
         Signature Over Printed Name
-        <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName} onChange={(e) => onPrintedNameChange(e.target.value)}
+        <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName}
+          onChange={(e) => onPrintedNameChange(e.target.value)}
           placeholder="Type the name that appears under your signature" />
       </label>
+
+      {open && (
+        <SignaturePadModal
+          onCancel={() => setOpen(false)}
+          onDone={(f) => { onChange(f); setOpen(false); }}
+          notify={(title, message) => pushToast({ title, message, success: false })}
+        />
+      )}
     </>
   );
 }
@@ -2761,6 +2732,7 @@ export default function App() {
       <style>{extraStyles}</style>
       <style>{LEGAL_CSS}</style>
       <style>{responsiveStyles}</style>
+      <style>{SIGNATURE_CSS}</style>
       <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
