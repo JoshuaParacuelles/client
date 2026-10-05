@@ -6,7 +6,32 @@ import {
   CONTROL_PREFIXES, typeFromControlNo,
 } from "./historyStore";
 
+const helpStyles = `
+.help{margin:6px 0 10px;}
+.form-paper .help-btn{
+  display:inline-flex;align-items:center;gap:6px;background:none;border:none;
+  padding:4px 0;font-family:inherit;font-size:.7rem;font-weight:600;
+  color:var(--modal-primary);cursor:pointer;text-align:left;
+}
+.help-i{
+  width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;
+  display:inline-grid;place-items:center;font-size:.62rem;font-style:italic;
+  font-family:'DM Serif Display',serif;line-height:1;flex-shrink:0;
+}
+.form-paper .help-note{
+  margin-top:6px;padding:9px 12px;border-radius:8px;
+  background:var(--modal-tint-bg);border:1px solid var(--modal-tint-border);
+  font-size:.72rem;line-height:1.6;
+}
+.help-note p{margin:0 0 6px;} .help-note p:last-child{margin:0;}
+.help-note dl{margin:0;} .help-note dt{font-weight:600;margin-top:6px;} .help-note dd{margin:0;}
+.form-paper .field-hint{margin:4px 0 0;font-size:.66rem;line-height:1.5;color:#5577a0;font-weight:400;}
+.form-paper .section-hint{margin:-4px 0 10px;}
+@media(pointer:coarse){.form-paper .help-btn{min-height:36px;}}
+`;
+
 const styles = `
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
 body,#root{
@@ -1516,6 +1541,20 @@ function buildPurposes(selected, other) {
 
 function Spinner() { return <span className="spinner" aria-hidden="true" />; }
 
+function HelpTip({ label = "What's this?", children }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <div className="help">
+      <button type="button" className="help-btn" aria-expanded={open} aria-controls={id}
+        onClick={() => setOpen((o) => !o)}>
+        <span className="help-i" aria-hidden="true">i</span>{label}
+      </button>
+      {open && <div id={id} className="help-note" role="note">{children}</div>}
+    </div>
+  );
+}
+
 function Checkbox({ label, checked, onChange, name }) {
   const uid = useId();
   return (
@@ -1541,6 +1580,9 @@ function PurposeSection({ selected, onChange }) {
   return (
     <div className="purpose-section">
       <div className="purpose-header">Purpose — Check Appropriate Box</div>
+      <p className="field-hint section-hint">
+        Tell the office why you need the document. Tick all that apply.
+      </p>
       <div className="purpose-grid" role="group" aria-label="Purpose of request">
         {PURPOSES.map((p, i) =>
           p ? (
@@ -1549,6 +1591,24 @@ function PurposeSection({ selected, onChange }) {
           ) : <div key={i} />
         )}
       </div>
+      <HelpTip label="What do these purposes mean?">
+        <dl>
+          <dt>School / Employment / Claims-Loans</dt>
+          <dd>For enrollment, a job application, or benefit and loan applications (e.g. SSS, GSIS, banks).</dd>
+          <dt>Baptism</dt>
+          <dd>For church records.</dd>
+          <dt>Legitimation / R.A. 9255</dt>
+          <dd>For a child born to unmarried parents who will use the father's surname, or whose parents later married.</dd>
+          <dt>R.A. 9048</dt>
+          <dd>For correcting a clerical or typographical error in a name (or first name change) without going to court.</dd>
+          <dt>Clear Copy</dt>
+          <dd>You need a clean, legible copy because an earlier one is unreadable or damaged.</dd>
+          <dt>Legal</dt>
+          <dd>For court cases or other legal proceedings.</dd>
+          <dt>Late Registration</dt>
+          <dd>The event was never registered on time and you need documents to register it now.</dd>
+        </dl>
+      </HelpTip>
     </div>
   );
 }
@@ -1576,6 +1636,11 @@ function CopiesRow({ copies, setCopies, name, othersValue, setOthersValue, error
         </div>
       </div>
       {error && <div className="field-error" role="alert">{error}</div>}
+      <HelpTip label="How many copies should I choose?">
+        <p>Choose how many separate copies of the certificate you need. Some offices and agencies each ask
+        for their own copy, so check with whoever requires it. Choose <strong>Others</strong> for more than three.</p>
+        <p>Fees may apply per copy. The office will confirm the amount.</p>
+      </HelpTip>
     </div>
   );
 }
@@ -1591,6 +1656,13 @@ function AuthClause() {
         direct descendant, or authorized guardian/institution-in-charge</u>.
         The Data Privacy Act of 2012 (R.A. 10173) applies to the personal information in this request. See our <a href="#/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy (opens in a new tab)</a>.
       </p>
+      <HelpTip label="In simple words">
+        <p>You can only request this record if you are the <strong>owner</strong>, the owner's <strong>parent</strong> (if
+        the owner is a minor), <strong>spouse</strong>, <strong>child or grandchild</strong>, or an authorized
+        <strong> guardian or institution</strong>.</p>
+        <p>This protects people's personal information. Your details are handled under the Data Privacy Act. By ticking
+        the consent box below, you confirm you're allowed to make this request.</p>
+      </HelpTip>
     </div>
   );
 }
@@ -1969,12 +2041,17 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
           <button type="button" className="sig-clear-btn" onClick={reset} title="Remove" aria-label="Remove signature">×</button>
         )}
       </div>
-      <div className="sig-note">Open a drawing pad to provide your signature.</div>
+      <div className="sig-note">Draw, upload, or take a photo of your signature using the pad.</div>
       <label className="req-field" htmlFor="signature_printed_name">
         Signature Over Printed Name
-        <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName} onChange={(e) => onPrintedNameChange(e.target.value)}
+        <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName}
+          aria-describedby="signature_printed_name-hint"
+          onChange={(e) => onPrintedNameChange(e.target.value)}
           placeholder="Type the name that appears under your signature" />
       </label>
+      <p className="field-hint" id="signature_printed_name-hint">
+        Your signature shows you authorize this request. Sign the same way you do on your IDs, then type your full name here.
+      </p>
       {padOpen && (
         <SignaturePadModal
           onClose={() => { setPadOpen(false); setTimeout(() => openBtnRef.current?.focus?.(), 0); }}
@@ -1986,29 +2063,38 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
 }
 
 function RequesterFields({ data, onChange, errors, sigFile, onSigChange, printedName, onPrintedNameChange }) {
-  const text = (key, label, extra = {}) => (
+  const text = (key, label, extra = {}, hint) => (
     <div>
       <label className="req-field" htmlFor={key}>
         {label}
         <input id={key} name={key} type="text" className={errors[key] ? "invalid" : ""} value={data[key]}
           aria-invalid={!!errors[key]} aria-required={label.endsWith("*")}
+          aria-describedby={hint ? `${key}-hint` : undefined}
           onChange={(e) => onChange(key, e.target.value)} {...extra} />
       </label>
+      {hint && <p className="field-hint" id={`${key}-hint`}>{hint}</p>}
       {errors[key] && <div className="field-error" role="alert">{errors[key]}</div>}
     </div>
   );
   return (
     <div className="req-left">
       <div className="req-title">Requesting Party</div>
+      <p className="field-hint section-hint">
+        This is about <strong>you</strong>, the person making the request, not the person on the certificate.
+      </p>
       <SignatureUpload file={sigFile} onChange={onSigChange} printedName={printedName} onPrintedNameChange={onPrintedNameChange} />
-      {text("requester_name", "Full Name *", { placeholder: "Juan Dela Cruz", autoComplete: "name" })}
-      {text("requester_relationship", "Relationship to document owner *", { placeholder: "Self / Parent / Spouse" })}
-      {text("requester_address", "Address *", { autoComplete: "street-address" })}
+      {text("requester_name", "Full Name *", { placeholder: "Juan Dela Cruz", autoComplete: "name" },
+        "Your own full name.")}
+      {text("requester_relationship", "Relationship to document owner *", { placeholder: "Self / Parent / Spouse" },
+        "How you are related to the person on the record (Self, Mother, Father, Spouse, Child, Guardian). Records are released only to the owner or authorized persons, so the office uses this to confirm you're allowed to request it.")}
+      {text("requester_address", "Address *", { autoComplete: "street-address" },
+        "Your current home address, kept for the office's request records.")}
       {text("requester_telephone", "Telephone No.", {
         type: "tel", inputMode: "tel", autoComplete: "tel",
         onChange: (e) => onChange("requester_telephone", sanitizePhoneInput(e.target.value)),
-      })}
-      {text("requester_email", "Email Address *", { type: "email", placeholder: "juandelacruz@gmail.com", autoComplete: "email" })}
+      }, "Optional. The office may call if there's a problem with your request. Use 09XXXXXXXXX or +639XXXXXXXXX.")}
+      {text("requester_email", "Email Address *", { type: "email", placeholder: "juandelacruz@gmail.com", autoComplete: "email" },
+        "Use an email you can open right now. We'll send a 6-digit code to confirm it's yours. You'll also need this exact email, with your control number, to track your request.")}
     </div>
   );
 }
@@ -2026,6 +2112,7 @@ function IssuancePanel({ forms, selected, onToggle }) {
       <div className="issuance-item">
         <Checkbox name="issuance" label="Machine Copy" checked={selected.includes("Machine Copy")} onChange={() => onToggle("Machine Copy")} />
       </div>
+      <p className="field-hint">Optional. Tick the type you were told to request.</p>
     </div>
   );
 }
@@ -2217,6 +2304,13 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
             disabled={sending || verifying || cooldown > 0 || sendsLeft <= 0}>
             {resendLabel}
           </button>
+          <HelpTip label="Didn't get the code?">
+            <p><strong>Why we ask:</strong> the code proves this email is really yours, so nobody else can request or track records in your name.</p>
+            <p>• Check your spam or junk folder.<br />
+            • Wait about a minute, then use "Resend code".<br />
+            • Check the email address above for typos. If it's wrong, tap "Back to Edit" to fix it.<br />
+            • The code expires after a few minutes, so request a new one if it doesn't work.</p>
+          </HelpTip>
         </div>
         <div className="form-actions">
           <div className="form-status" aria-hidden="true" />
@@ -2422,16 +2516,20 @@ const FORM_CONFIGS = {
   birth: {
     word: "BIRTH",
     blocks: [
-      { type: "name", heading: "Name of Child", keys: ["child_firstname", "child_middlename", "child_surname"], required: ["child_firstname"] },
-      { type: "date", heading: "Date of Birth", keys: ["birth_month", "birth_date", "birth_year"], required: ["birth_year"], yearPlaceholder: "2000" },
+      { type: "name", heading: "Name of Child", keys: ["child_firstname", "child_middlename", "child_surname"], required: ["child_firstname"],
+        hint: "Write the name of the person whose birth certificate you need (not the parent's name), exactly as it was registered. Leave middle name blank if there is none." },
+      { type: "date", heading: "Date of Birth", keys: ["birth_month", "birth_date", "birth_year"], required: ["birth_year"], yearPlaceholder: "2000",
+        hint: "Month can be a name (March) or a number (3). Day is 1–31. Year must be 4 digits. The year is required so the office can find the record." },
     ],
     place: { heading: "Place of Birth", key: "place_of_birth" },
   },
   death: {
     word: "DEATH",
     blocks: [
-      { type: "name", heading: "Name of Deceased", keys: ["deceased_firstname", "deceased_middlename", "deceased_surname"], required: ["deceased_firstname"] },
-      { type: "date", heading: "Date of Death", keys: ["death_month", "death_date", "death_year"], required: ["death_year"], yearPlaceholder: "2024" },
+      { type: "name", heading: "Name of Deceased", keys: ["deceased_firstname", "deceased_middlename", "deceased_surname"], required: ["deceased_firstname"],
+        hint: "Write the full name of the person who passed away, as it would appear on the record." },
+      { type: "date", heading: "Date of Death", keys: ["death_month", "death_date", "death_year"], required: ["death_year"], yearPlaceholder: "2024",
+        hint: "Month can be a name or a number. Day is 1–31. Year must be 4 digits and cannot be in the future." },
     ],
     place: { heading: "Place of Death", key: "place_of_death" },
   },
@@ -2439,11 +2537,14 @@ const FORM_CONFIGS = {
     word: "MARRIAGE",
     blocks: [
       { type: "text", heading: "Name of Husband", keys: ["husband_fullname"], required: ["husband_fullname"],
-        placeholder: "Complete name of husband", hint: "(Kumpletong Pangalan sa Bana)" },
+        placeholder: "Complete name of husband", hint: "(Kumpletong Pangalan sa Bana)",
+        help: "Write the husband's complete name (first, middle, surname) as in the marriage record." },
       { type: "text", heading: "Maiden Name of Wife", keys: ["wife_maiden_name"], required: ["wife_maiden_name"],
-        placeholder: "Complete maiden name of wife", hint: "(Kumpletong Pangalan sa Asawa. Apelido pagka DALAGA)" },
+        placeholder: "Complete maiden name of wife", hint: "(Kumpletong Pangalan sa Asawa. Apelido pagka DALAGA)",
+        help: "\"Maiden name\" is the wife's name before marriage, using her own surname, not her husband's. Marriage records are filed under it." },
       { type: "text", heading: "Date of Marriage", keys: ["marriage_date"], required: [],
-        placeholder: "e.g. January 1, 2020", hint: "(Kumpletong Bulan, petsa ug tuig sa pag kasai)" },
+        placeholder: "e.g. January 1, 2020", hint: "(Kumpletong Bulan, petsa ug tuig sa pag kasai)",
+        help: "Optional, but it helps staff find the record faster. If you're unsure, give your best estimate (e.g. \"2015\")." },
     ],
     place: { heading: "Place of Marriage", key: "place_of_marriage" },
   },
@@ -2490,7 +2591,15 @@ function SubjectBlock({ block, values, setValue, errors }) {
       </div>
     );
   }
-  return (<><div className="section-heading">{block.heading}</div>{body}</>);
+  // For "text" blocks, `hint` is already used as the sub-label, so the help line uses `help`.
+  const helpText = block.type === "text" ? block.help : block.hint;
+  return (
+    <>
+      <div className="section-heading">{block.heading}</div>
+      {helpText && <p className="field-hint section-hint">{helpText}</p>}
+      {body}
+    </>
+  );
 }
 
 function RequestForm({ kind, onClose }) {
@@ -2677,12 +2786,23 @@ function RequestForm({ kind, onClose }) {
           <div className="section-heading">{cfg.place.heading}</div>
           <div className="place-box">{PLACE}</div>
           <div className="place-sub">Hospital / Barangay / City / Municipality</div>
+          <p className="field-hint section-hint">
+            This office only keeps records registered in San Carlos City. If the event was registered
+            elsewhere, ask that city's or municipality's civil registrar, or the PSA.
+          </p>
           <PurposeSection selected={purposes} onChange={setPurposes} />
           {purposes.includes("OTHERS (SPECIFY)") && (
-            <div className="specify-row">
-              <label htmlFor="purpose_other">Specify:</label>
-              <input id="purpose_other" name="purpose_other" type="text" aria-label="Specify other purpose" value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
-            </div>
+            <>
+              <div className="specify-row">
+                <label htmlFor="purpose_other">Specify:</label>
+                <input id="purpose_other" name="purpose_other" type="text" aria-label="Specify other purpose"
+                  aria-describedby="purpose_other_hint" placeholder="e.g. Passport application"
+                  value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
+              </div>
+              <p className="field-hint" id="purpose_other_hint">
+                Describe your purpose in a few words if none of the boxes above fit.
+              </p>
+            </>
           )}
           <AuthClause />
           <div className="req-section">
@@ -2691,6 +2811,12 @@ function RequestForm({ kind, onClose }) {
             <div className="req-divider" />
             <IssuancePanel forms={FORM_TYPES[kind]} selected={issuance} onToggle={toggleIssuance} />
           </div>
+          <HelpTip label="What do the Issuance options mean?">
+            <p><strong>Form 3A / 3B / 3C</strong> (or 1A–1C, 2A–2C for birth and death) are the civil registry
+            form versions the office can issue.</p>
+            <p><strong>Machine Copy</strong> is a printed or photocopied copy of the record on file.</p>
+            <p>If you're unsure which to tick, leave it blank and the office will advise you.</p>
+          </HelpTip>
           <ConsentCheckbox checked={consent} onChange={setConsent} error={errors.consent} />
         </div>
         <OccrPanel data={occr} onChange={updateO} />
@@ -2919,8 +3045,6 @@ function HistoryDrawer({ items, onClose, onTrack }) {
     closeTimerRef.current = setTimeout(() => onCloseRef.current(), DRAWER_ANIM_MS);
   };
 
-  // Re-check every saved request that has an email, then update its saved entry.
-  // Entries checked in the last minute are skipped to avoid hammering the server.
   // Emails already saved on this device (other history entries + the "recent request").
   // Used to auto-link old entries that were saved before the email field existed.
   const candidateEmails = () => {
@@ -2949,6 +3073,8 @@ function HistoryDrawer({ items, onClose, onTrack }) {
     return false;
   };
 
+  // Re-check every saved request, then update its saved entry.
+  // Entries checked in the last minute are skipped to avoid hammering the server.
   const refreshAll = async (force = false) => {
     if (refreshingRef.current) return;
     const now = Date.now();
@@ -3022,7 +3148,6 @@ function HistoryDrawer({ items, onClose, onTrack }) {
     try {
       const res = await api.trackRequest(it.control_no, email);
       updateHistory(it.control_no, historyPatchFromTrack(res, email, it.control_no));
-      let extra = 0;
       const others = itemsRef.current.filter((o) => !o.email && o.control_no !== it.control_no);
       const settled = await Promise.allSettled(
         others.map(async (o) => {
@@ -3030,7 +3155,7 @@ function HistoryDrawer({ items, onClose, onTrack }) {
           updateHistory(o.control_no, historyPatchFromTrack(r, email, o.control_no));
         })
       );
-      extra = settled.filter((s) => s.status === "fulfilled").length;
+      const extra = settled.filter((s) => s.status === "fulfilled").length;
       pushToast({
         title: "Request updated",
         message: extra > 0
@@ -3231,6 +3356,7 @@ export default function App() {
       <style>{LEGAL_CSS}</style>
       <style>{responsiveStyles}</style>
       <style>{signaturePadStyles}</style>
+      <style>{helpStyles}</style>
       <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
