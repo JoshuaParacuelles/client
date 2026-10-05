@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useId } from "react";
+import { createPortal } from "react-dom";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
 import {
   addToHistory, updateHistory, getHistory, HISTORY_EVENT, initHistoryProtection,
   CONTROL_PREFIXES, typeFromControlNo,
 } from "./historyStore";
-import { SignaturePadModal, SignatureIcon, SIGNATURE_CSS } from "./SignaturePad";
 
 const styles = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
@@ -16,7 +16,7 @@ body,#root{
   color:#0f1f3d;
 }
 
-.landing{S
+.landing{
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -1185,6 +1185,116 @@ img,svg{max-width:100%;}
 }
 `;
 
+const signaturePadStyles = `
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap');
+
+button.sig-upload-label{font-family:inherit;}
+.sig-preview{object-fit:contain;background:#fff;}
+
+.sigpad-backdrop{
+  position:fixed;inset:0;z-index:1000;
+  box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(10,25,55,0.45);
+  padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
+  overscroll-behavior:contain;
+  animation:fadeOverlay 0.2s ease;
+}
+.sigpad-dialog{
+  box-sizing:border-box;
+  width:100%;max-width:420px;max-height:100%;
+  overflow-x:hidden;overflow-y:auto;
+  background:#fff;
+  border:1px solid #c8d9f0;border-radius:16px;
+  box-shadow:0 20px 60px rgba(24,95,165,0.14);
+  font-family:'DM Sans',system-ui,sans-serif;color:#0f1f3d;
+  outline:none;
+  animation:slideUpModal 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+.sigpad-sr{
+  position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;
+}
+.sigpad-header{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:10px 12px;padding:12px 16px;
+  background:#f4f8fd;border-bottom:1px solid #e2ecf8;
+}
+.sigpad-tabs{display:flex;gap:4px;padding:3px;background:#e6f1fb;border-radius:9px;}
+.sigpad-tab{
+  border:none;background:transparent;font-family:inherit;
+  font-size:0.78rem;font-weight:500;color:#5577a0;
+  padding:6px 12px;border-radius:7px;
+  transition:background 0.15s,color 0.15s;
+}
+.sigpad-tab.active{background:#fff;color:#185fa5;font-weight:600;box-shadow:0 1px 2px rgba(24,95,165,0.18);}
+.sigpad-tab.is-unavailable{opacity:0.6;cursor:not-allowed;}
+.sigpad-actions{display:flex;align-items:center;gap:8px;}
+.sigpad-actions .btn-cancel,.sigpad-actions .btn-submit{flex:0 0 auto;padding:7px 14px;font-size:0.78rem;}
+.sigpad-actions .btn-cancel{text-transform:none;}
+.sigpad-body{display:flex;justify-content:center;padding:18px 16px 20px;}
+.sigpad-phone{
+  box-sizing:border-box;
+  width:min(100%,264px);aspect-ratio:9/13;
+  display:flex;padding:10px;
+  background:#0f1f3d;border-radius:30px;
+  box-shadow:0 10px 30px rgba(15,31,61,0.25);
+}
+.sigpad-screen{
+  position:relative;flex:1;min-width:0;
+  background:#fff;border-radius:22px;overflow:hidden;
+}
+.sigpad-notch{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:56px;height:6px;border-radius:100px;background:#e2ecf8;
+  z-index:2;pointer-events:none;
+}
+.sigpad-home{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  width:64px;height:4px;border-radius:100px;background:#c8d9f0;
+  z-index:2;pointer-events:none;
+}
+.sigpad-line{
+  position:absolute;left:8%;right:8%;top:62%;height:2px;
+  background:#378add;border-radius:2px;pointer-events:none;
+}
+.sigpad-sample{
+  position:absolute;left:8%;right:8%;bottom:calc(38% + 2px);
+  text-align:center;line-height:1;
+  font-family:'Caveat','Segoe Script','Brush Script MT','Snell Roundhand',cursive;
+  font-weight:600;font-size:clamp(2.6rem,12vw,3.6rem);
+  color:#0f1f3d;opacity:0.3;
+  pointer-events:none;user-select:none;-webkit-user-select:none;
+}
+.sigpad-layer{position:absolute;inset:0;}
+.sigpad-panel{
+  position:absolute;inset:26px 10px 20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;text-align:center;
+}
+.sigpad-media{width:100%;flex:1;min-height:0;object-fit:contain;border-radius:8px;background:#f4f8fd;}
+.sigpad-video{object-fit:cover;}
+.sigpad-hint{font-size:0.78rem;line-height:1.5;color:#5577a0;padding:0 8px;margin:0;}
+.sigpad-pick{flex:0 0 auto;}
+.sigpad-pick:disabled{opacity:0.5;cursor:not-allowed;}
+.sigpad-canvas{
+  position:absolute;inset:0;z-index:1;
+  display:block;width:100%;height:100%;
+  touch-action:none;cursor:crosshair;
+}
+
+@media(max-width:480px){
+  .sigpad-tabs{flex:1 1 100%;}
+  .sigpad-tab{flex:1;}
+  .sigpad-actions{flex:1 1 100%;}
+  .sigpad-actions .btn-cancel,.sigpad-actions .btn-submit{flex:1;}
+}
+@media(max-height:640px){
+  .sigpad-phone{width:min(100%,200px);}
+  .sigpad-body{padding:12px 16px 14px;}
+}
+`;
+
 const NETWORK_ERROR = "We couldn't reach the server. Please check your internet connection and try again.";
 
 async function send(path, init) {
@@ -1319,6 +1429,25 @@ const REFRESH_MIN_AGE_MS = 60 * 1000;
 const PH_MOBILE_LOCAL_REGEX = /^09\d{9}$/;
 const PH_MOBILE_INTL_REGEX = /^\+639\d{9}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const SIG_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+const MAX_SIG_BYTES = 2 * 1024 * 1024;
+
+function getSignatureError(file) {
+  if (!SIG_TYPES.includes(file.type)) return "Use a PNG, JPG or WEBP image, or a PDF.";
+  if (file.size > MAX_SIG_BYTES) return "File is too large. Maximum size is 2 MB.";
+  return null;
+}
+
+async function sniffSignature(file) {
+  const b = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const is = (...sig) => sig.every((v, i) => b[i] === v);
+  if (is(0x89, 0x50, 0x4e, 0x47)) return "image/png";
+  if (is(0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (is(0x52, 0x49, 0x46, 0x46) && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "image/webp";
+  if (is(0x25, 0x50, 0x44, 0x46)) return "application/pdf";
+  return null;
+}
 
 function sanitizePhoneInput(raw) {
   let v = (raw || "").replace(/[^\d+]/g, "");
@@ -1456,46 +1585,390 @@ function AuthClause() {
   );
 }
 
-function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
-  const [open, setOpen] = useState(false);
-  const [preview, setPreview] = useState(null);
+const SIG_PAD_LINE_WIDTH = 2.5;
+
+function drawSignatureStrokes(ctx, strokes, w, h, lineWidth) {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = "#0f1f3d";
+  ctx.fillStyle = "#0f1f3d";
+  strokes.forEach((s) => {
+    if (!s.length) return;
+    if (s.length === 1) {
+      ctx.beginPath();
+      ctx.arc(s[0].x * w, s[0].y * h, lineWidth / 2, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    ctx.beginPath();
+    ctx.moveTo(s[0].x * w, s[0].y * h);
+    for (let i = 1; i < s.length; i++) ctx.lineTo(s[i].x * w, s[i].y * h);
+    ctx.stroke();
+  });
+}
+
+function SignaturePadModal({ onClose, onDone }) {
+  const dialogRef = useRef(null);
+  const canvasRef = useRef(null);
+  const strokesRef = useRef([]);
+  const sizeRef = useRef({ w: 0, h: 0 });
+  const drawingRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  const [hasInk, setHasInk] = useState(false);
+  const [tab, setTab] = useState("draw");
+  const [imageData, setImageData] = useState(null);
+  const [shot, setShot] = useState(null);
+  const [camError, setCamError] = useState("");
+  const [camReady, setCamReady] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const imgInputRef = useRef(null);
 
   useEffect(() => {
-    if (!file || !file.type.startsWith("image/")) { setPreview(null); return undefined; }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  const stopCamera = () => {
+    if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setCamReady(false);
+  };
+
+  useEffect(() => {
+    if (tab !== "camera" || shot) { stopCamera(); return undefined; }
+    let cancelled = false;
+    setCamError("");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCamError("Camera is not supported on this browser or connection.");
+      return undefined;
+    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
+      .then((stream) => {
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          const pl = videoRef.current.play?.();
+          if (pl && pl.catch) pl.catch(() => {});
+        }
+        setCamReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setCamError("Couldn't access the camera. Allow camera permission and try again.");
+      });
+    return () => { cancelled = true; stopCamera(); };
+  }, [tab, shot]);
+
+  const handlePick = async (e) => {
+    const f = e.target.files[0] || null;
+    e.target.value = "";
+    if (!f) return;
+    const err = f.type.startsWith("image/") ? getSignatureError(f) : "Use a PNG, JPG or WEBP image.";
+    if (err) { pushToast({ title: "Invalid file", message: err, success: false }); return; }
+    const sniffed = await sniffSignature(f);
+    if (!sniffed || sniffed === "application/pdf") {
+      pushToast({ title: "Invalid file", message: "This file isn't a real PNG, JPG or WEBP image.", success: false });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => setImageData({ file: f, url: ev.target.result });
+    reader.readAsDataURL(f);
+  };
+
+  const handleCapture = () => {
+    const v = videoRef.current;
+    if (!v || !v.videoWidth) return;
+    const s = Math.min(1, 1000 / v.videoWidth);
+    const c = document.createElement("canvas");
+    c.width = Math.round(v.videoWidth * s);
+    c.height = Math.round(v.videoHeight * s);
+    c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+    const url = c.toDataURL("image/jpeg", 0.85);
+    c.toBlob((blob) => {
+      if (blob) setShot({ file: new File([blob], "signature.jpg", { type: "image/jpeg" }), url });
+    }, "image/jpeg", 0.85);
+  };
+
+  const paint = () => {
+    const c = canvasRef.current;
+    if (!c) return;
+    const rect = c.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+    if (!w || !h) return;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    sizeRef.current = { w, h };
+    const ctx = c.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    drawSignatureStrokes(ctx, strokesRef.current, w, h, SIG_PAD_LINE_WIDTH);
+  };
+
+  useEffect(() => {
+    paint();
+    const c = canvasRef.current;
+    let ro;
+    if (typeof ResizeObserver !== "undefined" && c) {
+      ro = new ResizeObserver(() => paint());
+      ro.observe(c);
+    }
+    window.addEventListener("resize", paint);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", paint);
+    };
+  }, []);
+
+  useEffect(() => {
+    const opener = document.activeElement;
+    dialogRef.current?.focus();
+    const fn = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      e.stopPropagation();
+      const root = dialogRef.current;
+      if (!root) return;
+      const items = Array.from(root.querySelectorAll("button")).filter((b) => b.getClientRects().length > 0);
+      if (!items.length) { e.preventDefault(); return; }
+      const first = items[0], last = items[items.length - 1];
+      const a = document.activeElement;
+      const inside = root.contains(a) && a !== root;
+      if (e.shiftKey && (!inside || a === first)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (!inside || a === last)) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", fn, true);
+    return () => {
+      document.removeEventListener("keydown", fn, true);
+      opener?.focus?.();
+    };
+  }, []);
+
+  const pointFor = (e) => {
+    const r = canvasRef.current.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+  };
+
+  const handleDown = (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+    drawingRef.current = true;
+    const p = pointFor(e);
+    strokesRef.current.push([p]);
+    setHasInk(true);
+    const { w, h } = sizeRef.current;
+    const ctx = canvasRef.current.getContext("2d");
+    drawSignatureStrokes(ctx, [[p]], w, h, SIG_PAD_LINE_WIDTH);
+  };
+
+  const handleMove = (e) => {
+    if (!drawingRef.current) return;
+    e.preventDefault();
+    const stroke = strokesRef.current[strokesRef.current.length - 1];
+    if (!stroke) return;
+    const p = pointFor(e);
+    const prev = stroke[stroke.length - 1];
+    stroke.push(p);
+    const { w, h } = sizeRef.current;
+    const ctx = canvasRef.current.getContext("2d");
+    drawSignatureStrokes(ctx, [[prev, p]], w, h, SIG_PAD_LINE_WIDTH);
+  };
+
+  const handleUp = (e) => {
+    if (!drawingRef.current) return;
+    drawingRef.current = false;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+  };
+
+  const handleDone = () => {
+    if (tab === "image") {
+      if (imageData) onDone(imageData.file, imageData.url);
+      onClose();
+      return;
+    }
+    if (tab === "camera") {
+      if (shot) onDone(shot.file, shot.url);
+      onClose();
+      return;
+    }
+    const strokes = strokesRef.current;
+    const { w, h } = sizeRef.current;
+    if (!strokes.length || !w || !h) { onClose(); return; }
+    const pad = 12;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    strokes.forEach((s) => s.forEach((p) => {
+      const x = p.x * w, y = p.y * h;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }));
+    minX = Math.max(0, minX - pad);
+    minY = Math.max(0, minY - pad);
+    maxX = Math.min(w, maxX + pad);
+    maxY = Math.min(h, maxY + pad);
+    const scale = 3;
+    const off = document.createElement("canvas");
+    off.width = Math.max(1, Math.round((maxX - minX) * scale));
+    off.height = Math.max(1, Math.round((maxY - minY) * scale));
+    const octx = off.getContext("2d");
+    octx.fillStyle = "#ffffff";
+    octx.fillRect(0, 0, off.width, off.height);
+    octx.scale(scale, scale);
+    octx.translate(-minX, -minY);
+    drawSignatureStrokes(octx, strokes, w, h, SIG_PAD_LINE_WIDTH);
+    const dataUrl = off.toDataURL("image/png");
+    off.toBlob((blob) => {
+      if (blob) onDone(new File([blob], "signature.png", { type: "image/png" }), dataUrl);
+      onClose();
+    }, "image/png");
+  };
+
+  return createPortal(
+    <div className="sigpad-backdrop">
+      <div ref={dialogRef} className="sigpad-dialog" role="dialog" aria-modal="true" aria-labelledby="sigpad-title" tabIndex={-1}>
+        <div className="sigpad-header">
+          <h3 id="sigpad-title" className="sigpad-sr">Signature pad</h3>
+          <div className="sigpad-tabs" role="tablist" aria-label="Signature input method">
+            {[["draw", "Draw"], ["image", "Image"], ["camera", "Camera"]].map(([id, label]) => (
+              <button key={id} type="button" role="tab" aria-selected={tab === id}
+                className={`sigpad-tab${tab === id ? " active" : ""}`} onClick={() => setTab(id)}>{label}</button>
+            ))}
+          </div>
+          <div className="sigpad-actions">
+            <button type="button" className="btn-cancel" onClick={onClose}>CANCEL</button>
+            <button type="button" className="btn-submit" onClick={handleDone}>Done</button>
+          </div>
+        </div>
+        <div className="sigpad-body">
+          <div className="sigpad-phone">
+            <div className="sigpad-screen">
+              <span className="sigpad-notch" aria-hidden="true" />
+              <span className="sigpad-home" aria-hidden="true" />
+              <div className="sigpad-layer" hidden={tab !== "draw"}>
+                <div className="sigpad-line" aria-hidden="true" />
+                {!hasInk && <div className="sigpad-sample" aria-hidden="true">Ray</div>}
+                <canvas
+                  ref={canvasRef}
+                  className="sigpad-canvas"
+                  role="img"
+                  aria-label="Signature drawing area"
+                  onPointerDown={handleDown}
+                  onPointerMove={handleMove}
+                  onPointerUp={handleUp}
+                  onPointerCancel={handleUp}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              </div>
+              {tab === "image" && (
+                <div className="sigpad-panel">
+                  {imageData
+                    ? <img src={imageData.url} alt="Selected signature" className="sigpad-media" />
+                    : <p className="sigpad-hint">Choose a photo or scan of your signature (PNG, JPG or WEBP, max 2 MB).</p>}
+                  <button type="button" className="sig-upload-label sigpad-pick" onClick={() => imgInputRef.current?.click()}>
+                    {imageData ? "Change Image" : "Choose Image"}
+                  </button>
+                  <input ref={imgInputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={handlePick} />
+                </div>
+              )}
+              {tab === "camera" && (
+                <div className="sigpad-panel">
+                  {shot ? (
+                    <>
+                      <img src={shot.url} alt="Captured signature" className="sigpad-media" />
+                      <button type="button" className="sig-upload-label sigpad-pick" onClick={() => setShot(null)}>Retake</button>
+                    </>
+                  ) : camError ? (
+                    <p className="sigpad-hint">{camError}</p>
+                  ) : (
+                    <>
+                      <video ref={videoRef} className="sigpad-media sigpad-video" autoPlay playsInline muted />
+                      <button type="button" className="sig-upload-label sigpad-pick" onClick={handleCapture} disabled={!camReady}>Capture</button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
+  const fileRef = useRef(null);
+  const openBtnRef = useRef(null);
+  const [preview, setPreview] = useState(null);
+  const [padOpen, setPadOpen] = useState(false);
+
+  const reset = () => {
+    onChange(null);
+    setPreview(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleChange = async (e) => {
+    const f = e.target.files[0] || null;
+    if (!f) return;
+    const err = getSignatureError(f);
+    if (err) { pushToast({ title: "Invalid file", message: err, success: false }); reset(); return; }
+    if (!(await sniffSignature(f))) { pushToast({ title: "Invalid file", message: "This file isn't a real PNG, JPG, WEBP or PDF.", success: false }); reset(); return; }
+    onChange(f);
+    if (f.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreview(ev.target.result);
+      reader.readAsDataURL(f);
+    } else {
+      setPreview(null);
+    }
+  };
+
+  const handleDrawn = (f, dataUrl) => {
+    const err = getSignatureError(f);
+    if (err) { pushToast({ title: "Invalid file", message: err, success: false }); return; }
+    onChange(f);
+    setPreview(dataUrl);
+  };
 
   return (
     <>
-      <button type="button" className="sig-open-btn" onClick={() => setOpen(true)}>
-        <SignatureIcon />
-        Open Signature Pad
-      </button>
-      <div className="sig-helper">Open a drawing pad to provide your signature.</div>
-
-      {file && (
-        <div className="sig-chosen">
-          {preview && <img src={preview} alt="Preview of your signature" />}
-          <span className="sig-file-name has-file">{file.name}</span>
-          <button type="button" className="sig-clear-btn" onClick={() => onChange(null)}
-            title="Remove" aria-label="Remove signature">×</button>
-        </div>
-      )}
-
+      <div className="sig-upload-wrap">
+        <button type="button" ref={openBtnRef} className="sig-upload-label" onClick={() => setPadOpen(true)} aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+          Open Signature Pad
+        </button>
+        {preview ? (
+          <img src={preview} alt="Preview of your drawn signature" className="sig-preview" />
+        ) : (
+          file && <span className="sig-file-name has-file">{file.name}</span>
+        )}
+        {file && (
+          <button type="button" className="sig-clear-btn" onClick={reset} title="Remove" aria-label="Remove signature">×</button>
+        )}
+      </div>
+      <div className="sig-note">Open a drawing pad to provide your signature.</div>
       <label className="req-field" htmlFor="signature_printed_name">
         Signature Over Printed Name
-        <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName}
-          onChange={(e) => onPrintedNameChange(e.target.value)}
+        <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName} onChange={(e) => onPrintedNameChange(e.target.value)}
           placeholder="Type the name that appears under your signature" />
       </label>
-
-      {open && (
+      {padOpen && (
         <SignaturePadModal
-          onCancel={() => setOpen(false)}
-          onDone={(f) => { onChange(f); setOpen(false); }}
-          notify={(title, message) => pushToast({ title, message, success: false })}
+          onClose={() => { setPadOpen(false); setTimeout(() => openBtnRef.current?.focus?.(), 0); }}
+          onDone={handleDrawn}
         />
       )}
     </>
@@ -2732,7 +3205,7 @@ export default function App() {
       <style>{extraStyles}</style>
       <style>{LEGAL_CSS}</style>
       <style>{responsiveStyles}</style>
-      <style>{SIGNATURE_CSS}</style>
+      <style>{signaturePadStyles}</style>
       <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
