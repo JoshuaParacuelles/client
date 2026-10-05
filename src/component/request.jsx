@@ -1191,6 +1191,13 @@ const signaturePadStyles = `
 button.sig-upload-label{font-family:inherit;}
 .sig-preview{object-fit:contain;background:#fff;}
 
+.review-sig{
+  display:flex;justify-content:center;
+  margin:8px 0 4px;padding:10px;
+  background:#fff;border:1px solid #e2ecf8;border-radius:8px;
+}
+.review-sig img{display:block;max-width:100%;max-height:140px;object-fit:contain;}
+
 .sigpad-backdrop{
   position:fixed;inset:0;z-index:1000;
   box-sizing:border-box;
@@ -2240,6 +2247,13 @@ function ReviewSection({ title, rows }) {
 }
 
 function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, status, errorMessage, remember, onRememberChange, onBack, onConfirm }) {
+  const [sigUrl, setSigUrl] = useState(null);
+  useEffect(() => {
+    if (!sigFile || !sigFile.type || !sigFile.type.startsWith("image/")) { setSigUrl(null); return undefined; }
+    const u = URL.createObjectURL(sigFile);
+    setSigUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [sigFile]);
   return (
     <div className="form-paper" style={theme}>
       <FormHeader recordWord={recordWord} step={2} />
@@ -2253,6 +2267,11 @@ function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, statu
           { label: "Uploaded File", value: sigFile ? sigFile.name : null },
           { label: "Signature Over Printed Name", value: printedName },
         ]} />
+        {sigUrl && (
+          <div className="review-sig">
+            <img src={sigUrl} alt="Your signature" />
+          </div>
+        )}
         <div className="section-heading">Optional</div>
         <div className="review-consent">
           <Checkbox name="remember_device" label="Save my control number and email on this device so I can track this request later. I can remove it anytime from the tracking screen."
