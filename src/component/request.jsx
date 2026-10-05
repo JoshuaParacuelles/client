@@ -1191,11 +1191,11 @@ const signaturePadStyles = `
 button.sig-upload-label{font-family:inherit;}
 .sig-preview{object-fit:contain;background:#fff;}
 
-.review-sig{display:flex;justify-content:flex-end;margin:6px 0 4px;}
+.review-sig{display:flex;justify-content:center;margin:10px 0 4px;}
 .review-sig-inner{display:inline-flex;flex-direction:column;align-items:center;max-width:100%;}
 .review-sig img{display:block;max-width:100%;max-height:120px;object-fit:contain;mix-blend-mode:multiply;}
 .review-sig-name{
-  position:relative;z-index:1;margin-top:-6px;
+  position:relative;z-index:1;margin-top:-16px;
   font-size:0.8rem;font-weight:600;text-align:center;color:#0f1f3d;
   overflow-wrap:anywhere;
 }
@@ -2267,7 +2267,7 @@ function ReviewScreen({ recordWord, theme, sections, sigFile, printedName, statu
         {sections.map((sec) => <ReviewSection key={sec.title} title={sec.title} rows={sec.rows} />)}
         <ReviewSection title="Signature" rows={[
           { label: "Uploaded File", value: sigFile ? sigFile.name : null },
-          { label: "Signature Over Printed Name", value: printedName },
+          ...(sigUrl ? [] : [{ label: "Signature Over Printed Name", value: printedName }]),
         ]} />
         {sigUrl && (
           <div className="review-sig">
