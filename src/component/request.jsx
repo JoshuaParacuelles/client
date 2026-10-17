@@ -3075,6 +3075,8 @@ function HistoryDrawer({ items, onClose, onTrack }) {
 
   // Re-check every saved request, then update its saved entry.
   // Entries checked in the last minute are skipped to avoid hammering the server.
+  // Re-check every saved request, one at a time, so a burst doesn't trip the
+  // server's rate limit. Entries checked in the last minute are skipped.
   const refreshAll = async (force = false) => {
     if (refreshingRef.current) return;
     const now = Date.now();
@@ -3092,7 +3094,10 @@ function HistoryDrawer({ items, onClose, onTrack }) {
     if (!targets.length) return;
     refreshingRef.current = true;
     if (mountedRef.current) setRefreshing(true);
-    await Promise.allSettled(targets.map((it) => checkOne(it, candidates)));
+    for (const it of targets) {
+      if (!mountedRef.current) break;
+      await checkOne(it, candidates);
+    }
     refreshingRef.current = false;
     if (mountedRef.current) setRefreshing(false);
   };
