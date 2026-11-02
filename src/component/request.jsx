@@ -1355,6 +1355,7 @@ async function send(path, init) {
       : retryHeader
         ? Math.max(0, Math.ceil((Date.parse(retryHeader) - Date.now()) / 1000))
         : undefined;
+    err.hasRetryAfterBody = data?.retry_after !== undefined && Number.isFinite(Number(data.retry_after));
     err.retryAfter = Number(data?.retry_after) || headerSeconds;
     err.status = res.status;
     throw err;
@@ -2260,7 +2261,9 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     } catch (e) {
       if (e.retryAfter) {
         setCooldown(e.retryAfter);
-        setInfo("A code was sent recently. Enter it below, or wait to request a new one.");
+        setInfo(e.status === 429 && !e.hasRetryAfterBody
+          ? `Too many verification code requests. Try again in about ${Math.ceil(e.retryAfter / 60)} minutes.`
+          : "A code was sent recently. Enter it below, or wait to request a new one.");
       } else {
         pushToast({ title: "Couldn't send code", message: e.message, success: false });
       }
