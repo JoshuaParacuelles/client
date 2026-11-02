@@ -1341,13 +1341,22 @@ async function send(path, init) {
   }
   const ct = res.headers.get("content-type") || "";
   if (!ct.includes("application/json")) {
-    throw new Error(`The server sent an unexpected response (HTTP ${res.status}). Please try again later.`);
+    const err = new Error(`The server sent an unexpected response (HTTP ${res.status}). Please try again later.`);
+    err.status = res.status;
+    throw err;
   }
   const data = await res.json();
   if (!res.ok) {
     const err = new Error(data?.error || `Request failed (HTTP ${res.status}).`);
     err.code = data?.code;
-    err.retryAfter = data?.retry_after;
+    const retryHeader = res.headers.get("Retry-After");
+    const headerSeconds = retryHeader && Number.isFinite(Number(retryHeader))
+      ? Number(retryHeader)
+      : retryHeader
+        ? Math.max(0, Math.ceil((Date.parse(retryHeader) - Date.now()) / 1000))
+        : undefined;
+    err.retryAfter = Number(data?.retry_after) || headerSeconds;
+    err.status = res.status;
     throw err;
   }
   return data;
@@ -1355,6 +1364,25 @@ async function send(path, init) {
 
 const postJson = (path, body) =>
   send(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function trackWithRetry(control_no, email) {
+  const maxAttempts = 3;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await postJson("/track", { control_no, email });
+    } catch (err) {
+      const retryable = err.status === undefined || err.status === 429 || err.status >= 500;
+      if (!retryable || attempt >= maxAttempts - 1) throw err;
+      const exponentialDelay = 400 * (2 ** attempt);
+      const retryAfterDelay = err.status === 429 && Number.isFinite(err.retryAfter)
+        ? Math.max(0, err.retryAfter * 1000)
+        : 0;
+      await wait(Math.max(exponentialDelay, retryAfterDelay) + Math.random() * 300);
+    }
+  }
+}
 
 function buildFormData(payload, file) {
   const fd = new FormData();
@@ -1368,7 +1396,7 @@ const api = {
     file
       ? send(`/${kind}/submit`, { method: "POST", body: buildFormData(payload, file) })
       : postJson(`/${kind}/submit`, { [`${kind}_request`]: payload }),
-  trackRequest: (control_no, email) => postJson("/track", { control_no, email }),
+  trackRequest: trackWithRetry,
   sendVerificationCode: (email) => postJson("/verify/send", { email }),
   confirmVerificationCode: (email, code) => postJson("/verify/confirm", { email, code }),
 };
@@ -3059,14 +3087,17 @@ function HistoryDrawer({ items, onClose, onTrack }) {
 
   const checkOne = async (it, candidates) => {
     const emails = it.email ? [it.email] : candidates;
-    for (const email of emails) {
+    for (let i = 0; i < emails.length; i += 1) {
+      const email = emails[i];
       try {
         const res = await api.trackRequest(it.control_no, email);
         // Success: saves the email (if it was missing) plus status, dates, etc.
         updateHistory(it.control_no, historyPatchFromTrack(res, email, it.control_no));
         return true;
       } catch (e) {
+        if (e.status === 429) return "rate_limited";
         if (e.message === NETWORK_ERROR || it.email) return false;
+        if (i < emails.length - 1) await wait(300);
       }
     }
     if (!it.email) updateHistory(it.control_no, { link_checked_at: new Date().toISOString() });
@@ -3094,9 +3125,19 @@ function HistoryDrawer({ items, onClose, onTrack }) {
     if (!targets.length) return;
     refreshingRef.current = true;
     if (mountedRef.current) setRefreshing(true);
-    for (const it of targets) {
+    for (let i = 0; i < targets.length; i += 1) {
+      const it = targets[i];
       if (!mountedRef.current) break;
-      await checkOne(it, candidates);
+      const result = await checkOne(it, candidates);
+      if (result === "rate_limited") {
+        pushToast({
+          title: "Tracking rate limit reached",
+          message: "Recent requests will stop updating for now. Please try again later.",
+          success: false,
+        });
+        break;
+      }
+      if (i < targets.length - 1) await wait(300);
     }
     refreshingRef.current = false;
     if (mountedRef.current) setRefreshing(false);
@@ -3154,19 +3195,30 @@ function HistoryDrawer({ items, onClose, onTrack }) {
       const res = await api.trackRequest(it.control_no, email);
       updateHistory(it.control_no, historyPatchFromTrack(res, email, it.control_no));
       const others = itemsRef.current.filter((o) => !o.email && o.control_no !== it.control_no);
-      const settled = await Promise.allSettled(
-        others.map(async (o) => {
-          const r = await api.trackRequest(o.control_no, email);
-          updateHistory(o.control_no, historyPatchFromTrack(r, email, o.control_no));
-        })
-      );
-      const extra = settled.filter((s) => s.status === "fulfilled").length;
+      let extra = 0;
+      let rateLimited = false;
+      for (const other of others) {
+        if (!mountedRef.current) break;
+        await wait(300);
+        try {
+          const r = await api.trackRequest(other.control_no, email);
+          updateHistory(other.control_no, historyPatchFromTrack(r, email, other.control_no));
+          extra += 1;
+        } catch (err) {
+          if (err.status === 429) {
+            rateLimited = true;
+            break;
+          }
+        }
+      }
       pushToast({
-        title: "Request updated",
-        message: extra > 0
+        title: rateLimited ? "Tracking rate limit reached" : "Request updated",
+        message: rateLimited
+          ? `${it.control_no} was linked, but the remaining requests will need to wait before updating.`
+          : extra > 0
           ? `${it.control_no} and ${extra} other request${extra > 1 ? "s" : ""} are now linked and updated.`
           : `${it.control_no} is now linked and will update automatically.`,
-        success: true,
+        success: !rateLimited,
       });
     } catch (e) {
       pushToast({ title: "Couldn't link request", message: e.message, success: false });
