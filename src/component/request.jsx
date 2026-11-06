@@ -2396,37 +2396,61 @@ function FormActions({ status, onCancel, onSubmit, cancelLabel = "Cancel", submi
   );
 }
 
+function formatWait(seconds) {
+  const total = Math.max(0, Math.ceil(Number(seconds) || 0));
+  if (total >= 3600) {
+    const h = Math.floor(total / 3600);
+    const m = Math.ceil((total % 3600) / 60);
+    return `${h} hour${h > 1 ? "s" : ""}${m ? ` ${m} min` : ""}`;
+  }
+  if (total >= 120) return `${Math.ceil(total / 60)} minutes`;
+  if (total >= 60) return "1 minute";
+  return `${total} second${total === 1 ? "" : "s"}`;
+}
+
+function formatClock(seconds) {
+  const total = Math.max(0, Math.ceil(Number(seconds) || 0));
+  const m = Math.floor(total / 60);
+  const s = String(total % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
-  const MAX_SENDS = 5;
   const [code, setCode] = useState("");
   const [info, setInfo] = useState("");
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [sendCount, setSendCount] = useState(0);
+  const [sendsLeft, setSendsLeft] = useState(null);
   const autoSentRef = useRef(false);
   const busyRef = useRef(false);
-  const sendsLeft = MAX_SENDS - sendCount;
 
   const sendCode = async () => {
     if (busyRef.current) return;
-    if (sendsLeft <= 0) { pushToast({ title: "Resend limit reached", message: "Please try again in an hour.", success: false }); return; }
     busyRef.current = true;
     setSending(true);
     setInfo("");
     try {
       const res = await api.sendVerificationCode(email);
-      setSendCount((n) => n + 1);
       setCooldown(res.resend_in ?? 60);
+      setSendsLeft(typeof res.sends_left === "number" ? res.sends_left : null);
       setCode("");
-      const minutes = Math.round((res.expires_in ?? 600) / 60);
-      setInfo(`We sent a ${CODE_LENGTH}-digit code to ${email}. It expires in ${minutes} minutes. Check your spam folder if you don't see it.`);
+      setInfo(
+        `We sent a ${CODE_LENGTH}-digit code to ${email}. It expires in ${formatWait(res.expires_in ?? 600)}. Check your spam folder if you don't see it.`
+      );
     } catch (e) {
-      if (e.retryAfter) {
-        setCooldown(e.retryAfter);
-        setInfo(e.status === 429 && !e.hasRetryAfterBody
-          ? `Too many verification code requests. Try again in about ${Math.ceil(e.retryAfter / 60)} minutes.`
-          : "A code was sent recently. Enter it below, or wait to request a new one.");
+      if (e.code === "SEND_LIMIT") {
+        setCooldown(e.retryAfter || 0);
+        setSendsLeft(0);
+        setInfo(
+          `This email has reached today's limit for verification codes. You can request a new code in ${formatWait(e.retryAfter)}, or use the enter-code box if you already received one.`
+        );
+      } else if (e.code === "COOLDOWN") {
+        setCooldown(e.retryAfter || 0);
+        setInfo(`A code was just sent. You can request another in ${formatWait(e.retryAfter)}.`);
+      } else if (e.status === 429) {
+        setCooldown(e.retryAfter || 60);
+        setInfo(`Too many requests from this network. Please try again in ${formatWait(e.retryAfter || 60)}.`);
       } else {
         pushToast({ title: "Couldn't send code", message: e.message, success: false });
       }
@@ -2483,10 +2507,12 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
   const resendLabel = sending
     ? "Sending…"
     : cooldown > 0
-      ? `Resend code in ${cooldown}s`
-      : sendCount === 0
+      ? `Resend code in ${formatClock(cooldown)}`
+      : sendsLeft === null
         ? "Send code"
-        : `Resend code (${sendsLeft} left)`;
+        : sendsLeft > 0
+          ? `Resend code (${sendsLeft} left today)`
+          : "Resend code";
 
   return (
     <div className="form-paper" style={theme}>
@@ -2507,7 +2533,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
           </label>
           {info && <p className="verify-note" role="status">{info}</p>}
           <button type="button" className="verify-resend" onClick={sendCode}
-            disabled={sending || verifying || cooldown > 0 || sendsLeft <= 0}>
+            disabled={sending || verifying || cooldown > 0}>
             {resendLabel}
           </button>
           <HelpTip label="Didn't get the code?">
