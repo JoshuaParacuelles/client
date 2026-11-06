@@ -1,8 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Request from "./component/request.jsx";
+import RequestApp from "./App.jsx";
 import "./index.css";
-import { initHistoryProtection } from "./component/historyStore";
+import "./styles/app.css";
+import "./styles/legal.css";
+import { initHistoryProtection } from "./lib/historyStore.js";
 
 // Restore/mirror saved control numbers before anything else runs.
 initHistoryProtection().catch(() => {});
@@ -10,7 +12,7 @@ initHistoryProtection().catch(() => {});
 function App() {
   return (
     <div>
-      <Request />
+      <RequestApp />
     </div>
   );
 }

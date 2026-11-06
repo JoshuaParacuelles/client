@@ -139,3 +139,17 @@ export const initHistoryProtection = async () => {
   try { await navigator.storage?.persist?.(); } catch {}
   return reconcile();
 };
+// Turns a successful /track response into a patch for the saved history entry.
+export const historyPatchFromTrack = (res, email, fallbackControlNo) => {
+  const control_no = res.control_no || fallbackControlNo;
+  return {
+    control_no,
+    type: typeFromControlNo(control_no) || undefined,
+    email: (email || "").trim(),
+    submitted_at: res.submitted_at,
+    status_label: res.status_label,
+    is_rejected: !!res.is_rejected,
+    status_updated_at: res.updated_at,
+    last_checked_at: new Date().toISOString(),
+  };
+};

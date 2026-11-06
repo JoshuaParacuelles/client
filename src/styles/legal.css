@@ -1,0 +1,85 @@
+
+/* Footer always pinned to the bottom of the screen, on every device */
+html,body{height:100%;margin:0;}
+body{display:block;min-height:100vh;min-height:100dvh;}
+#root{display:flex;flex-direction:column;width:100%;min-height:100vh;min-height:100dvh;}
+.landing{flex:1 0 auto;min-height:0;}
+.legal-wrap{flex:1 0 auto;}
+.site-footer{margin-top:auto;flex-shrink:0;width:100%;}
+
+/* Legal pages */
+.legal-wrap{min-height:100vh;background:#f6f8fc;display:flex;flex-direction:column;}
+.legal-top{max-width:780px;width:100%;margin:0 auto;padding:20px 16px 0;}
+.legal-back{color:#185fa5;font-size:0.85rem;font-weight:500;}
+.legal-card{
+  max-width:780px;width:calc(100% - 32px);margin:16px auto 32px;background:#fff;
+  border:1px solid #dde6f2;border-radius:14px;padding:28px 32px;line-height:1.7;font-size:0.92rem;
+}
+.legal-h1{font-family:'DM Serif Display',serif;font-weight:400;font-size:clamp(1.5rem,5vw,2rem);margin-bottom:4px;}
+.legal-h1:focus{outline:none;}
+.legal-h2{font-size:1rem;font-weight:600;margin:24px 0 6px;color:#0c447c;}
+.legal-card p{margin:8px 0;}
+.legal-card ul{margin:8px 0 8px 22px;}
+.legal-card li{margin:4px 0;}
+.legal-card a,.legal-back{text-decoration:underline;}
+.legal-card a{color:#0c447c;}
+.legal-meta{font-size:0.8rem;color:#3f5b7d;}
+.legal-draft{background:#fff8e6;border:1px solid #f0d9a0;border-radius:8px;padding:10px 12px;font-size:0.8rem;}
+mark.ph{background:#fff1b8;color:#5c4400;padding:0 3px;border-radius:3px;}
+.site-footer{margin-top:auto;border-top:1px solid #dde6f2;background:#fff;text-align:center;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));font-size:0.78rem;color:#3f5b7d;}
+.site-footer nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;margin-bottom:8px;}
+.site-footer a{color:#185fa5;text-decoration:underline;padding:6px 2px;}
+/* Home page: content centered on screen, slim footer pinned to the bottom */
+body,#root{background:#f6f8fc;}
+#root{min-height:100vh;min-height:100dvh;}
+.landing{
+  min-height:100vh;min-height:100dvh;
+  padding:24px 20px 56px;
+  justify-content:center;
+}
+.landing + .site-footer{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));
+  font-size:0.72rem;line-height:1.4;
+}
+.landing + .site-footer nav{gap:0 16px;margin-bottom:2px;}
+.landing + .site-footer a{padding:2px 0;}
+.landing + .site-footer p{margin:0;}
+@media(max-width:640px){.legal-card{padding:20px 18px;width:calc(100% - 24px);}}
+
+/* Consent + review */
+.consent-box{margin-top:14px;padding:12px 14px;border:1px solid #b5d4f4;background:#e6f1fb;border-radius:10px;}
+.consent-label{align-items:flex-start;font-size:0.78rem;}
+.consent-label .check-box{margin-top:2px;}
+.form-paper a{color:#0c447c;text-decoration:underline;}
+.review-consent{margin-top:8px;font-size:0.8rem;}
+.track-note{font-size:0.72rem;margin:8px 0 4px;line-height:1.5;}
+
+/* Accessibility: keyboard-reachable custom checkboxes / radios / file input */
+.check-label,.radio-label{position:relative;}
+.check-label input[type="checkbox"],.radio-label input[type="radio"]{
+  display:block;position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none;
+}
+.sig-upload-label{position:relative;}
+.sig-upload-label input[type="file"]{display:block;position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;}
+.sig-upload-label:focus-within{outline:2px solid #185fa5;outline-offset:2px;}
+.check-label input:focus-visible+.check-box,.radio-label input:focus-visible+.radio-box{outline:2px solid #185fa5;outline-offset:2px;}
+label.req-field{display:block;}
+.overlay:focus{outline:none;}
+
+/* Accessibility: visible focus */
+a:focus-visible,button:focus-visible,
+.form-paper input:focus-visible{outline:2px solid #185fa5!important;outline-offset:2px;}
+.form-header button:focus-visible{outline-color:#fff!important;}
+
+/* Accessibility: contrast (same hues, darker where text failed 4.5:1) */
+.select-prompt,.card-arrow,.toast-close{color:#4a6585;}
+.toast-msg{color:#3f5b7d;}
+.form-paper .field-error,.form-paper .form-status,.field-error,.form-status{color:#b3261e;}
+::placeholder{color:#5f7794;opacity:1;}
+.sub-label,.place-sub,.sig-note{font-size:0.7rem;}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}
+}
