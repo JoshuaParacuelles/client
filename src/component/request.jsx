@@ -183,6 +183,14 @@ const successStyles = `
 @media(max-width:640px) and (max-height:760px){
   .form-paper .success-meta{grid-template-columns:1fr;gap:6px;}
 }
+.form-paper.success-paper{
+  max-width:var(--modal-max,720px) !important;
+  max-height:calc(100dvh - 32px) !important;
+}
+@media(min-width:641px){
+  .form-paper .success-body{padding:18px 24px;}
+  .form-paper .success-meta{grid-template-columns:1fr 1fr;}
+}
 `;
 
 const styles = `
