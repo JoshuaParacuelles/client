@@ -165,6 +165,24 @@ const successStyles = `
   .form-paper .success-meta{grid-template-columns:1fr;gap:8px;}
   .form-paper.success-paper .form-actions{position:static !important;box-shadow:none !important;}
 }
+@media(max-height:760px){
+  .form-paper.success-paper .success-hero .success-icon-wrap{display:none;}
+  .form-paper .success-body{padding:14px 16px;gap:10px;}
+  .form-paper .success-hero{gap:2px;}
+  .form-paper .success-title{font-size:1.05rem;margin:0;}
+  .form-paper .success-sub{font-size:.72rem;}
+  .form-paper .success-card-head{padding:6px 12px;}
+  .form-paper .success-card-body{padding:10px 14px;gap:8px;}
+  .form-paper .success-number{font-size:1.2rem;}
+  .form-paper .success-meta{grid-template-columns:1fr 1fr;gap:8px;padding-top:8px;}
+  .form-paper .success-meta dd{font-size:.7rem;}
+  .form-paper .success-note{padding:8px 10px;font-size:.7rem;}
+  .form-paper.success-paper .form-actions{padding:10px 16px;}
+}
+
+@media(max-width:640px) and (max-height:760px){
+  .form-paper .success-meta{grid-template-columns:1fr;gap:6px;}
+}
 `;
 
 const styles = `
