@@ -31,21 +31,45 @@ const helpStyles = `
 `;
 
 const pagedStyles = `
+.overlay:has(> .form-paper.paged){
+  overflow:hidden !important;
+  padding:16px !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
 .form-paper.paged{
-  display:flex;flex-direction:column;
-  max-height:calc(100dvh - 32px);
+  display:flex !important;
+  flex-direction:column !important;
+  height:calc(100dvh - 32px) !important;
+  max-height:calc(100dvh - 32px) !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  margin:0 auto !important;
 }
 .form-paper.paged .form-header,
 .form-paper.paged .form-subheader{flex:0 0 auto;}
 .form-paper.paged .paged-scroll{
-  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  flex:1 1 0 !important;
+  min-height:0 !important;
+  overflow-y:auto;
+  overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
 }
 .form-paper.paged .form-body{border-bottom:none;}
 .form-paper.paged .form-actions{flex:0 0 auto;}
 .form-paper .form-actions .page-indicator{flex:1;color:#6b87a8;font-size:.72rem;}
 @media(max-width:640px){
-  .form-paper.paged{min-height:0 !important;max-height:calc(100dvh - 32px);}
+  .overlay:has(> .form-paper.paged){padding:12px !important;}
+  .form-paper.paged{
+    height:calc(100dvh - 24px) !important;
+    max-height:calc(100dvh - 24px) !important;
+    border-radius:16px !important;
+    padding:0 !important;
+  }
+  .form-paper.paged .form-actions{
+    position:static !important;
+    box-shadow:none !important;
+  }
 }
 `;
 
