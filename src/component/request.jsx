@@ -2728,14 +2728,32 @@ function RequestForm({ kind, onClose }) {
   const purposeText = buildPurposes(purposes, purposeOther);
   const emailKey = requester.requester_email.trim().toLowerCase();
 
-  const handleSubmit = () => {
-    const errs = { ...validateRequester(requester), ...validateSubjectDates(kind, subject) };
+  const validatePage0 = () => {
+    const errs = {};
     cfg.blocks.forEach((b) => b.required.forEach((k) => { if (!subject[k].trim()) errs[k] = "Required"; }));
+    Object.assign(errs, validateSubjectDates(kind, subject));
     if (copies === "Others" && !(parseInt(copiesOther, 10) > 0)) errs.num_copies = "Enter a number of copies";
+    if (purposes.includes("OTHERS (SPECIFY)") && !purposeOther.trim()) errs.purpose_other = "Please specify the purpose";
+    return errs;
+  };
+
+  const goNext = () => {
+    const errs = validatePage0();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      pushToast({ title: "Incomplete form", message: "Please fill in all required fields on this page.", success: false });
+      return;
+    }
+    setPage(1);
+  };
+
+  const handleSubmit = () => {
+    const page0Errors = validatePage0();
+    const errs = { ...page0Errors, ...validateRequester(requester) };
     if (!consent) errs.consent = "You must give your consent to submit this request.";
     setErrors(errs);
     if (Object.keys(errs).length > 0) {
-      setPage(Object.keys(errs).some((k) => k === "num_copies" || k in subject) ? 0 : 1);
+      setPage(Object.keys(page0Errors).length > 0 ? 0 : 1);
       pushToast({ title: "Incomplete form", message: "Please fill in all required fields.", success: false });
       return;
     }
@@ -2892,6 +2910,7 @@ function RequestForm({ kind, onClose }) {
                     <p className="field-hint" id="purpose_other_hint">
                       Describe your purpose in a few words if none of the boxes above fit.
                     </p>
+                    {errors.purpose_other && <div className="field-error" role="alert">{errors.purpose_other}</div>}
                   </>
                 )}
               </>
@@ -2923,7 +2942,7 @@ function RequestForm({ kind, onClose }) {
         {page === 0 ? (
           <>
             <button type="button" className="btn-cancel" onClick={onClose}>Cancel</button>
-            <button type="button" className="btn-submit" onClick={() => setPage(1)}>Next</button>
+            <button type="button" className="btn-submit" onClick={goNext}>Next</button>
           </>
         ) : (
           <>
