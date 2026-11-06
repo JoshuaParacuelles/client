@@ -1694,6 +1694,7 @@ function validateRequester(req) {
   if (!req.requester_name.trim()) errs.requester_name = "Full name is required";
   if (!req.requester_relationship.trim()) errs.requester_relationship = "Relationship is required";
   if (!req.requester_address.trim()) errs.requester_address = "Address is required";
+  if (!req.requester_telephone.trim()) errs.requester_telephone = "Telephone number is required";
   if (!req.requester_email.trim()) errs.requester_email = "Email is required";
   else if (!EMAIL_REGEX.test(req.requester_email.trim())) errs.requester_email = "Enter a valid email address";
   const phoneErr = getPhoneError(req.requester_telephone);
@@ -1768,14 +1769,14 @@ function Radio({ label, name, checked, onChange }) {
   );
 }
 
-function PurposeSection({ selected, onChange }) {
+function PurposeSection({ selected, onChange, error }) {
   return (
     <div className="purpose-section">
-      <div className="purpose-header">Purpose — Check Appropriate Box</div>
+      <div className="purpose-header">Purpose — Check Appropriate Box *</div>
       <p className="field-hint section-hint">
         Tell the office why you need the document. Tick all that apply.
       </p>
-      <div className="purpose-grid" role="group" aria-label="Purpose of request">
+      <div className="purpose-grid" role="group" aria-label="Purpose of request" aria-required="true" aria-invalid={!!error}>
         {PURPOSES.map((p, i) =>
           p ? (
             <Checkbox key={i} name="purpose" label={p} checked={selected.includes(p)}
@@ -1783,6 +1784,7 @@ function PurposeSection({ selected, onChange }) {
           ) : <div key={i} />
         )}
       </div>
+      {error && <div className="field-error" role="alert">{error}</div>}
       <HelpTip label="What do these purposes mean?">
         <dl>
           <dt>School / Employment / Claims-Loans</dt>
@@ -1810,7 +1812,7 @@ function CopiesRow({ copies, setCopies, name, othersValue, setOthersValue, error
   const othersCountId = `${name}-others-count`;
   return (
     <div className="copies-row">
-      <div className="copies-row-label">Number of Copies — Please check appropriate box</div>
+      <div className="copies-row-label">Number of Copies — Please check appropriate box *</div>
       <div className="copies-options" role="radiogroup" aria-label="Number of copies">
         {["One", "Two", "Three"].map((c) => (
           <Radio key={c} label={c} name={name} checked={copies === c} onChange={() => setCopies(c)} />
@@ -2179,7 +2181,7 @@ function SignaturePadModal({ onClose, onDone }) {
   );
 }
 
-function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
+function SignatureUpload({ file, onChange, printedName, onPrintedNameChange, errors }) {
   const fileRef = useRef(null);
   const openBtnRef = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -2217,7 +2219,7 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
   return (
     <>
       <div className="sig-upload-wrap">
-        <button type="button" ref={openBtnRef} className="sig-upload-label" onClick={() => setPadOpen(true)} aria-haspopup="dialog">
+        <button type="button" ref={openBtnRef} className="sig-upload-label" onClick={() => setPadOpen(true)} aria-haspopup="dialog" aria-required="true" aria-invalid={!!errors.signature}>
           <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
@@ -2233,14 +2235,18 @@ function SignatureUpload({ file, onChange, printedName, onPrintedNameChange }) {
           <button type="button" className="sig-clear-btn" onClick={reset} title="Remove" aria-label="Remove signature">×</button>
         )}
       </div>
-      <div className="sig-note">Draw, upload, or take a photo of your signature using the pad.</div>
+      {errors.signature && <div className="field-error" role="alert">{errors.signature}</div>}
+      <div className="sig-note">Signature is required. Draw, upload, or take a photo of your signature using the pad.</div>
       <label className="req-field" htmlFor="signature_printed_name">
-        Signature Over Printed Name
+        Signature Over Printed Name *
         <input id="signature_printed_name" name="signature_printed_name" type="text" value={printedName}
+          className={errors.signature_printed_name ? "invalid" : ""}
+          aria-required="true" aria-invalid={!!errors.signature_printed_name}
           aria-describedby="signature_printed_name-hint"
           onChange={(e) => onPrintedNameChange(e.target.value)}
           placeholder="Type the name that appears under your signature" />
       </label>
+      {errors.signature_printed_name && <div className="field-error" role="alert">{errors.signature_printed_name}</div>}
       <p className="field-hint" id="signature_printed_name-hint">
         Your signature shows you authorize this request. Sign the same way you do on your IDs, then type your full name here.
       </p>
@@ -2274,27 +2280,27 @@ function RequesterFields({ data, onChange, errors, sigFile, onSigChange, printed
       <p className="field-hint section-hint">
         This is about <strong>you</strong>, the person making the request, not the person on the certificate.
       </p>
-      <SignatureUpload file={sigFile} onChange={onSigChange} printedName={printedName} onPrintedNameChange={onPrintedNameChange} />
+      <SignatureUpload file={sigFile} onChange={onSigChange} printedName={printedName} onPrintedNameChange={onPrintedNameChange} errors={errors} />
       {text("requester_name", "Full Name *", { placeholder: "Juan Dela Cruz", autoComplete: "name" },
         "Your own full name.")}
       {text("requester_relationship", "Relationship to document owner *", { placeholder: "Self / Parent / Spouse" },
         "How you are related to the person on the record (Self, Mother, Father, Spouse, Child, Guardian). Records are released only to the owner or authorized persons, so the office uses this to confirm you're allowed to request it.")}
       {text("requester_address", "Address *", { autoComplete: "street-address" },
         "Your current home address, kept for the office's request records.")}
-      {text("requester_telephone", "Telephone No.", {
+      {text("requester_telephone", "Telephone No. *", {
         type: "tel", inputMode: "tel", autoComplete: "tel",
         onChange: (e) => onChange("requester_telephone", sanitizePhoneInput(e.target.value)),
-      }, "Optional. The office may call if there's a problem with your request. Use 09XXXXXXXXX or +639XXXXXXXXX.")}
+      }, "The office may call if there's a problem with your request. Use 09XXXXXXXXX or +639XXXXXXXXX.")}
       {text("requester_email", "Email Address *", { type: "email", placeholder: "juandelacruz@gmail.com", autoComplete: "email" },
         "Use an email you can open right now. We'll send a 6-digit code to confirm it's yours. You'll also need this exact email, with your control number, to track your request.")}
     </div>
   );
 }
 
-function IssuancePanel({ forms, selected, onToggle }) {
+function IssuancePanel({ forms, selected, onToggle, error }) {
   return (
-    <div className="req-right">
-      <div className="issuance-title">Issuance</div>
+    <div className="req-right" role="group" aria-label="Issuance type" aria-required="true" aria-invalid={!!error}>
+      <div className="issuance-title">Issuance *</div>
       {forms.map((f) => (
         <div key={f} className="issuance-item">
           <Checkbox name="issuance" label={f} checked={selected.includes(f)} onChange={() => onToggle(f)} />
@@ -2304,7 +2310,8 @@ function IssuancePanel({ forms, selected, onToggle }) {
       <div className="issuance-item">
         <Checkbox name="issuance" label="Machine Copy" checked={selected.includes("Machine Copy")} onChange={() => onToggle("Machine Copy")} />
       </div>
-      <p className="field-hint">Optional. Tick the type you were told to request.</p>
+      <p className="field-hint">Tick at least one type you were told to request.</p>
+      {error && <div className="field-error" role="alert">{error}</div>}
     </div>
   );
 }
@@ -2775,19 +2782,19 @@ const FORM_CONFIGS = {
   birth: {
     word: "BIRTH",
     blocks: [
-      { type: "name", heading: "Name of Child", keys: ["child_firstname", "child_middlename", "child_surname"], required: ["child_firstname"],
-        hint: "Write the name of the person whose birth certificate you need (not the parent's name), exactly as it was registered. Leave middle name blank if there is none." },
-      { type: "date", heading: "Date of Birth", keys: ["birth_month", "birth_date", "birth_year"], required: ["birth_year"], yearPlaceholder: "2000",
-        hint: "Month can be a name (March) or a number (3). Day is 1–31. Year must be 4 digits. The year is required so the office can find the record." },
+      { type: "name", heading: "Name of Child", keys: ["child_firstname", "child_middlename", "child_surname"], required: ["child_firstname", "child_middlename", "child_surname"],
+        hint: "Write the name of the person whose birth certificate you need (not the parent's name), exactly as it was registered. Enter N/A for a middle name if there is none." },
+      { type: "date", heading: "Date of Birth", keys: ["birth_month", "birth_date", "birth_year"], required: ["birth_month", "birth_date", "birth_year"], yearPlaceholder: "2000",
+        hint: "Month can be a name (March) or a number (3). Day is 1–31. Year must be 4 digits." },
     ],
     place: { heading: "Place of Birth", key: "place_of_birth" },
   },
   death: {
     word: "DEATH",
     blocks: [
-      { type: "name", heading: "Name of Deceased", keys: ["deceased_firstname", "deceased_middlename", "deceased_surname"], required: ["deceased_firstname"],
+      { type: "name", heading: "Name of Deceased", keys: ["deceased_firstname", "deceased_middlename", "deceased_surname"], required: ["deceased_firstname", "deceased_middlename", "deceased_surname"],
         hint: "Write the full name of the person who passed away, as it would appear on the record." },
-      { type: "date", heading: "Date of Death", keys: ["death_month", "death_date", "death_year"], required: ["death_year"], yearPlaceholder: "2024",
+      { type: "date", heading: "Date of Death", keys: ["death_month", "death_date", "death_year"], required: ["death_month", "death_date", "death_year"], yearPlaceholder: "2024",
         hint: "Month can be a name or a number. Day is 1–31. Year must be 4 digits and cannot be in the future." },
     ],
     place: { heading: "Place of Death", key: "place_of_death" },
@@ -2801,20 +2808,21 @@ const FORM_CONFIGS = {
       { type: "text", heading: "Maiden Name of Wife", keys: ["wife_maiden_name"], required: ["wife_maiden_name"],
         placeholder: "Complete maiden name of wife", hint: "(Kumpletong Pangalan sa Asawa. Apelido pagka DALAGA)",
         help: "\"Maiden name\" is the wife's name before marriage, using her own surname, not her husband's. Marriage records are filed under it." },
-      { type: "text", heading: "Date of Marriage", keys: ["marriage_date"], required: [],
+      { type: "text", heading: "Date of Marriage", keys: ["marriage_date"], required: ["marriage_date"],
         placeholder: "e.g. January 1, 2020", hint: "(Kumpletong Bulan, petsa ug tuig sa pag kasai)",
-        help: "Optional, but it helps staff find the record faster. If you're unsure, give your best estimate (e.g. \"2015\")." },
+        help: "If you're unsure, give your best estimate (e.g. \"2015\")." },
     ],
     place: { heading: "Place of Marriage", key: "place_of_marriage" },
   },
 };
 
-function SubjectField({ k, cls, placeholder, sub, heading, values, setValue, errors }) {
+function SubjectField({ k, cls, placeholder, sub, heading, values, setValue, errors, requiredKeys }) {
   return (
     <div className={cls}>
       <input id={k} name={k} type="text" className={errors[k] ? "invalid" : ""} value={values[k]}
+        aria-required={requiredKeys.includes(k)} aria-invalid={!!errors[k]}
         onChange={(e) => setValue(k, e.target.value)} placeholder={placeholder}
-        aria-label={`${heading} ${sub}`} aria-invalid={!!errors[k]} />
+        aria-label={`${heading} ${sub}`} />
       <label className="sub-label" htmlFor={k}>{sub}</label>
       {errors[k] && <div className="field-error" role="alert">{errors[k]}</div>}
     </div>
@@ -2822,7 +2830,7 @@ function SubjectField({ k, cls, placeholder, sub, heading, values, setValue, err
 }
 
 function SubjectBlock({ block, values, setValue, errors }) {
-  const common = { values, setValue, errors, heading: block.heading };
+  const common = { values, setValue, errors, heading: block.heading, requiredKeys: block.required };
   let body;
   if (block.type === "name") {
     const subs = ["(Firstname)", "(Middlename)", "(Surname)"];
@@ -2854,7 +2862,7 @@ function SubjectBlock({ block, values, setValue, errors }) {
   const helpText = block.type === "text" ? block.help : block.hint;
   return (
     <>
-      <div className="section-heading">{block.heading}</div>
+      <div className="section-heading">{block.heading} *</div>
       {helpText && <p className="field-hint section-hint">{helpText}</p>}
       {body}
     </>
@@ -2901,10 +2909,53 @@ function RequestForm({ kind, onClose }) {
     document.querySelector(".overlay")?.scrollTo({ top: 0 });
   }, [step]);
 
-  const setValue = (k, v) => setSubject((p) => ({ ...p, [k]: v }));
-  const updateR = (k, v) => setRequester((p) => ({ ...p, [k]: v }));
+  const clearError = (key) => setErrors((current) => {
+    if (!current[key]) return current;
+    const next = { ...current };
+    delete next[key];
+    return next;
+  });
+  const setValue = (k, v) => {
+    setSubject((p) => ({ ...p, [k]: v }));
+    clearError(k);
+  };
+  const updateR = (k, v) => {
+    setRequester((p) => ({ ...p, [k]: v }));
+    clearError(k);
+  };
   const updateO = (k, v) => setOccr((p) => ({ ...p, [k]: v }));
-  const toggleIssuance = (f) => setIssuance((p) => (p.includes(f) ? p.filter((x) => x !== f) : [...p, f]));
+  const updateCopies = (value) => {
+    setCopies(value);
+    clearError("num_copies");
+  };
+  const updateCopiesOther = (value) => {
+    setCopiesOther(value);
+    clearError("num_copies");
+  };
+  const updatePurpose = (value) => {
+    setPurposes(value);
+    clearError("purposes");
+  };
+  const updatePurposeOther = (value) => {
+    setPurposeOther(value);
+    clearError("purpose_other");
+  };
+  const updateSignature = (value) => {
+    setSigFile(value);
+    clearError("signature");
+  };
+  const updatePrintedName = (value) => {
+    setPrintedName(value);
+    clearError("signature_printed_name");
+  };
+  const toggleIssuance = (f) => {
+    setIssuance((p) => (p.includes(f) ? p.filter((x) => x !== f) : [...p, f]));
+    clearError("issuance");
+  };
+  const updateConsent = (value) => {
+    setConsent(value);
+    clearError("consent");
+  };
 
   const numCopies = copies === "Others" ? copiesOther : copies;
   const purposeText = buildPurposes(purposes, purposeOther);
@@ -2915,6 +2966,7 @@ function RequestForm({ kind, onClose }) {
     cfg.blocks.forEach((b) => b.required.forEach((k) => { if (!subject[k].trim()) errs[k] = "Required"; }));
     Object.assign(errs, validateSubjectDates(kind, subject));
     if (copies === "Others" && !(parseInt(copiesOther, 10) > 0)) errs.num_copies = "Enter a number of copies";
+    if (purposes.length === 0) errs.purposes = "Select at least one purpose";
     if (purposes.includes("OTHERS (SPECIFY)") && !purposeOther.trim()) errs.purpose_other = "Please specify the purpose";
     return errs;
   };
@@ -2932,6 +2984,9 @@ function RequestForm({ kind, onClose }) {
   const handleSubmit = () => {
     const page0Errors = validatePage0();
     const errs = { ...page0Errors, ...validateRequester(requester) };
+    if (!sigFile) errs.signature = "A signature is required";
+    if (!printedName.trim()) errs.signature_printed_name = "Printed name is required";
+    if (issuance.length === 0) errs.issuance = "Select at least one issuance type";
     if (!consent) errs.consent = "You must give your consent to submit this request.";
     setErrors(errs);
     if (Object.keys(errs).length > 0) {
@@ -3068,8 +3123,8 @@ function RequestForm({ kind, onClose }) {
           <div className="form-left">
             {page === 0 && (
               <>
-                <CopiesRow copies={copies} setCopies={setCopies} name={`copies-${kind}`}
-                  othersValue={copiesOther} setOthersValue={setCopiesOther} error={errors.num_copies} />
+                <CopiesRow copies={copies} setCopies={updateCopies} name={`copies-${kind}`}
+                  othersValue={copiesOther} setOthersValue={updateCopiesOther} error={errors.num_copies} />
                 {cfg.blocks.map((b) => (
                   <SubjectBlock key={b.heading} block={b} values={subject} setValue={setValue} errors={errors} />
                 ))}
@@ -3080,14 +3135,14 @@ function RequestForm({ kind, onClose }) {
                   This office only keeps records registered in San Carlos City. If the event was registered
                   elsewhere, ask that city's or municipality's civil registrar, or the PSA.
                 </p>
-                <PurposeSection selected={purposes} onChange={setPurposes} />
+                <PurposeSection selected={purposes} onChange={updatePurpose} error={errors.purposes} />
                 {purposes.includes("OTHERS (SPECIFY)") && (
                   <>
                     <div className="specify-row">
                       <label htmlFor="purpose_other">Specify:</label>
                       <input id="purpose_other" name="purpose_other" type="text" aria-label="Specify other purpose"
                         aria-describedby="purpose_other_hint" placeholder="e.g. Passport application"
-                        value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
+                        value={purposeOther} onChange={(e) => updatePurposeOther(e.target.value)} />
                     </div>
                     <p className="field-hint" id="purpose_other_hint">
                       Describe your purpose in a few words if none of the boxes above fit.
@@ -3102,9 +3157,9 @@ function RequestForm({ kind, onClose }) {
                 <AuthClause />
                 <div className="req-section">
                   <RequesterFields data={requester} onChange={updateR} errors={errors}
-                    sigFile={sigFile} onSigChange={setSigFile} printedName={printedName} onPrintedNameChange={setPrintedName} />
+                    sigFile={sigFile} onSigChange={updateSignature} printedName={printedName} onPrintedNameChange={updatePrintedName} />
                   <div className="req-divider" />
-                  <IssuancePanel forms={FORM_TYPES[kind]} selected={issuance} onToggle={toggleIssuance} />
+                  <IssuancePanel forms={FORM_TYPES[kind]} selected={issuance} onToggle={toggleIssuance} error={errors.issuance} />
                 </div>
                 <HelpTip label="What do the Issuance options mean?">
                   <p><strong>Form 3A / 3B / 3C</strong> (or 1A–1C, 2A–2C for birth and death) are the civil registry
@@ -3112,7 +3167,7 @@ function RequestForm({ kind, onClose }) {
                   <p><strong>Machine Copy</strong> is a printed or photocopied copy of the record on file.</p>
                   <p>If you're unsure which to tick, leave it blank and the office will advise you.</p>
                 </HelpTip>
-                <ConsentCheckbox checked={consent} onChange={setConsent} error={errors.consent} />
+                <ConsentCheckbox checked={consent} onChange={updateConsent} error={errors.consent} />
               </>
             )}
           </div>
