@@ -1208,6 +1208,30 @@ img,svg{max-width:100%;}
   .overlay{--modal-max:720px;}
   .overlay > .form-paper{border-radius:16px;}
 }
+@media (min-width:641px){
+  .overlay > .form-paper{
+    display:flex;
+    flex-direction:column;
+    max-height:calc(100dvh - 40px);
+    min-height:0;
+  }
+  .form-paper > .form-header,
+  .form-paper > .form-subheader,
+  .form-paper > .form-actions{flex:0 0 auto;}
+
+  .form-paper > .form-body,
+  .form-paper > .review-body{
+    flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  }
+  .form-paper > form{
+    flex:1 1 auto;min-height:0;
+    display:flex;flex-direction:column;
+  }
+  .form-paper > form > .review-body,
+  .form-paper > form > .track-body{
+    flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  }
+}
 `;
 
 const signaturePadStyles = `
@@ -2661,7 +2685,9 @@ function RequestForm({ kind, onClose }) {
   const submittingRef = useRef(false);
 
   useEffect(() => {
-    document.querySelector(".overlay")?.scrollTo({ top: 0 });
+    document
+      .querySelectorAll(".form-paper > .form-body, .form-paper > .review-body, .form-paper > form > .review-body, .form-paper > form > .track-body")
+      .forEach((el) => { el.scrollTop = 0; });
   }, [step]);
 
   const setValue = (k, v) => setSubject((p) => ({ ...p, [k]: v }));
