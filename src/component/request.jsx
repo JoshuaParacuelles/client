@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useId, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
 import {
@@ -73,6 +73,82 @@ const pagedStyles = `
     position:static !important;
     box-shadow:none !important;
   }
+}
+`;
+
+const successStyles = `
+.overlay:has(> .form-paper.success-paper){
+  overflow:hidden !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+.form-paper.success-paper{
+  display:flex !important;
+  flex-direction:column !important;
+  max-height:calc(100dvh - 32px) !important;
+  margin:0 auto !important;
+}
+.form-paper .success-body{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  padding:24px 28px;display:flex;flex-direction:column;gap:18px;
+}
+.form-paper .success-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;}
+.form-paper .success-hero .success-icon-wrap{margin:0 auto 8px;}
+.form-paper .success-title{font-family:'DM Serif Display',serif;font-size:1.35rem;font-weight:400;color:#0f1f3d;margin:0;}
+.form-paper .success-sub{font-size:.8rem;color:#5577a0;margin:0;line-height:1.5;}
+.form-paper .success-sub strong{color:#0f1f3d;}
+
+.form-paper .success-card{
+  border:1px solid #c8d9f0;border-radius:14px;background:#fff;overflow:hidden;
+}
+.form-paper .success-card-head{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:12px 16px;background:var(--modal-tint-bg);border-bottom:1px solid var(--modal-tint-border);
+}
+.form-paper .success-badge{
+  font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 10px;border-radius:100px;background:#fff;border:1px solid currentColor;
+}
+.form-paper .success-card-body{padding:18px 16px 16px;display:flex;flex-direction:column;gap:14px;}
+.form-paper .success-label{
+  font-size:.6rem;text-transform:uppercase;letter-spacing:.14em;color:#6b87a8;font-weight:600;margin-bottom:4px;
+}
+.form-paper .success-number{
+  font-family:'DM Serif Display',serif;font-size:clamp(1.3rem,5vw,1.7rem);
+  color:#0f1f3d;letter-spacing:.03em;word-break:break-all;user-select:all;-webkit-user-select:all;
+}
+.form-paper .success-meta{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0;
+  padding-top:12px;border-top:1px solid #e2ecf8;
+}
+.form-paper .success-meta dt{
+  font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:#8aabbf;margin-bottom:3px;
+}
+.form-paper .success-meta dd{margin:0;font-size:.78rem;color:#0f1f3d;word-break:break-all;}
+.form-paper .success-meta > div{min-width:0;}
+
+.form-paper .success-note{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:12px 14px;border-radius:10px;
+  background:#fff8e6;border:1px solid #f0d9a0;
+  font-size:.76rem;line-height:1.55;color:#5c4a14;
+}
+.form-paper .success-note svg{width:16px;height:16px;flex-shrink:0;margin-top:2px;stroke:#b45309;fill:none;stroke-width:2;stroke-linecap:round;}
+.form-paper .success-note p{margin:0;}
+.form-paper .success-note strong{color:#5c4a14;}
+
+.form-paper.success-paper .form-actions{flex:0 0 auto;justify-content:center;}
+.form-paper.success-paper .form-actions .btn-submit{min-width:160px;}
+
+@media(max-width:640px){
+  .overlay:has(> .form-paper.success-paper){padding:12px !important;}
+  .form-paper.success-paper{
+    max-height:calc(100dvh - 24px) !important;
+    border-radius:16px !important;
+  }
+  .form-paper .success-body{padding:20px 18px;}
+  .form-paper .success-meta{grid-template-columns:1fr;gap:10px;}
+  .form-paper.success-paper .form-actions{position:static !important;box-shadow:none !important;}
 }
 `;
 
@@ -2331,24 +2407,36 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     return () => clearTimeout(t);
   }, [cooldown]);
 
-  const handleVerify = async (e) => {
-    e.preventDefault();
+  const handleVerifyCode = useCallback(async (value) => {
     if (busyRef.current) return;
-    if (code.length !== CODE_LENGTH) {
-      pushToast({ title: "Incomplete code", message: `Enter the ${CODE_LENGTH}-digit code.`, success: false });
-      return;
-    }
+    if (value.length !== CODE_LENGTH) return;
     busyRef.current = true;
     setVerifying(true);
     try {
-      const res = await api.confirmVerificationCode(email, code);
+      const res = await api.confirmVerificationCode(email, value);
       onVerified(res.verification_token);
     } catch (err) {
       pushToast({ title: "Verification failed", message: err.message, success: false });
+      setCode("");
     } finally {
       busyRef.current = false;
       setVerifying(false);
     }
+  }, [email, onVerified]);
+
+  useEffect(() => {
+    if (code.length === CODE_LENGTH && !verifying && !busyRef.current) {
+      handleVerifyCode(code);
+    }
+  }, [code, verifying, handleVerifyCode]);
+
+  const handleVerify = (e) => {
+    e.preventDefault();
+    if (code.length !== CODE_LENGTH) {
+      pushToast({ title: "Incomplete code", message: `Enter the ${CODE_LENGTH}-digit code.`, success: false });
+      return;
+    }
+    handleVerifyCode(code);
   };
 
   const resendLabel = sending
@@ -2470,6 +2558,8 @@ function SuccessScreen({ result, type, email, savedOnDevice, onClose }) {
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
+  const submittedAt = new Date().toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
+
   const handleCopy = async () => {
     const ok = await copyToClipboard(controlNo);
     if (ok) {
@@ -2478,7 +2568,7 @@ function SuccessScreen({ result, type, email, savedOnDevice, onClose }) {
       timerRef.current = setTimeout(() => setCopied(false), 2500);
       pushToast({
         title: "Control number copied",
-        message: `${controlNo} is on your clipboard. Paste it in "Track my request" along with your email.`,
+        message: `${controlNo} is on your clipboard.`,
         success: true,
       });
     } else {
@@ -2491,52 +2581,77 @@ function SuccessScreen({ result, type, email, savedOnDevice, onClose }) {
   };
 
   return (
-    <div className="success-overlay">
-      <div className="success-icon-wrap">
-        <svg className="success-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
-      </div>
-      <div className="success-title">Request Submitted!</div>
-      <div className="success-sub">Your <strong>{meta ? meta.label.toLowerCase() : type}</strong> record request has been saved.</div>
-
-      <div className="ctl-card">
-        {meta && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 }}>
-            <TypeTile kind={kind} />
-            <span className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${meta.badge}`}
-              style={{ color: CARD_ICON_COLORS[kind].base }}>
-              {meta.label} · {meta.prefix}
-            </span>
+    <>
+      <div className="success-body">
+        <div className="success-hero">
+          <div className="success-icon-wrap">
+            <svg className="success-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
           </div>
-        )}
-        <div className="ctl-label">Your Control Number</div>
-        <div className="ctl-number">{controlNo}</div>
-        {email && <div className="ctl-email">Tracking email: {email}</div>}
-        <button type="button" className={`btn-copy${copied ? " copied" : ""}`} onClick={handleCopy}
-          aria-live="polite">
-          {copied ? (
-            <>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-              Copied!
-            </>
-          ) : (
-            <>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="9" y="9" width="13" height="13" rx="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              Copy Control Number
-            </>
-          )}
-        </button>
+          <h3 className="success-title">Request Submitted</h3>
+          <p className="success-sub">
+            Your <strong>{meta ? meta.label.toLowerCase() : type}</strong> record request has been saved.
+          </p>
+        </div>
+
+        <div className="success-card">
+          <div className="success-card-head">
+            <TypeTile kind={kind} size={32} />
+            {meta && (
+              <span className="success-badge" style={{ color: CARD_ICON_COLORS[kind].base }}>
+                {meta.label} · {meta.prefix}
+              </span>
+            )}
+          </div>
+          <div className="success-card-body">
+            <div>
+              <div className="success-label">Control number</div>
+              <div className="success-number">{controlNo}</div>
+            </div>
+            <dl className="success-meta">
+              <div>
+                <dt>Tracking email</dt>
+                <dd>{email || "—"}</dd>
+              </div>
+              <div>
+                <dt>Submitted</dt>
+                <dd>{submittedAt}</dd>
+              </div>
+            </dl>
+            <button type="button" className={`btn-copy${copied ? " copied" : ""}`} onClick={handleCopy} aria-live="polite">
+              {copied ? (
+                <>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  Copy Control Number
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="success-note" role="note">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" />
+          </svg>
+          <p>
+            <strong>Please save this number.</strong> You need it together with your email to track your request.
+            {savedOnDevice ? " It is also saved on this device." : " Keep a note or screenshot of it."}
+          </p>
+        </div>
       </div>
 
-      <div className="save-warning">
-        <strong>Please save this number.</strong> You need it, together with your email, to track
-        your request.{savedOnDevice ? " As you chose, it is also saved on this device." : " Keep a note or screenshot of it."}
+      <div className="form-actions">
+        <div className="form-status" aria-hidden="true" />
+        <button type="button" className="btn-submit" onClick={onClose}>Done</button>
       </div>
-
-      <button type="button" className="btn-new" onClick={onClose}>Done</button>
-    </div>
+    </>
   );
 }
 
@@ -2837,7 +2952,7 @@ function RequestForm({ kind, onClose }) {
 
   if (status === "success") {
     return (
-      <div className="form-paper" style={theme}>
+      <div className="form-paper success-paper" style={theme}>
         <FormHeader recordWord={cfg.word} step={3} />
         <SuccessScreen result={result} type={kind} email={requester.requester_email.trim()} savedOnDevice={remember} onClose={onClose} />
       </div>
@@ -3515,6 +3630,7 @@ export default function App() {
       <style>{signaturePadStyles}</style>
       <style>{helpStyles}</style>
       <style>{pagedStyles}</style>
+      <style>{successStyles}</style>
       <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
