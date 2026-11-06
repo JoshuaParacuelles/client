@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useId } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import { createPortal } from "react-dom";
 import { LEGAL_CSS, LEGAL_ROUTES, LegalPage, SiteFooter, ConsentCheckbox, useHashRoute } from "./Legal";
 import {
@@ -54,6 +54,9 @@ const pagedStyles = `
   overflow-y:auto;
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
+}
+.form-paper.paged .paged-scroll{
+  scroll-behavior:auto !important;
 }
 .form-paper.paged .form-body{border-bottom:none;}
 .form-paper.paged .form-actions{flex:0 0 auto;}
@@ -2705,8 +2708,11 @@ function RequestForm({ kind, onClose }) {
   const [page, setPage] = useState(0);
   const pageScrollRef = useRef(null);
 
-  useEffect(() => {
-    pageScrollRef.current?.scrollTo({ top: 0 });
+  useLayoutEffect(() => {
+    const el = pageScrollRef.current;
+    if (el) {
+      el.scrollTop = 0;
+    }
   }, [page]);
 
   useEffect(() => {
