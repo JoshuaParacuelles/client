@@ -30,6 +30,25 @@ const helpStyles = `
 @media(pointer:coarse){.form-paper .help-btn{min-height:36px;}}
 `;
 
+const pagedStyles = `
+.form-paper.paged{
+  display:flex;flex-direction:column;
+  max-height:calc(100dvh - 32px);
+}
+.form-paper.paged .form-header,
+.form-paper.paged .form-subheader{flex:0 0 auto;}
+.form-paper.paged .paged-scroll{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.form-paper.paged .form-body{border-bottom:none;}
+.form-paper.paged .form-actions{flex:0 0 auto;}
+.form-paper .form-actions .page-indicator{flex:1;color:#6b87a8;font-size:.72rem;}
+@media(max-width:640px){
+  .form-paper.paged{min-height:0 !important;max-height:calc(100dvh - 32px);}
+}
+`;
+
 const styles = `
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
@@ -1207,30 +1226,6 @@ img,svg{max-width:100%;}
 @media(min-width:641px) and (max-height:520px) and (orientation:landscape){
   .overlay{--modal-max:720px;}
   .overlay > .form-paper{border-radius:16px;}
-}
-@media (min-width:641px){
-  .overlay > .form-paper{
-    display:flex;
-    flex-direction:column;
-    max-height:calc(100dvh - 40px);
-    min-height:0;
-  }
-  .form-paper > .form-header,
-  .form-paper > .form-subheader,
-  .form-paper > .form-actions{flex:0 0 auto;}
-
-  .form-paper > .form-body,
-  .form-paper > .review-body{
-    flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-  }
-  .form-paper > form{
-    flex:1 1 auto;min-height:0;
-    display:flex;flex-direction:column;
-  }
-  .form-paper > form > .review-body,
-  .form-paper > form > .track-body{
-    flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-  }
 }
 `;
 
@@ -2683,11 +2678,15 @@ function RequestForm({ kind, onClose }) {
   const [consent, setConsent] = useState(false);
   const [remember, setRemember] = useState(false);
   const submittingRef = useRef(false);
+  const [page, setPage] = useState(0);
+  const pageScrollRef = useRef(null);
 
   useEffect(() => {
-    document
-      .querySelectorAll(".form-paper > .form-body, .form-paper > .review-body, .form-paper > form > .review-body, .form-paper > form > .track-body")
-      .forEach((el) => { el.scrollTop = 0; });
+    pageScrollRef.current?.scrollTo({ top: 0 });
+  }, [page]);
+
+  useEffect(() => {
+    document.querySelector(".overlay")?.scrollTo({ top: 0 });
   }, [step]);
 
   const setValue = (k, v) => setSubject((p) => ({ ...p, [k]: v }));
@@ -2706,6 +2705,7 @@ function RequestForm({ kind, onClose }) {
     if (!consent) errs.consent = "You must give your consent to submit this request.";
     setErrors(errs);
     if (Object.keys(errs).length > 0) {
+      setPage(Object.keys(errs).some((k) => k === "num_copies" || k in subject) ? 0 : 1);
       pushToast({ title: "Incomplete form", message: "Please fill in all required fields.", success: false });
       return;
     }
@@ -2830,56 +2830,78 @@ function RequestForm({ kind, onClose }) {
   }
 
   return (
-    <div className="form-paper" style={theme}>
+    <div className="form-paper paged" style={theme}>
       <FormHeader recordWord={cfg.word} step={0} />
       <FormSubheader />
-      <div className="form-body">
-        <div className="form-left">
-          <CopiesRow copies={copies} setCopies={setCopies} name={`copies-${kind}`}
-            othersValue={copiesOther} setOthersValue={setCopiesOther} error={errors.num_copies} />
-          {cfg.blocks.map((b) => (
-            <SubjectBlock key={b.heading} block={b} values={subject} setValue={setValue} errors={errors} />
-          ))}
-          <div className="section-heading">{cfg.place.heading}</div>
-          <div className="place-box">{PLACE}</div>
-          <div className="place-sub">Hospital / Barangay / City / Municipality</div>
-          <p className="field-hint section-hint">
-            This office only keeps records registered in San Carlos City. If the event was registered
-            elsewhere, ask that city's or municipality's civil registrar, or the PSA.
-          </p>
-          <PurposeSection selected={purposes} onChange={setPurposes} />
-          {purposes.includes("OTHERS (SPECIFY)") && (
-            <>
-              <div className="specify-row">
-                <label htmlFor="purpose_other">Specify:</label>
-                <input id="purpose_other" name="purpose_other" type="text" aria-label="Specify other purpose"
-                  aria-describedby="purpose_other_hint" placeholder="e.g. Passport application"
-                  value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
-              </div>
-              <p className="field-hint" id="purpose_other_hint">
-                Describe your purpose in a few words if none of the boxes above fit.
-              </p>
-            </>
-          )}
-          <AuthClause />
-          <div className="req-section">
-            <RequesterFields data={requester} onChange={updateR} errors={errors}
-              sigFile={sigFile} onSigChange={setSigFile} printedName={printedName} onPrintedNameChange={setPrintedName} />
-            <div className="req-divider" />
-            <IssuancePanel forms={FORM_TYPES[kind]} selected={issuance} onToggle={toggleIssuance} />
+      <div className="paged-scroll" ref={pageScrollRef}>
+        <div className="form-body">
+          <div className="form-left">
+            {page === 0 && (
+              <>
+                <CopiesRow copies={copies} setCopies={setCopies} name={`copies-${kind}`}
+                  othersValue={copiesOther} setOthersValue={setCopiesOther} error={errors.num_copies} />
+                {cfg.blocks.map((b) => (
+                  <SubjectBlock key={b.heading} block={b} values={subject} setValue={setValue} errors={errors} />
+                ))}
+                <div className="section-heading">{cfg.place.heading}</div>
+                <div className="place-box">{PLACE}</div>
+                <div className="place-sub">Hospital / Barangay / City / Municipality</div>
+                <p className="field-hint section-hint">
+                  This office only keeps records registered in San Carlos City. If the event was registered
+                  elsewhere, ask that city's or municipality's civil registrar, or the PSA.
+                </p>
+                <PurposeSection selected={purposes} onChange={setPurposes} />
+                {purposes.includes("OTHERS (SPECIFY)") && (
+                  <>
+                    <div className="specify-row">
+                      <label htmlFor="purpose_other">Specify:</label>
+                      <input id="purpose_other" name="purpose_other" type="text" aria-label="Specify other purpose"
+                        aria-describedby="purpose_other_hint" placeholder="e.g. Passport application"
+                        value={purposeOther} onChange={(e) => setPurposeOther(e.target.value)} />
+                    </div>
+                    <p className="field-hint" id="purpose_other_hint">
+                      Describe your purpose in a few words if none of the boxes above fit.
+                    </p>
+                  </>
+                )}
+              </>
+            )}
+            {page === 1 && (
+              <>
+                <AuthClause />
+                <div className="req-section">
+                  <RequesterFields data={requester} onChange={updateR} errors={errors}
+                    sigFile={sigFile} onSigChange={setSigFile} printedName={printedName} onPrintedNameChange={setPrintedName} />
+                  <div className="req-divider" />
+                  <IssuancePanel forms={FORM_TYPES[kind]} selected={issuance} onToggle={toggleIssuance} />
+                </div>
+                <HelpTip label="What do the Issuance options mean?">
+                  <p><strong>Form 3A / 3B / 3C</strong> (or 1A–1C, 2A–2C for birth and death) are the civil registry
+                  form versions the office can issue.</p>
+                  <p><strong>Machine Copy</strong> is a printed or photocopied copy of the record on file.</p>
+                  <p>If you're unsure which to tick, leave it blank and the office will advise you.</p>
+                </HelpTip>
+                <ConsentCheckbox checked={consent} onChange={setConsent} error={errors.consent} />
+              </>
+            )}
           </div>
-          <HelpTip label="What do the Issuance options mean?">
-            <p><strong>Form 3A / 3B / 3C</strong> (or 1A–1C, 2A–2C for birth and death) are the civil registry
-            form versions the office can issue.</p>
-            <p><strong>Machine Copy</strong> is a printed or photocopied copy of the record on file.</p>
-            <p>If you're unsure which to tick, leave it blank and the office will advise you.</p>
-          </HelpTip>
-          <ConsentCheckbox checked={consent} onChange={setConsent} error={errors.consent} />
+          <OccrPanel data={occr} onChange={updateO} />
         </div>
-        <OccrPanel data={occr} onChange={updateO} />
       </div>
-      <FormActions status={status} errorMessage={errorMessage} onCancel={onClose} onSubmit={handleSubmit}
-        submitLabel="Continue" />
+      <div className="form-actions">
+        <div className="form-status page-indicator" aria-live="polite">Page {page + 1} of 2</div>
+        {page === 0 ? (
+          <>
+            <button type="button" className="btn-cancel" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn-submit" onClick={() => setPage(1)}>Next</button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="btn-cancel" onClick={() => setPage(0)}>Back</button>
+            <button type="button" className="btn-submit" onClick={handleSubmit}>Continue</button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -3443,6 +3465,7 @@ export default function App() {
       <style>{responsiveStyles}</style>
       <style>{signaturePadStyles}</style>
       <style>{helpStyles}</style>
+      <style>{pagedStyles}</style>
       <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
