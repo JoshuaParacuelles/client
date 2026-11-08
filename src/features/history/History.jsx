@@ -38,8 +38,33 @@ export function HistoryButton({ count, onClick }) {
   );
 }
 
+function HistorySkeleton({ count = 3 }) { // eslint-disable-line no-unused-vars
+  return (
+    <div role="status" aria-label="Loading recent requests">
+      <span className="sr-only">Loading recent requests</span>
+      <ul aria-hidden="true" className="space-y-3">
+        {Array.from({ length: count }, (_, index) => (
+          <li key={index} className="animate-pulse rounded-xl border border-[#dde6f2] bg-[#f9fbff] p-3.5">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 shrink-0 rounded-[10px] bg-[#e2ecf8]" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-5 w-28 rounded-full bg-[#e2ecf8]" />
+                <div className="h-4 w-36 max-w-full rounded bg-[#e2ecf8]" />
+              </div>
+            </div>
+            <div className="mt-3 h-5 w-24 rounded-full bg-[#e2ecf8]" />
+            <div className="mt-3 h-3 w-40 max-w-full rounded bg-[#e2ecf8]" />
+            <div className="mt-2 h-3 w-52 max-w-full rounded bg-[#e2ecf8]" />
+            <div className="mt-4 h-11 w-full rounded-lg bg-[#d7e5f5]" />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 const DRAWER_ANIM_MS = 300;
-export function HistoryDrawer({ items, onClose }) {
+export function HistoryDrawer({ items, onClose, loading = false }) {
   const [copiedNo, setCopiedNo] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -249,7 +274,7 @@ export function HistoryDrawer({ items, onClose }) {
               Recent requests
             </h2>
             <p className="mt-0.5 text-[0.72rem] text-[#6b87a8]">
-              {refreshing ? "Updating status…" : "History of Control No."}
+              {loading ? "Loading requests…" : refreshing ? "Updating status…" : "History of Control No."}
             </p>
           </div>
           <div className="-mr-1 flex shrink-0 items-center gap-1">
@@ -284,7 +309,9 @@ export function HistoryDrawer({ items, onClose }) {
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
-          {items.length === 0 ? (
+          {loading || refreshing ? (
+            <HistorySkeleton count={items.length ? Math.min(items.length, 3) : 3} />
+          ) : items.length === 0 ? (
             <div className="mt-12 text-center text-sm text-[#6b87a8] sm:mt-16">
               <p className="font-medium text-[#0f1f3d]">No requests yet</p>
               <p className="mt-1">Control numbers appear here after you submit a request.</p>

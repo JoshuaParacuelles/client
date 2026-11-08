@@ -4,7 +4,7 @@
 This folder contains the recent-request button and drawer.
 
 ## Files
-- `History.jsx` — Exports `HistoryButton` and `HistoryDrawer`. The drawer lists saved requests and can refresh their status, link an email, and copy a control number.
+- `History.jsx` — Exports `HistoryButton` and `HistoryDrawer`. The drawer shows loading skeletons while history is loading or being refreshed, then lists saved requests with actions to update status, link an email, and copy a control number.
 - `README.md` — This file.
 
 ## Dependencies

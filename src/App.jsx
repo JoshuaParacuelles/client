@@ -20,17 +20,29 @@ import { HistoryButton, HistoryDrawer } from "./features/history/History.jsx"; /
 
 function useSubmissionHistory() {
   const [items, setItems] = useState(getHistory);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
+    let active = true;
     const sync = () => setItems(getHistory());
     window.addEventListener(HISTORY_EVENT, sync);
     window.addEventListener("storage", sync);
-    initHistoryProtection().then(sync);
+    initHistoryProtection()
+      .then(() => {
+        if (!active) return;
+        sync();
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Could not initialize request history:", error);
+        if (active) setLoading(false);
+      });
     return () => {
+      active = false;
       window.removeEventListener(HISTORY_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
-  return items;
+  return { items, loading };
 }
 
 function Modal({ type, onClose, trackPrefill = "" }) {
@@ -73,7 +85,7 @@ export default function App() {
   const [active, setActive] = useState(null);
   const [trackPrefill, setTrackPrefill] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
-  const history = useSubmissionHistory();
+  const { items: history, loading: historyLoading } = useSubmissionHistory();
   const route = useHashRoute();
   const legalPage = LEGAL_ROUTES.includes(route) ? route : null;
 
@@ -89,7 +101,7 @@ export default function App() {
 <ToastContainer />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
-      {historyOpen && <HistoryDrawer items={history} onClose={() => setHistoryOpen(false)} />}
+      {historyOpen && <HistoryDrawer items={history} loading={historyLoading} onClose={() => setHistoryOpen(false)} />}
       <main className="landing">
         <div className="logo-row">
           <img src="/lcr.jpg" alt="Office of the City Civil Registrar logo" className="logo-img logo-img--lcr"
