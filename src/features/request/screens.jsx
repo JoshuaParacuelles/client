@@ -224,7 +224,6 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [sendsLeft, setSendsLeft] = useState(null);
   const autoSentRef = useRef(false);
   const busyRef = useRef(false);
 
@@ -236,19 +235,9 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     try {
       const res = await api.sendVerificationCode(email);
       setCooldown(res.resend_in ?? 60);
-      setSendsLeft(typeof res.sends_left === "number" ? res.sends_left : null);
       setCode("");
-      setInfo(
-        `We sent a ${CODE_LENGTH}-digit code to your email address. It expires in ${formatWait(res.expires_in ?? 600)}. Check your spam folder if you don't see it.`
-      );
     } catch (e) {
-      if (e.code === "SEND_LIMIT") {
-        setCooldown(e.retryAfter || 0);
-        setSendsLeft(0);
-        setInfo(
-          `This email has reached today's limit for verification codes. You can request a new code in ${formatWait(e.retryAfter)}, or use the enter-code box if you already received one.`
-        );
-      } else if (e.code === "COOLDOWN") {
+      if (e.code === "COOLDOWN") {
         setCooldown(e.retryAfter || 0);
         setInfo(`A code was just sent. You can request another in ${formatWait(e.retryAfter)}.`);
       } else if (e.status === 429) {
@@ -305,11 +294,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     ? "Sending…"
     : cooldown > 0
       ? `Resend code in ${formatClock(cooldown)}`
-      : sendsLeft === null
-        ? "Send code"
-        : sendsLeft > 0
-          ? `Resend code (${sendsLeft} left today)`
-          : "Resend code";
+      : "Resend code";
 
   return (
     <div className="form-paper" style={theme}>
@@ -324,7 +309,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
           <div className="req-field">
             <OtpInput
               id="verification_code_label"
-              label="Verification Code"
+              label="Enter Code"
               length={CODE_LENGTH}
               value={code}
               onChange={setCode}
