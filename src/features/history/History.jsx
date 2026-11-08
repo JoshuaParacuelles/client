@@ -256,8 +256,6 @@ export function HistoryDrawer({ items, onClose, loading = false }) {
     }
   };
 
-  const canRefresh = items.length > 0;
-
   return (
     <div className="fixed inset-0 z-150 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="history-title">
       <div
@@ -286,19 +284,6 @@ export function HistoryDrawer({ items, onClose, loading = false }) {
             </p>
           </div>
           <div className="-mr-1 flex shrink-0 items-center gap-1">
-            {canRefresh && (
-              <button
-                type="button"
-                onClick={() => refreshAll(true)}
-                disabled={refreshing}
-                aria-label="Refresh status of saved requests"
-                className="grid h-11 min-w-11 place-items-center rounded-lg px-2 text-xs font-medium text-[#6b87a8] transition
-                           hover:bg-[#eef3fb] hover:text-[#0f1f3d] disabled:opacity-50
-                           focus:outline-none focus-visible:ring-2 focus-visible:ring-[#185fa5]"
-              >
-                Refresh
-              </button>
-            )}
             <button
               ref={closeBtnRef}
               type="button"
