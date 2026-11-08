@@ -19,6 +19,7 @@ export default function BugReportWidget() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
+  const [uploadWarning, setUploadWarning] = useState("");
   const [status, setStatus] = useState("idle");
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
@@ -78,6 +79,7 @@ export default function BugReportWidget() {
     setIncludeScreenshot(false);
     updateFile(null);
     setError("");
+    setUploadWarning("");
     setStatus("idle");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -159,22 +161,32 @@ export default function BugReportWidget() {
     }
 
     setError("");
+    setUploadWarning("");
     setStatus("submitting");
     try {
       const form = new FormData();
       form.append("issue_type", issueType);
-      if (issueType === "Other Issue") form.append("other_issue_type", otherType);
+      if (issueType === "Other Issue") form.append("issue_subtype", otherType);
       form.append("description", text);
       form.append("page_url", `${window.location.origin}${window.location.pathname}`);
       form.append("user_agent", navigator.userAgent);
 
       if (includeScreenshot) {
-        const screenshot = await captureScreenshot();
-        form.append("screenshot", screenshot, "screenshot.png");
+        try {
+          const screenshot = await captureScreenshot();
+          form.append("screenshot", screenshot, "screenshot.png");
+        } catch (screenshotError) {
+          setUploadWarning(
+            screenshotError.message || "The screenshot could not be captured; your report will be sent without it.",
+          );
+        }
       }
       if (file) form.append("attachment", file, file.name);
 
-      await api.submitFeedback(form);
+      const result = await api.submitFeedback(form);
+      if (result.warning) {
+        setUploadWarning((current) => [current, result.warning].filter(Boolean).join(" "));
+      }
       setStatus("success");
     } catch (submitError) {
       setError(submitError.message || "Something went wrong. Please try again.");
@@ -186,8 +198,9 @@ export default function BugReportWidget() {
     <div className="feedback-widget" data-feedback-widget>
       <button
         type="button"
-        className="feedback-fab"
-        hidden={open}
+        className={`feedback-fab${open ? " feedback-fab-hidden" : ""}`}
+        aria-hidden={open}
+        tabIndex={open ? -1 : 0}
         onClick={(event) => {
           openerRef.current = event.currentTarget;
           setOpen(true);
@@ -230,6 +243,7 @@ export default function BugReportWidget() {
             {status === "success" ? (
               <div className="feedback-success" role="status">
                 <p>Thank you! Your report has been submitted.</p>
+                {uploadWarning && <p className="feedback-error" role="alert">{uploadWarning}</p>}
                 <button type="button" className="feedback-btn feedback-btn-primary" onClick={handleClose}>
                   Close
                 </button>

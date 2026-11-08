@@ -19,8 +19,9 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
-.feedback-fab[hidden] {
-  display: none;
+.feedback-fab-hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .feedback-fab:hover {
