@@ -317,7 +317,7 @@ export function HistoryDrawer({ items, onClose, loading = false }) {
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
-          {loading ? (
+          {loading || refreshing ? (
             <HistorySkeleton count={items.length ? Math.min(items.length, 3) : 3} />
           ) : items.length === 0 ? (
             <div className="mt-12 text-center text-sm text-[#6b87a8] sm:mt-16">
