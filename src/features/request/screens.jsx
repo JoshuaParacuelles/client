@@ -3,6 +3,7 @@ import { api } from "../../api/client.js";
 import { FORM_THEME, CARD_ICON_COLORS, RECORD_META, FORM_CONFIGS, PURPOSES, FORM_TYPES, CODE_LENGTH, PLACE } from "../../config/formConfigs.js";
 import { TypeTile } from "../../components/RecordType.jsx"; // eslint-disable-line no-unused-vars
 import { Spinner, FormHeader, FormActions } from "../../components/FormShell.jsx"; // eslint-disable-line no-unused-vars
+import OtpInput from "../../components/OtpInput.jsx"; // eslint-disable-line no-unused-vars
 import { pushToast } from "../../lib/toast.js";
 import { SignatureUpload, RequesterFields } from "../signature/Signature.jsx"; // eslint-disable-line no-unused-vars
 import { copyToClipboard } from "../../lib/clipboard.js";
@@ -291,12 +292,6 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
     }
   }, [email, onVerified]);
 
-  useEffect(() => {
-    if (code.length === CODE_LENGTH && !verifying && !busyRef.current) {
-      handleVerifyCode(code);
-    }
-  }, [code, verifying, handleVerifyCode]);
-
   const handleVerify = (e) => {
     e.preventDefault();
     if (code.length !== CODE_LENGTH) {
@@ -326,13 +321,17 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
             To protect your request, we need to confirm that you own this email address.
             Enter the {CODE_LENGTH}-digit code we sent to <span className="verify-email">{email}</span>.
           </p>
-          <label className="req-field" htmlFor="verification_code">
-            Verification Code
-            <input id="verification_code" name="verification_code" type="text" className="otp-input" inputMode="numeric" autoComplete="one-time-code"
-              maxLength={CODE_LENGTH} placeholder={"0".repeat(CODE_LENGTH)} aria-label="Verification code"
-              value={code} autoFocus
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))} />
-          </label>
+          <div className="req-field">
+            <OtpInput
+              id="verification_code_label"
+              label="Verification Code"
+              length={CODE_LENGTH}
+              value={code}
+              onChange={setCode}
+              onComplete={handleVerifyCode}
+              disabled={verifying}
+            />
+          </div>
           {info && <p className="verify-note" role="status">{info}</p>}
           <button type="button" className="verify-resend" onClick={sendCode}
             disabled={sending || verifying || cooldown > 0}>

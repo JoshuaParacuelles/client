@@ -690,10 +690,6 @@ button:not(:disabled){cursor:pointer;}
 .verify-form{display:flex;flex-direction:column;flex:1;}
 .verify-form .review-body{flex:1;}
 .verify-email{word-break:break-all;font-weight:600;}
-.form-paper .req-field input.otp-input[type="text"]{
-  font-size:1.6rem;font-weight:600;letter-spacing:0.45em;padding:8px 2px 8px 0.45em;
-  text-align:center;border-bottom-width:2px;margin-top:6px;
-}
 .verify-note{
   margin-top:12px;font-size:0.76rem;line-height:1.55;
   background:var(--modal-tint-bg);border:1px solid var(--modal-tint-border);
@@ -825,7 +821,6 @@ img,svg{max-width:100%;}
   .track-step{font-size:0.62rem;gap:4px;overflow-wrap:anywhere;padding:0 2px;}
   .track-status{font-size:1.1rem;}
   .track-meta{line-height:1.5;}
-  .form-paper .req-field input.otp-input[type="text"]{font-size:1.4rem;letter-spacing:0.3em;padding-left:0.3em;}
   .recent-box{flex-direction:column;align-items:stretch;}
   .recent-actions{justify-content:space-between;}
   .form-paper .recent-use{min-height:40px;flex:1;}
@@ -1383,3 +1378,127 @@ button.sig-upload-label{font-family:inherit;}
   .form-paper .success-body{padding:18px 24px;}
   .form-paper .success-meta{grid-template-columns:1fr 1fr;}
 }
+
+/* ===== Mobile container fix (form box only) ===== */
+.overlay {
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  padding: max(12px, env(safe-area-inset-top, 0px))
+    max(12px, env(safe-area-inset-right, 0px))
+    max(12px, env(safe-area-inset-bottom, 0px))
+    max(12px, env(safe-area-inset-left, 0px));
+}
+
+.overlay > .form-paper {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--modal-max, 720px);
+  margin: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-paper .form-header {
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.form-paper .paged-scroll,
+.form-paper:not(.paged) > .form-body,
+.form-paper .review-body,
+.form-paper .track-body,
+.form-paper .success-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.form-paper .form-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.form-paper .form-actions .btn-cancel,
+.form-paper .form-actions .btn-submit {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: max(10px, env(safe-area-inset-top, 0px))
+      max(10px, env(safe-area-inset-right, 0px))
+      max(10px, env(safe-area-inset-bottom, 0px))
+      max(10px, env(safe-area-inset-left, 0px));
+  }
+
+  .overlay:has(> .form-paper.paged),
+  .overlay:has(> .form-paper.success-paper) {
+    padding: max(10px, env(safe-area-inset-top, 0px))
+      max(10px, env(safe-area-inset-right, 0px))
+      max(10px, env(safe-area-inset-bottom, 0px))
+      max(10px, env(safe-area-inset-left, 0px)) !important;
+  }
+
+  .overlay > .form-paper,
+  .form-paper.paged {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    border-radius: 16px !important;
+    margin: 0 auto !important;
+  }
+
+  .form-paper .form-actions {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .form-paper .form-actions .btn-cancel,
+  .form-paper .form-actions .btn-submit {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .form-paper input,
+  .form-paper select,
+  .form-paper textarea {
+    font-size: 16px;
+  }
+}
+
+/* ===== End of mobile container fix ===== */
+
+/* ===== OTP boxes (6 digits) ===== */
+.otp-wrap{
+  display:flex;flex-direction:column;align-items:flex-start;width:100%;
+  margin:8px 0 4px;
+}
+.otp-label{font-size:0.85rem;color:#0f1f3d;margin:0 0 14px;font-weight:500;}
+.otp-boxes{
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:clamp(4px,2vw,10px);width:100%;max-width:340px;
+}
+.form-paper .otp-boxes .otp-box,
+.form-paper .form-left .otp-boxes input.otp-box{
+  box-sizing:border-box;width:100%;min-width:0;height:clamp(44px,12vw,56px);
+  margin:0;padding:0;border:2px solid #d4dce8;border-radius:10px;background:#fff;
+  font-family:inherit;font-size:1.35rem;font-weight:600;color:#0f1f3d;
+  text-align:center;box-shadow:none;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.form-paper .form-left .otp-boxes input.otp-box:focus,
+.form-paper .otp-boxes .otp-box.active{
+  border-color:var(--modal-primary,#185fa5);
+  box-shadow:0 0 0 3px var(--modal-tint-bg,#e6f1fb);
+}
+.form-paper .otp-boxes .otp-box.invalid{border-color:#e24b4a;}
+.form-paper .otp-boxes .otp-box:disabled{opacity:.6;cursor:not-allowed;}
+@media(max-width:360px){.otp-boxes{gap:4px;}}
+/* ===== End of OTP boxes ===== */
