@@ -72,6 +72,16 @@ export const api = {
       ? send(`/${kind}/submit`, { method: "POST", body: buildFormData(payload, file) })
       : postJson(`/${kind}/submit`, { [`${kind}_request`]: payload }),
   trackRequest: trackWithRetry,
+  trackRequestOnce: (control_no, email) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    return send("/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ control_no, email }),
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
+  },
   sendVerificationCode: (email) => postJson("/verify/send", { email }),
   confirmVerificationCode: (email, code) => postJson("/verify/confirm", { email, code }),
 };

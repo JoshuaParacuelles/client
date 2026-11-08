@@ -111,7 +111,7 @@ export function HistoryDrawer({ items, onClose, loading = false }) {
     for (let i = 0; i < emails.length; i += 1) {
       const email = emails[i];
       try {
-        const res = await api.trackRequest(it.control_no, email);
+        const res = await api.trackRequestOnce(it.control_no, email);
         // Success: saves the email (if it was missing) plus status, dates, etc.
         updateHistory(it.control_no, historyPatchFromTrack(res, email, it.control_no));
         return true;
@@ -125,10 +125,8 @@ export function HistoryDrawer({ items, onClose, loading = false }) {
     return false;
   };
 
-  // Re-check every saved request, then update its saved entry.
-  // Entries checked in the last minute are skipped to avoid hammering the server.
-  // Re-check every saved request, one at a time, so a burst doesn't trip the
-  // server's rate limit. Entries checked in the last minute are skipped.
+  // Re-check stale entries in a small batch so saved history stays visible and
+  // a slow request doesn't delay every other status check.
   const refreshAll = async (force = false) => {
     if (refreshingRef.current) return;
     const now = Date.now();
@@ -146,22 +144,32 @@ export function HistoryDrawer({ items, onClose, loading = false }) {
     if (!targets.length) return;
     refreshingRef.current = true;
     if (mountedRef.current) setRefreshing(true);
-    for (let i = 0; i < targets.length; i += 1) {
-      const it = targets[i];
-      if (!mountedRef.current) break;
-      const result = await checkOne(it, candidates);
-      if (result === "rate_limited") {
+    let nextIndex = 0;
+    let rateLimited = false;
+    const worker = async () => {
+      while (mountedRef.current && !rateLimited) {
+        const index = nextIndex;
+        nextIndex += 1;
+        if (index >= targets.length) return;
+        const result = await checkOne(targets[index], candidates);
+        if (result === "rate_limited") rateLimited = true;
+      }
+    };
+    try {
+      await Promise.all(
+        Array.from({ length: Math.min(4, targets.length) }, () => worker())
+      );
+      if (rateLimited) {
         pushToast({
           title: "Tracking rate limit reached",
           message: "Recent requests will stop updating for now. Please try again later.",
           success: false,
         });
-        break;
       }
-      if (i < targets.length - 1) await wait(300);
+    } finally {
+      refreshingRef.current = false;
+      if (mountedRef.current) setRefreshing(false);
     }
-    refreshingRef.current = false;
-    if (mountedRef.current) setRefreshing(false);
   };
 
   useEffect(() => {
@@ -309,7 +317,7 @@ export function HistoryDrawer({ items, onClose, loading = false }) {
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
-          {loading || refreshing ? (
+          {loading ? (
             <HistorySkeleton count={items.length ? Math.min(items.length, 3) : 3} />
           ) : items.length === 0 ? (
             <div className="mt-12 text-center text-sm text-[#6b87a8] sm:mt-16">
