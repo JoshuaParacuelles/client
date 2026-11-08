@@ -3,8 +3,9 @@ import html2canvas from "html2canvas";
 import { api } from "../api/client.js";
 import "../styles/bugReport.css";
 
-const ISSUE_TYPES = ["Bug Report", "Feature Suggestion", "General Feedback", "Content Error"];
+const ISSUE_TYPES = ["Bug Report", "Feature Suggestion", "General Feedback", "Content Error", "Other Issue"];
 const MAX_CHARS = 500;
+const MAX_OTHER_TYPE_CHARS = 100;
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -12,6 +13,7 @@ const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([di
 export default function BugReportWidget() {
   const [open, setOpen] = useState(false);
   const [issueType, setIssueType] = useState(ISSUE_TYPES[0]);
+  const [otherIssueType, setOtherIssueType] = useState("");
   const [description, setDescription] = useState("");
   const [includeScreenshot, setIncludeScreenshot] = useState(false);
   const [file, setFile] = useState(null);
@@ -71,6 +73,7 @@ export default function BugReportWidget() {
 
   function reset() {
     setIssueType(ISSUE_TYPES[0]);
+    setOtherIssueType("");
     setDescription("");
     setIncludeScreenshot(false);
     updateFile(null);
@@ -145,12 +148,22 @@ export default function BugReportWidget() {
       setError(`Description must be ${MAX_CHARS} characters or fewer.`);
       return;
     }
+    const otherType = otherIssueType.trim();
+    if (issueType === "Other Issue" && !otherType) {
+      setError("Please specify the issue type.");
+      return;
+    }
+    if (issueType === "Other Issue" && otherType.length > MAX_OTHER_TYPE_CHARS) {
+      setError(`The issue type must be ${MAX_OTHER_TYPE_CHARS} characters or fewer.`);
+      return;
+    }
 
     setError("");
     setStatus("submitting");
     try {
       const form = new FormData();
       form.append("issue_type", issueType);
+      if (issueType === "Other Issue") form.append("other_issue_type", otherType);
       form.append("description", text);
       form.append("page_url", `${window.location.origin}${window.location.pathname}`);
       form.append("user_agent", navigator.userAgent);
@@ -172,7 +185,6 @@ export default function BugReportWidget() {
   return (
     <div className="feedback-widget" data-feedback-widget>
       <button
-        ref={closeButtonRef}
         type="button"
         className="feedback-fab"
         hidden={open}
@@ -204,6 +216,7 @@ export default function BugReportWidget() {
             <header className="feedback-header">
               <h2 id="feedback-title">Report an Issue or Feedback</h2>
               <button
+                ref={closeButtonRef}
                 type="button"
                 className="feedback-close"
                 onClick={handleClose}
@@ -229,11 +242,35 @@ export default function BugReportWidget() {
                     id="feedback-type"
                     className="feedback-select"
                     value={issueType}
-                    onChange={(event) => setIssueType(event.target.value)}
+                    onChange={(event) => {
+                      setIssueType(event.target.value);
+                      setOtherIssueType("");
+                      setError("");
+                    }}
                     disabled={status === "submitting"}
                   >
                     {ISSUE_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
                   </select>
+
+                  {issueType === "Other Issue" && (
+                    <>
+                      <label className="feedback-label" htmlFor="feedback-other-type">Please specify</label>
+                      <input
+                        id="feedback-other-type"
+                        className="feedback-select"
+                        type="text"
+                        value={otherIssueType}
+                        maxLength={MAX_OTHER_TYPE_CHARS}
+                        onChange={(event) => setOtherIssueType(event.target.value)}
+                        disabled={status === "submitting"}
+                        aria-describedby="feedback-other-counter"
+                        required
+                      />
+                      <p id="feedback-other-counter" className="feedback-counter" aria-live="polite">
+                        {otherIssueType.length}/{MAX_OTHER_TYPE_CHARS} characters
+                      </p>
+                    </>
+                  )}
 
                   <label className="feedback-label" htmlFor="feedback-description">Description</label>
                   <textarea
