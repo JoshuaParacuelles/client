@@ -18,3 +18,5 @@ This folder contains the React + Vite frontend for the Local Civil Registrar req
 
 ## Notes
 `node_modules/` and `dist/` are generated or installed folders, not frontend source code.
+
+The floating feedback widget submits to `POST /api/feedback`. Screenshot capture uses the existing `html2canvas` dependency.

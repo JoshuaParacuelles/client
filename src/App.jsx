@@ -9,6 +9,7 @@ import {
 import RequestForm from "./features/request/screens.jsx"; // eslint-disable-line no-unused-vars
 import TrackForm from "./features/track/TrackForm.jsx"; // eslint-disable-line no-unused-vars
 import { HistoryButton, HistoryDrawer } from "./features/history/History.jsx"; // eslint-disable-line no-unused-vars
+import BugReportWidget from "./components/BugReportWidget.jsx"; // eslint-disable-line no-unused-vars
 
 
 
@@ -45,6 +46,7 @@ function useSubmissionHistory() {
   return { items, loading };
 }
 
+// eslint-disable-next-line no-unused-vars
 function Modal({ type, onClose, trackPrefill = "" }) {
   const closeRef = useRef(onClose);
   const overlayRef = useRef(null);
@@ -99,6 +101,7 @@ export default function App() {
   return (
     <>
 <ToastContainer />
+      <BugReportWidget />
       {legalPage ? <LegalPage page={legalPage} /> : (<>
       <HistoryButton count={history.length} onClick={() => setHistoryOpen(true)} />
       {historyOpen && <HistoryDrawer items={history} loading={historyLoading} onClose={() => setHistoryOpen(false)} />}

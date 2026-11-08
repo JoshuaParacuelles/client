@@ -82,6 +82,8 @@ export const api = {
       signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId));
   },
+  submitFeedback: (formData) =>
+    send("/feedback", { method: "POST", body: formData }),
   sendVerificationCode: (email) => postJson("/verify/send", { email }),
   confirmVerificationCode: (email, code) => postJson("/verify/confirm", { email, code }),
 };
