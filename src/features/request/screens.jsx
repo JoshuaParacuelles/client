@@ -239,7 +239,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
       setSendsLeft(typeof res.sends_left === "number" ? res.sends_left : null);
       setCode("");
       setInfo(
-        `We sent a ${CODE_LENGTH}-digit code to ${email}. It expires in ${formatWait(res.expires_in ?? 600)}. Check your spam folder if you don't see it.`
+        `We sent a ${CODE_LENGTH}-digit code to your email address. It expires in ${formatWait(res.expires_in ?? 600)}. Check your spam folder if you don't see it.`
       );
     } catch (e) {
       if (e.code === "SEND_LIMIT") {
@@ -319,7 +319,7 @@ function VerifyScreen({ recordWord, theme, email, onVerified, onBack }) {
           <div className="section-heading">Verify your email</div>
           <p className="review-intro">
             To protect your request, we need to confirm that you own this email address.
-            Enter the {CODE_LENGTH}-digit code we sent to <span className="verify-email">{email}</span>.
+            Enter the {CODE_LENGTH}-digit code we sent to your email address.
           </p>
           <div className="req-field">
             <OtpInput

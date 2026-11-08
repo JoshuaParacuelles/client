@@ -1,16 +1,20 @@
-# React + Vite
+# client/
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Purpose
+This folder contains the React + Vite frontend for the Local Civil Registrar request system.
 
-Currently, two official plugins are available:
+## Files
+- `index.html` — The page Vite loads to start the frontend.
+- `package.json` — Lists frontend dependencies and commands such as `dev`, `build`, and `lint`.
+- `package-lock.json` — Records the exact installed package versions.
+- `vite.config.js` — Sets up the React and Tailwind plugins and sends local `/api` requests to the Flask backend.
+- `eslint.config.js` — Sets the rules used to check JavaScript and JSX files.
+- `vercel.json` — Sets Vercel page rewrites and cache headers.
+- `.gitignore` — Lists local files and generated folders that Git should ignore.
+- `README.md` — This file; describes the frontend project.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Dependencies
+`index.html` loads `src/main.jsx`. Vite settings and frontend packages are listed in `vite.config.js` and `package.json`.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Notes
+`node_modules/` and `dist/` are generated or installed folders, not frontend source code.
