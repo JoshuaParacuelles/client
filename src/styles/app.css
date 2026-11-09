@@ -1379,22 +1379,31 @@ button.sig-upload-label{font-family:inherit;}
   .form-paper .success-meta{grid-template-columns:1fr 1fr;}
 }
 
-/* ===== Mobile container fix (form box only) ===== */
+/* ===== Modal container: centered on all screens ===== */
 .overlay {
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 100vh;
   height: 100dvh;
-  padding: max(12px, env(safe-area-inset-top, 0px))
-    max(12px, env(safe-area-inset-right, 0px))
-    max(12px, env(safe-area-inset-bottom, 0px))
-    max(12px, env(safe-area-inset-left, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(16px, env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
 }
 
 .overlay > .form-paper {
   box-sizing: border-box;
+  flex: 0 0 auto;
   width: 100%;
   max-width: var(--modal-max, 720px);
+  min-height: 0;
+  max-height: calc(100dvh - 32px);
   margin: auto;
+  align-self: center;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1437,27 +1446,10 @@ button.sig-upload-label{font-family:inherit;}
       max(10px, env(safe-area-inset-left, 0px));
   }
 
-  .overlay:has(> .form-paper.paged),
-  .overlay:has(> .form-paper.success-paper) {
-    padding: max(10px, env(safe-area-inset-top, 0px))
-      max(10px, env(safe-area-inset-right, 0px))
-      max(10px, env(safe-area-inset-bottom, 0px))
-      max(10px, env(safe-area-inset-left, 0px)) !important;
-  }
-
-  .overlay > .form-paper,
-  .form-paper.paged {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    min-height: 0 !important;
-    border-radius: 16px !important;
-    margin: 0 auto !important;
-  }
-
-  .form-paper .form-actions {
-    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  .overlay > .form-paper {
+    max-width: 100%;
+    max-height: calc(100dvh - 20px);
+    border-radius: 16px;
   }
 
   .form-paper .form-actions .btn-cancel,
@@ -1472,6 +1464,8 @@ button.sig-upload-label{font-family:inherit;}
     font-size: 16px;
   }
 }
+
+/* ===== End of modal container ===== */
 
 /* ===== End of mobile container fix ===== */
 
