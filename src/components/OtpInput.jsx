@@ -19,7 +19,7 @@ export default function OtpInput({
   }, []);
 
   useEffect(() => {
-    if (value.length === length && completedValue.current !== value) {
+    if (/^\d+$/.test(value) && value.length === length && completedValue.current !== value) {
       completedValue.current = value;
       onComplete?.(value);
     } else if (value.length !== length) {
@@ -28,16 +28,16 @@ export default function OtpInput({
   }, [value, length, onComplete]);
 
   const applyDigits = (index, text) => {
-    const digits = text.replace(/\D/g, "");
+    const digits = text.replace(/[^0-9]/g, "");
     if (!digits) return;
 
-    const start = digits.length >= length ? 0 : index;
+    const start = digits.length >= length ? 0 : Math.min(index, value.length);
     const next = value.split("");
     digits.slice(0, length - start).split("").forEach((digit, offset) => {
       next[start + offset] = digit;
     });
     onChange(next.join("").slice(0, length));
-    refs.current[Math.min(start + digits.length, length) - 1]?.focus();
+    refs.current[Math.min(start + digits.length, length - 1)]?.focus();
   };
 
   const handleChange = (index, event) => {
@@ -50,10 +50,7 @@ export default function OtpInput({
   };
 
   const handleKeyDown = (index, event) => {
-    if (/^\d$/.test(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey) {
-      event.preventDefault();
-      applyDigits(index, event.key);
-    } else if (event.key === "Backspace") {
+    if (event.key === "Backspace") {
       event.preventDefault();
       if (value[index]) {
         onChange(value.slice(0, index) + value.slice(index + 1));
@@ -68,18 +65,17 @@ export default function OtpInput({
     } else if (event.key === "ArrowRight" && index < length - 1) {
       event.preventDefault();
       refs.current[index + 1]?.focus();
+    } else if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      event.preventDefault();
+      if (/^[0-9]$/.test(event.key)) applyDigits(index, event.key);
     }
   };
 
   const handlePaste = (index, event) => {
-    const pasted = event.clipboardData.getData("text").replace(/\D/g, "");
+    const pasted = event.clipboardData.getData("text").replace(/[^0-9]/g, "");
     if (!pasted) return;
     event.preventDefault();
     applyDigits(index, pasted);
-  };
-
-  const handleFocus = (index) => {
-    if (index > activeIndex) refs.current[activeIndex]?.focus();
   };
 
   return (
@@ -93,7 +89,7 @@ export default function OtpInput({
             type="text"
             inputMode="numeric"
             autoComplete={index === 0 ? "one-time-code" : "off"}
-            maxLength={length}
+            maxLength={1}
             className={[
               "otp-box",
               index === activeIndex && !disabled ? "active" : "",
@@ -103,7 +99,7 @@ export default function OtpInput({
             onChange={(event) => handleChange(index, event)}
             onKeyDown={(event) => handleKeyDown(index, event)}
             onPaste={(event) => handlePaste(index, event)}
-            onFocus={() => handleFocus(index)}
+            onFocus={(event) => event.currentTarget.select()}
             disabled={disabled}
             aria-label={`Digit ${index + 1} of ${length}`}
           />
