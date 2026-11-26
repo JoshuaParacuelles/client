@@ -1,9 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-
-/* ─── ORGANIZATION DETAILS ───────────────────────────────────────
-   Anything in [square brackets] is a PLACEHOLDER. Replace it with the
-   office's confirmed information. Placeholders render highlighted so
-   they are easy to spot before going live. */
 export const ORG = {
   name: "Office of the City Civil Registrar",
   place: "San Carlos City, Negros Occidental",
