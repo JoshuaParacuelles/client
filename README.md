@@ -9,7 +9,7 @@ This folder contains the React + Vite frontend for the Local Civil Registrar req
 - `package-lock.json` — Records the exact installed package versions.
 - `vite.config.js` — Sets up the React and Tailwind plugins and sends local `/api` requests to the Flask backend.
 - `eslint.config.js` — Sets the rules used to check JavaScript and JSX files.
-- `vercel.json` — Sets Vercel page rewrites and cache headers.
+- `vercel.json` — Sets Vercel page rewrites, cache headers, and security headers.
 - `.gitignore` — Lists local files and generated folders that Git should ignore.
 - `README.md` — This file; describes the frontend project.
 
@@ -20,3 +20,5 @@ This folder contains the React + Vite frontend for the Local Civil Registrar req
 `node_modules/` and `dist/` are generated or installed folders, not frontend source code.
 
 The floating feedback widget submits to `POST /api/feedback`. Screenshot capture uses the existing `html2canvas` dependency.
+
+<!-- TODO: Replace BACKEND_DOMAIN in the report-only CSP with the origin configured by VITE_API_URL before reviewing CSP reports. -->
